@@ -31,7 +31,7 @@
 - [x] 认证中心：JWT 登录（buyer / seller）
 - [x] 事件驱动：Outbox Pattern + Kafka（wallet-service、order-service）
 - [x] 可观测性：Prometheus + OpenTelemetry Collector（采集层）+ 结构化日志
-- [x] Docker Compose + Kind/Kubernetes 部署 + mirrord 本地接入
+- [x] Kind/Kubernetes 部署 + mirrord 本地接入
 - [x] API Gateway：YAML 路由 + Virtual Threads + Redis Lua 限流 + Canary 灰度 + Trusted Headers
 
 **购物核心流程：**
@@ -302,7 +302,7 @@ Phase 1          Phase 2          Phase 3          Phase 4          Phase 5     
 
 | 任务 | 说明 |
 |------|------|
-| ✅ Docker Compose / Kind 添加 Mailpit | Web UI :8025 + SMTP :1025 |
+| ✅ Kind / K8s 添加 Mailpit | Web UI :8025 + SMTP :1025 |
 | ✅ notification-service 部署到 Kind 集群 | K8s manifest |
 | ✅ api-gateway 路由（如需健康检查端点） | |
 
@@ -690,7 +690,7 @@ Phase 5：向量数据库 Milvus（AI 推荐）
 ### 12.4 基础设施成熟化
 
 ```
-Phase 1：Docker Compose + Kind（本地开发）
+Phase 1：Kind + mirrord（本地开发）
 Phase 2：Kubernetes + Helm Charts（测试/预发）
 Phase 3：ArgoCD GitOps 持续部署
 Phase 4：多云部署（AWS EKS + 阿里云 ACK）

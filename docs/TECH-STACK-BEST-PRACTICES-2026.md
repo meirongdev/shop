@@ -92,7 +92,7 @@
 
 - 所有服务统一 `8080/8081` 端口模型，便于平台治理
 - 健康检查、Prometheus、OTLP、结构化日志已纳入默认配置模板
-- Kind / Docker Compose / K8s manifest 三套运行方式可以形成从开发到交付的连续路径
+- Kind / K8s manifest / mirrord 可以形成从本地验证到集群交付的连续路径
 - 配置与密钥通过环境变量、ConfigMap、Secret 注入，而不是硬编码到镜像
 
 ### 3.3 服务边界与共享层次是健康的

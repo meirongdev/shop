@@ -7,86 +7,34 @@ title: 本地部署
 
 ## 前置要求
 
-- Java 25 (推荐 Eclipse Temurin)
-- Maven 3.9+
-- Docker & Docker Compose
-- (可选) Kind + kubectl（K8s 部署方式）
+- Docker Desktop（或任意兼容 Docker 的运行时）
+- Kind
+- kubectl
 
-## 方式一：Docker Compose（推荐）
+## 唯一支持的本地运行方式：Kind / Kubernetes
 
-最简单的本地部署方式，一键启动全部服务。
-
-### 1. 构建项目
-
-```bash
-mvn -DskipTests verify
-```
-
-### 2. 复制环境变量
-
-```bash
-cp .env.example .env
-```
-
-### 3. 构建 Docker 镜像
-
-```bash
-./scripts/build-images.sh
-```
-
-### 4. 启动服务
-
-```bash
-docker compose up -d
-```
-
-### 5. 验证服务
-
-等待所有服务健康后访问：
-
-- **Buyer Portal**: [http://localhost:8080/buyer/login](http://localhost:8080/buyer/login)
-- **Seller Portal**: [http://localhost:8080/seller/login](http://localhost:8080/seller/login)
-- **Mailpit (邮件测试)**: [http://localhost:8025](http://localhost:8025)
-- **Prometheus**: [http://localhost:9090](http://localhost:9090)
-
-检查服务状态：
-
-```bash
-docker compose ps
-```
-
-> 当前仓库中的 Redis 不是“可有可无的缓存”。它同时承担 guest cart、限流、OTP、防作弊、Bloom Filter 幂等以及 Redisson 分布式锁协调（库存写入、订单批处理、订阅续费、优惠券发放）。如果要验证这些链路，请确保 `redis` 容器健康。
-
-### 6. 停止服务
-
-```bash
-docker compose down
-# 如需清除数据
-docker compose down -v
-```
-
-## 方式二：Kind/Kubernetes
-
-适合验证 K8s 部署清单和完整的云原生体验。
+当前仓库不再维护 `docker-compose.yml` 路径；本地开发、联调、热更新验证统一以 Kind + Kubernetes 清单为准。
 
 ### 1. 一键部署（推荐）
 
 ```bash
-mvn -DskipTests verify
 ./kind/setup.sh
 ```
 
-此脚本会自动：创建 Kind 集群 → 构建 Docker 镜像 → 加载到集群 → 部署全部基础设施和服务。
+此脚本会自动：创建 Kind 集群 → 构建全部镜像 → 加载镜像 → 部署基础设施与平台服务。
 
 > `kind/setup.sh` 会为 Meilisearch 注入符合生产模式要求的 16+ 字节密钥，并在 MySQL 首次启动时初始化各服务所需的数据库与授权。
 
-### 2. 分步部署
+### 2. 清理环境
 
 ```bash
-# 构建 Maven 项目
-mvn -DskipTests verify
+./kind/teardown.sh
+```
 
-# 构建所有 Docker 镜像
+### 3. 分步部署
+
+```bash
+# 构建所有 Docker 镜像（镜像内部会完成 Maven 打包）
 ./scripts/build-images.sh
 
 # 创建 Kind 集群
@@ -101,7 +49,7 @@ kubectl apply -f k8s/infra/base.yaml
 kubectl apply -f k8s/apps/platform.yaml
 ```
 
-### 3. 验证
+### 4. 访问与基本验证
 
 - **Buyer Portal**: [http://localhost:8080/buyer/login](http://localhost:8080/buyer/login)
 - **Seller Portal**: [http://localhost:8080/seller/login](http://localhost:8080/seller/login)
@@ -120,40 +68,10 @@ kubectl -n shop port-forward svc/api-gateway 18080:8080
 ```
 
 > 通过网关访问 `buyer-bff`、`subscription-service`、`webhook-service` 等路由时，需要保留服务自身的基础路径，例如：`/api/buyer/v1/...`、`/api/subscription/v1/...`、`/api/webhook/v1/...`。Gateway 只会剥离最前面的 `/api` 段。
-
-### 4. Kind 快速验收
-
-推荐使用内置演示账号验证核心链路：
-
-- Buyer: `buyer.demo / password`
-- Seller: `seller.demo / password`
-
-```bash
-# 1) Buyer 登录，获取 JWT
-curl -X POST http://127.0.0.1:18080/auth/v1/token/login \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"buyer.demo","password":"password","portal":"buyer"}'
-
-# 2) Buyer Dashboard（验证 gateway -> buyer-bff -> profile/wallet/marketplace/loyalty）
-curl -X POST http://127.0.0.1:18080/api/buyer/v1/dashboard/get \
-  -H 'Authorization: Bearer <BUYER_JWT>' \
-  -H 'Content-Type: application/json' \
-  -d '{"playerId":"player-1001"}'
-
-# 3) Seller 创建订阅计划
-curl -X POST http://127.0.0.1:18080/api/subscription/v1/plan/create \
-  -H 'Authorization: Bearer <SELLER_JWT>' \
-  -H 'Content-Type: application/json' \
-  -d '{"sellerId":"seller-2001","productId":"10000000-0000-0000-0000-000000000001","name":"Kind Smoke Plan","description":"Created during Kind validation","price":"29.99","frequency":"MONTHLY"}'
-
-# 4) Seller 创建 Webhook Endpoint
-curl -X POST http://127.0.0.1:18080/api/webhook/v1/endpoint/create \
-  -H 'Authorization: Bearer <SELLER_JWT>' \
-  -H 'Content-Type: application/json' \
-  -d '{"sellerId":"seller-2001","url":"https://example.com/kind-smoke","eventTypes":["order.created","wallet.deposit"],"description":"Kind smoke webhook"}'
-```
+> Redis 在 Kind 路径中仍然是必选基础设施：guest cart、限流、OTP、防作弊、Bloom Filter 幂等以及 Redisson 分布式锁都会依赖它。
 
 ### 4.1 验证 Search Service Feature Toggle 热更新
+
 
 当前仓库在 Kind 下使用：
 
@@ -394,7 +312,7 @@ kind delete cluster --name shop-kind
 
 ## 服务端口映射
 
-| 服务 | 应用端口 | 管理端口 | Docker Compose 外部端口 |
+| 服务 | 应用端口 | 管理端口 | Kind 默认访问方式 |
 |------|---------|---------|----------------------|
 | api-gateway | 8080 | 8081 | 8080 |
 | auth-server | 8080 | 8081 | 8090 |
@@ -417,26 +335,28 @@ kind delete cluster --name shop-kind
 
 ### 服务启动失败
 
-检查 MySQL 是否已就绪：
+检查 Pod 是否 ready，并查看 MySQL 日志：
 
 ```bash
-docker compose logs mysql
+kubectl -n shop get pods
+kubectl -n shop logs deployment/mysql --tail=100
 ```
 
 ### Kafka 连接超时
 
-Kafka 启动较慢，等待健康检查通过：
+Kafka 启动较慢，等待 broker ready 并查看日志：
 
 ```bash
-docker compose logs kafka | tail -20
+kubectl -n shop get pods -l app=kafka
+kubectl -n shop logs deployment/kafka --tail=50
 ```
 
 ### 数据库迁移失败
 
-检查 Flyway 日志：
+检查服务启动日志中的 Flyway 输出：
 
 ```bash
-docker compose logs profile-service | grep -i flyway
+kubectl -n shop logs deployment/profile-service --tail=200 | grep -i flyway
 ```
 
 ### Feature Toggle 改了但服务没刷新

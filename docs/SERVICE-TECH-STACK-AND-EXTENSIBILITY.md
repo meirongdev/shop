@@ -150,6 +150,6 @@
 2. **是不是已有 SPI / strategy / template 可以复用**：例如 `GamePlugin`、`BenefitCalculator`、`NotificationChannel`、`StripeGateway`。
 3. **是不是要补共享契约**：BFF、Portal、Worker 需要共用的 DTO / path / event，请先更新 `shop-contracts`。
 4. **是不是要补观测与告警**：新增关键链路时，同步补指标、trace、日志关键字段与文档。
-5. **是不是要补运行清单**：如果配置、topic、K8s manifest、docker compose 发生变化，文档和清单都要一起更新。
+5. **是不是要补运行清单**：如果配置、topic、Kind 脚本或 K8s manifest 发生变化，文档和清单都要一起更新。
 
 做到了这五点，平台就能在不推倒重来的前提下继续长大。

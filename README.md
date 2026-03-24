@@ -7,7 +7,7 @@
 - 验证 Gateway + Thin BFF + Domain Service 架构在 2026 技术基线下可行
 - 验证 Spring Security 认证中心、Kotlin Portal、Kafka 事件驱动、Stripe 支付接入
 - Buyer 与 Seller 分离入口
-- Docker Compose / Kind 本地部署验证
+- 统一采用 Kind / Kubernetes 本地部署验证
 
 ## 模块
 
@@ -24,38 +24,37 @@
 | `marketplace-service` | 商品市场服务 |
 | `buyer-portal` / `seller-portal` | Kotlin + Thymeleaf 门户 |
 
-## 快速开始（Docker Compose）
+## 快速开始（Kind）
 
 ```bash
-# 1. 构建
-mvn -DskipTests verify
+./kind/setup.sh
 
-# 2. 环境变量
-cp .env.example .env
-
-# 3. 构建镜像并启动
-./scripts/build-images.sh
-docker compose up -d
-
-# 4. 访问
+# 访问
 # Buyer Portal: http://localhost:8080/buyer/login
 # Seller Portal: http://localhost:8080/seller/login
-# Prometheus:    http://localhost:9090
+# Mailpit:      http://localhost:8025
+# Prometheus:   http://localhost:9090
 ```
 
-> Redis 在当前仓库中不只是缓存：除了 gateway 限流、OTP、guest cart、活动防作弊与 Bloom Filter 幂等外，`marketplace-service`、`order-service`、`subscription-service`、`promotion-service` 现在也通过 Redisson 做库存与批处理协调。因此本地和 Kind 验证都不应跳过 `redis`。
+清理环境：
+
+```bash
+./kind/teardown.sh
+```
+
+> Redis 在当前仓库中不只是缓存：除了 gateway 限流、OTP、guest cart、活动防作弊与 Bloom Filter 幂等外，`marketplace-service`、`order-service`、`subscription-service`、`promotion-service` 也通过 Redisson 做库存与批处理协调。因此本地 Kind 验证不应跳过 `redis`。
 
 > Kafka consumer 的失败处理现在按场景区分：`search-service` 走 projection 型 `retry + DLT`；`promotion-service` / `loyalty-service` 走幂等业务型“瞬时错误有限重试、毒消息直送 DLT”；`notification-service` / `webhook-service` 只把解析/契约错误送入 DLT，真实投递失败继续由各自的数据库重试调度器接管。
 
 ## Kind/Kubernetes 部署
 
 ```bash
-mvn -DskipTests verify
 ./scripts/build-images.sh
-./scripts/kind-up.sh
-./scripts/load-images-kind.sh
-./scripts/deploy-kind.sh
-# 访问 http://localhost:8080/buyer/login
+kind create cluster --name shop-kind --config kind/cluster-config.yaml
+./scripts/load-images-kind.sh shop-kind
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/infra/base.yaml
+kubectl apply -f k8s/apps/platform.yaml
 ```
 
 ## 演示账号

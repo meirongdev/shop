@@ -69,4 +69,4 @@ spring:
       port: ${SUBSCRIPTION_REDIS_PORT:6379}
 ```
 
-在 Docker Compose 与 Kind 环境中，默认 `redis` 服务即可满足要求。
+在当前仓库的 Kind / Kubernetes 基线中，默认 `redis` 服务即可满足要求。

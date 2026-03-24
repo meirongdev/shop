@@ -35,7 +35,7 @@
 - Kafka Exporter（consumer lag 指标）
 - Prometheus Alert Rules 与 SLO Rules
 
-本地 `docker-compose.yml` 侧重点是让所有应用都具备统一的 OTLP 与 Prometheus 入口；K8s 清单则提供更完整的多信号观测平台。
+本地验证统一走 Kind / Kubernetes；K8s 清单提供完整的多信号观测平台。
 
 > **当前重点**已经从“把日志/trace 采进来”转为“把告警、保留策略、容量和 runbook 治理做得更稳”。
 

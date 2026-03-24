@@ -401,30 +401,20 @@ activity-service 调用下游（loyalty/promotion/wallet）：
 
 ## 六、部署架构
 
-### 6.1 Docker Compose（本地开发）
+### 6.1 Kind / Kubernetes（本地开发基线）
 
 ```
-Infrastructure:
-  mysql:8.4      → :3306  (databases: shop_profile/marketplace/order/wallet/promotion/loyalty/activity)
-  redis:7.4      → :6379
-  kafka:3.9      → :9092  (KRaft, 无 ZooKeeper)
-  otel-collector → :4318
-  prometheus     → :9090
+统一入口：
+  ./kind/setup.sh     → 创建 Kind 集群 + 构建镜像 + 加载镜像 + 应用清单
+  ./kind/teardown.sh  → 清理本地集群
 
-Platform Services:
-  api-gateway      → :8080
-  auth-server      → :8090
-  buyer-bff        → :8081
-  seller-bff       → :8082
-  profile-svc      → :8083
-  marketplace-svc  → :8084
-  order-svc        → :8085
-  wallet-svc       → :8086
-  promotion-svc    → :8087
-  loyalty-svc      → :8088
-  activity-svc     → :8089   ← NEW
-  buyer-portal     → :8100
-  seller-portal    → :8101
+基础设施：
+  mysql / redis / kafka / meilisearch / garage / observability stack
+
+默认访问入口：
+  api-gateway  → :8080
+  mailpit      → :8025
+  prometheus   → :9090
 ```
 
 ### 6.2 Kubernetes（生产）

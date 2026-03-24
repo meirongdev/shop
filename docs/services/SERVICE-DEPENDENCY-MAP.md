@@ -221,13 +221,10 @@ promotion.coupon.used.v1        promotion-service   数据分析
 - 新增路由：`/loyalty/**` → `loyalty-service`
 - 公开路由无需变动
 
-### 对 docker-compose.yml 的影响
-- 新增 `loyalty-service` 容器
-- 新增 `shop_loyalty` 数据库
-
-### 对 k8s 的影响
-- 新增 `loyalty-service` Deployment + Service
-- 新增 HPA 配置
+### 对本地 / 集群运行面的影响
+- Kind / K8s 清单需要包含 `loyalty-service` Deployment + Service
+- MySQL 初始化脚本需要创建 `shop_loyalty` 数据库
+- 如需弹性验证，可继续为 `loyalty-service` 增补 HPA 配置
 
 ---
 

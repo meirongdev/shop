@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Order Confirmed</title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h1 style="color: #333;">Order Confirmed ✅</h1>
+    <p>Hi <span th:text="${username}">User</span>,</p>
+    <p>Your order <strong th:text="${orderId}">ORD-001</strong> has been confirmed!</p>
+    <p>Total Amount: <strong>$<span th:text="${totalAmount}">0.00</span></strong></p>
+    <div th:if="${items != null and !items.isEmpty()}">
+        <h3>Order Items:</h3>
+        <ul>
+            <li th:each="item : ${items}">
+                <span th:text="${item.productName()}">Product</span>
+                × <span th:text="${item.quantity()}">1</span>
+                — $<span th:text="${item.unitPrice()}">0.00</span>
+            </li>
+        </ul>
+    </div>
+    <p>We'll notify you when your order ships.</p>
+    <hr style="border: 1px solid #eee;"/>
+    <p style="color: #666; font-size: 12px;">This email was sent by Shop Platform.</p>
+</body>
+</html>

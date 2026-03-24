@@ -1,0 +1,17 @@
+package dev.meirong.shop.loyalty;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+@EnableScheduling
+@EnableConfigurationProperties
+@SpringBootApplication(scanBasePackages = "dev.meirong.shop")
+public class LoyaltyServiceApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(LoyaltyServiceApplication.class, args);
+    }
+}

@@ -1,0 +1,99 @@
+package dev.meirong.shop.activity.service;
+
+import dev.meirong.shop.activity.config.ActivityProperties;
+import dev.meirong.shop.activity.domain.ActivityGame;
+import dev.meirong.shop.common.error.BusinessException;
+import dev.meirong.shop.common.error.CommonErrorCode;
+import io.micrometer.core.instrument.MeterRegistry;
+import java.time.Duration;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+@Component
+public class AntiCheatGuard {
+
+    private final StringRedisTemplate redisTemplate;
+    private final ActivityProperties properties;
+    private final MeterRegistry meterRegistry;
+
+    public AntiCheatGuard(StringRedisTemplate redisTemplate,
+                          ActivityProperties properties,
+                          MeterRegistry meterRegistry) {
+        this.redisTemplate = redisTemplate;
+        this.properties = properties;
+        this.meterRegistry = meterRegistry;
+    }
+
+    public void check(ActivityGame game, String playerId, String ipAddress, String deviceFingerprint) {
+        if (playerId == null || playerId.isBlank()) {
+            return;
+        }
+        checkPlayerRateLimit(game.getId(), playerId);
+        checkIpRateLimit(game.getId(), ipAddress);
+        checkDeviceReuse(game.getId(), playerId, deviceFingerprint);
+    }
+
+    private void checkPlayerRateLimit(String gameId, String playerId) {
+        long count = incrementWithinWindow("activity:ac:player:%s:%s".formatted(gameId, playerId));
+        if (count > properties.antiCheat().playerRequestsPerWindow()) {
+            recordBlock("player_rate_limit");
+            throw new BusinessException(CommonErrorCode.TOO_MANY_REQUESTS,
+                    "Too many participation attempts for this player");
+        }
+    }
+
+    private void checkIpRateLimit(String gameId, String ipAddress) {
+        String normalizedIp = normalizeIp(ipAddress);
+        if (normalizedIp == null) {
+            return;
+        }
+        long count = incrementWithinWindow("activity:ac:ip:%s:%s".formatted(gameId, normalizedIp));
+        if (count > properties.antiCheat().ipRequestsPerWindow()) {
+            recordBlock("ip_rate_limit");
+            throw new BusinessException(CommonErrorCode.TOO_MANY_REQUESTS,
+                    "Too many participation attempts from this IP");
+        }
+    }
+
+    private void checkDeviceReuse(String gameId, String playerId, String deviceFingerprint) {
+        if (!properties.antiCheat().deviceFingerprintEnabled()
+                || deviceFingerprint == null
+                || deviceFingerprint.isBlank()) {
+            return;
+        }
+        String key = "activity:ac:device:%s:%s".formatted(gameId, deviceFingerprint);
+        String existingPlayer = redisTemplate.opsForValue().get(key);
+        if (existingPlayer == null) {
+            redisTemplate.opsForValue().set(key, playerId,
+                    Duration.ofHours(properties.antiCheat().deviceFingerprintTtlHours()));
+            return;
+        }
+        if (!existingPlayer.equals(playerId)) {
+            recordBlock("device_reuse");
+            throw new BusinessException(CommonErrorCode.FORBIDDEN,
+                    "Device fingerprint is already bound to another participant");
+        }
+    }
+
+    private long incrementWithinWindow(String key) {
+        Long count = redisTemplate.opsForValue().increment(key);
+        if (count == null) {
+            throw new BusinessException(CommonErrorCode.INTERNAL_ERROR, "Anti-cheat counter increment failed");
+        }
+        if (count == 1L) {
+            redisTemplate.expire(key, Duration.ofSeconds(properties.antiCheat().windowSeconds()));
+        }
+        return count;
+    }
+
+    private void recordBlock(String reason) {
+        meterRegistry.counter("activity_anti_cheat_blocked_total", "reason", reason).increment();
+    }
+
+    private String normalizeIp(String ipAddress) {
+        if (ipAddress == null || ipAddress.isBlank()) {
+            return null;
+        }
+        return ipAddress.split(",")[0].trim();
+    }
+}

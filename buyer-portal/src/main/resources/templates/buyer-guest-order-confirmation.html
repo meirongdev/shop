@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmed - Shop Platform</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;min-height:100vh;display:flex;align-items:center;justify-content:center}
+        .card{background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.08);padding:48px 40px;width:100%;max-width:500px;text-align:center}
+        .check{font-size:48px;margin-bottom:16px}
+        h1{font-size:24px;color:#1a1a2e;margin-bottom:8px}
+        .subtitle{color:#6b7280;font-size:14px;margin-bottom:24px}
+        .order-info{background:#f9fafb;border-radius:8px;padding:20px;margin-bottom:24px;text-align:left}
+        .order-info .row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px}
+        .order-info .row .label{color:#6b7280}
+        .order-info .row .value{color:#1a1a2e;font-weight:600}
+        .token-box{background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:16px;margin-bottom:24px}
+        .token-box p{font-size:13px;color:#92400e;margin-bottom:8px}
+        .token-box code{font-size:16px;font-weight:700;color:#92400e;word-break:break-all}
+        .links{font-size:13px;margin-top:8px}
+        .links a{color:#4f46e5;text-decoration:none}
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="check">✅</div>
+    <h1>Order Placed!</h1>
+    <p class="subtitle">Thank you for your purchase</p>
+    <div class="order-info">
+        <div class="row"><span class="label">Order No</span><span class="value" th:text="${order.orderNo()}">ORD-XXX</span></div>
+        <div class="row"><span class="label">Status</span><span class="value" th:text="${order.status()}">PENDING</span></div>
+        <div class="row"><span class="label">Total</span><span class="value" th:text="'$' + ${order.totalAmount()}">$0.00</span></div>
+    </div>
+    <div class="token-box">
+        <p>Save this tracking token to check your order status:</p>
+        <code th:text="${orderToken}">token-here</code>
+    </div>
+    <div class="links">
+        <a th:href="@{/buyer/guest/track}">Track your order</a> &middot;
+        <a th:href="@{/buyer/login}">Create an account</a>
+    </div>
+</div>
+</body>
+</html>

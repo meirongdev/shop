@@ -1,0 +1,84 @@
+spring:
+  application:
+    name: marketplace-service
+  mvc:
+    problemdetails:
+      enabled: true
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  data:
+    redis:
+      host: ${MARKETPLACE_REDIS_HOST:redis}
+      port: ${MARKETPLACE_REDIS_PORT:6379}
+  datasource:
+    url: ${MARKETPLACE_DB_URL:jdbc:mysql://mysql:3306/shop_marketplace?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${MARKETPLACE_DB_USERNAME:shop}
+    password: ${MARKETPLACE_DB_PASSWORD:shop}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+server:
+  port: 8080
+  shutdown: graceful
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+        liveness:
+          include: livenessState
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://otel-collector:4318/v1/traces}
+logging:
+  structured:
+    format:
+      console: logstash
+shop:
+  marketplace:
+    outbox:
+      publish-delay-ms: ${MARKETPLACE_OUTBOX_PUBLISH_DELAY_MS:5000}
+      topic: ${MARKETPLACE_PRODUCT_TOPIC:marketplace.product.events.v1}
+  security:
+    internal:
+      enabled: true
+      token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
+      excluded-path-prefixes:
+        - /actuator
+        - /v3/api-docs
+        - /swagger-ui
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /swagger-ui.html
+    persist-authorization: true
+  paths-to-exclude:
+    - /actuator/**
+    - /internal/**

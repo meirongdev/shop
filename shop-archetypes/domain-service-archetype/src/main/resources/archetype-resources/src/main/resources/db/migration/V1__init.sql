@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS sample_aggregate (
+    id         VARCHAR(36)   NOT NULL PRIMARY KEY,
+    name       VARCHAR(128)  NOT NULL,
+    created_at TIMESTAMP(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+);

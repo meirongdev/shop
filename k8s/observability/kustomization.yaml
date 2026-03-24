@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: shop
+
+resources:
+  # Object storage backend
+  - garage/garage-secret.yaml
+  - garage/garage-configmap.yaml
+  - garage/garage-pvc.yaml
+  - garage/garage-deployment.yaml
+  - garage/garage-service.yaml
+  # Log aggregation
+  - loki/loki-configmap.yaml
+  - loki/loki-deployment.yaml
+  - promtail/promtail-rbac.yaml
+  - promtail/promtail-configmap.yaml
+  - promtail/promtail-daemonset.yaml
+  # Distributed tracing
+  - tempo/tempo-configmap.yaml
+  - tempo/tempo-deployment.yaml
+  # Visualisation
+  - grafana/grafana-datasources-configmap.yaml
+  - grafana/grafana-dashboard-provider-configmap.yaml
+  - grafana/grafana-dashboards-configmap.yaml
+  - grafana/grafana-deployment.yaml
+  # Kafka metrics
+  - kafka-exporter/kafka-exporter-deployment.yaml
+  # Alert rules (standalone copy — also embedded in infra/base.yaml)
+  - prometheus/alert-rules.yaml

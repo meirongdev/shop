@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: ${artifactId}
+  mvc:
+    problemdetails:
+      enabled: true
+  thymeleaf:
+    cache: false
+
+portal:
+  gateway:
+    base-url: http://localhost:8080
+
+
+server:
+  port: 8080
+
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://otel-collector:4318/v1/traces

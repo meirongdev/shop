@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buyer Login - Shop Platform</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+        .login-card{background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.08);padding:40px;width:100%;max-width:420px}
+        .login-card h1{font-size:24px;color:#1a1a2e;margin-bottom:8px}
+        .login-card .subtitle{color:#6b7280;font-size:14px;margin-bottom:28px;line-height:1.5}
+        .badge{display:inline-block;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:16px}
+        label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+        input[type=text],input[type=password],input[type=email]{width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;transition:border-color .2s;outline:none}
+        input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+        .field{margin-bottom:16px}
+        button{width:100%;padding:12px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s}
+        button:hover{background:#2563eb}
+        .secondary{display:block;text-align:center;margin-top:14px;color:#3b82f6;text-decoration:none;font-size:14px;font-weight:600}
+        .secondary-links{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+        .secondary-links a{display:block;text-align:center;padding:10px 12px;border-radius:8px;background:#f8fafc;color:#2563eb;text-decoration:none;font-size:14px;font-weight:600}
+        .hint,.message,.error{margin-top:16px;padding:12px 14px;border-radius:10px;font-size:13px;line-height:1.5}
+        .hint{background:#eff6ff;color:#1d4ed8}
+        .message{background:#ecfdf5;color:#047857}
+        .error{background:#fef2f2;color:#b91c1c}
+        .divider{display:flex;align-items:center;gap:10px;margin:20px 0;color:#9ca3af;font-size:12px;text-transform:uppercase}
+        .divider::before,.divider::after{content:"";height:1px;background:#e5e7eb;flex:1}
+        .apple-btn{width:100%;padding:12px;border-radius:8px;border:1px solid #111827;background:#111827;color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+        .apple-btn[disabled]{opacity:.55;cursor:not-allowed}
+        .footnote{margin-top:12px;color:#6b7280;font-size:12px;line-height:1.5}
+    </style>
+</head>
+<body>
+<div class="login-card">
+    <span class="badge">BUYER</span>
+    <h1>Shop Platform</h1>
+    <p class="subtitle">Sign in to Buyer Portal, merge your guest cart, and unlock welcome rewards.</p>
+
+    <div class="message" th:if="${successMessage}" th:text="${successMessage}"></div>
+    <div class="error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <form method="post" th:action="@{/buyer/login}" th:object="${loginForm}">
+        <div class="field">
+            <label for="username">Username</label>
+            <input type="text" th:field="*{username}" placeholder="buyer.demo"/>
+        </div>
+        <div class="field">
+            <label for="password">Password</label>
+            <input type="password" th:field="*{password}" placeholder="Enter password"/>
+        </div>
+        <button type="submit">Sign In</button>
+    </form>
+
+    <div class="secondary-links">
+        <a th:href="@{/buyer/register}">Create account</a>
+        <a th:href="@{/buyer/login/otp}">Login with OTP</a>
+    </div>
+    <a class="secondary" th:href="@{/buyer/home}">Continue as guest</a>
+
+    <div class="divider">or</div>
+
+    <form id="appleLoginForm" method="post" th:action="@{/buyer/login/apple}" th:object="${appleLoginForm}">
+        <input type="hidden" th:field="*{idToken}" id="appleIdToken"/>
+        <input type="hidden" th:field="*{nonce}" id="appleNonceField"/>
+        <button type="button" class="apple-btn" id="appleButton" th:disabled="${!appleEnabled}">
+            Sign in with Apple
+        </button>
+    </form>
+    <p class="footnote" th:if="${!appleEnabled}">
+        Configure <code>APPLE_OAUTH2_CLIENT_ID</code> to enable Apple Sign-In in this environment.
+    </p>
+
+    <div class="hint" th:if="${guestActive}">
+        You are browsing as a guest. Sign in now to merge this cart into your buyer account and continue to checkout.
+    </div>
+</div>
+
+<script th:src="@{https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js}"></script>
+<script th:inline="javascript">
+    const appleButton = document.getElementById('appleButton');
+    const appleForm = document.getElementById('appleLoginForm');
+    const appleTokenInput = document.getElementById('appleIdToken');
+    const appleNonceInput = document.getElementById('appleNonceField');
+    const appleClientId = /*[[${appleClientId}]]*/ '';
+    const appleRedirectUri = /*[[${appleRedirectUri}]]*/ '';
+    const appleNonce = /*[[${appleNonce}]]*/ '';
+    if (appleButton && !appleButton.disabled) {
+        appleButton.addEventListener('click', async () => {
+            try {
+                AppleID.auth.init({
+                    clientId: appleClientId,
+                    scope: 'name email',
+                    redirectURI: appleRedirectUri,
+                    nonce: appleNonce,
+                    usePopup: true
+                });
+                const response = await AppleID.auth.signIn();
+                appleTokenInput.value = response.authorization.id_token;
+                appleNonceInput.value = appleNonce;
+                appleForm.submit();
+            } catch (error) {
+                window.alert('Apple sign-in was cancelled or could not be completed.');
+            }
+        });
+    }
+</script>
+</body>
+</html>

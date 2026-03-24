@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Your Order Has Shipped</title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h1 style="color: #333;">Your Order Has Shipped 📦</h1>
+    <p>Hi <span th:text="${username}">User</span>,</p>
+    <p>Great news! Your order <strong th:text="${orderId}">ORD-001</strong> has been shipped.</p>
+    <div th:if="${trackingNumber != null}">
+        <p>Tracking Number: <strong th:text="${trackingNumber}">N/A</strong></p>
+    </div>
+    <p>You can track your delivery status using the tracking number above.</p>
+    <hr style="border: 1px solid #eee;"/>
+    <p style="color: #666; font-size: 12px;">This email was sent by Shop Platform.</p>
+</body>
+</html>

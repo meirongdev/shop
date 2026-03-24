@@ -1,0 +1,646 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-auth
+  namespace: shop
+type: Opaque
+stringData:
+  MYSQL_ROOT_PASSWORD: root
+  MYSQL_DATABASE: bootstrap
+  MYSQL_USER: shop
+  MYSQL_PASSWORD: shop
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-scripts
+  namespace: shop
+data:
+  01-create-databases.sql: |
+    CREATE DATABASE IF NOT EXISTS shop_profile;
+    CREATE DATABASE IF NOT EXISTS shop_promotion;
+    CREATE DATABASE IF NOT EXISTS shop_wallet;
+    CREATE DATABASE IF NOT EXISTS shop_marketplace;
+    CREATE DATABASE IF NOT EXISTS shop_order;
+    CREATE DATABASE IF NOT EXISTS shop_notification;
+    CREATE DATABASE IF NOT EXISTS shop_loyalty;
+    CREATE DATABASE IF NOT EXISTS shop_activity;
+    CREATE DATABASE IF NOT EXISTS shop_webhook;
+    CREATE DATABASE IF NOT EXISTS shop_subscription;
+    CREATE DATABASE IF NOT EXISTS shop_auth;
+
+    GRANT ALL PRIVILEGES ON shop_profile.* TO 'shop'@'%';
+    GRANT ALL PRIVILEGES ON shop_promotion.* TO 'shop'@'%';
+    GRANT ALL PRIVILEGES ON shop_wallet.* TO 'shop'@'%';
+    GRANT ALL PRIVILEGES ON shop_marketplace.* TO 'shop'@'%';
+    GRANT ALL PRIVILEGES ON shop_order.* TO 'shop'@'%';
+    GRANT ALL PRIVILEGES ON shop_notification.* TO 'shop'@'%';
+    GRANT ALL PRIVILEGES ON shop_loyalty.* TO 'shop'@'%';
+    GRANT ALL PRIVILEGES ON shop_activity.* TO 'shop'@'%';
+    GRANT ALL PRIVILEGES ON shop_webhook.* TO 'shop'@'%';
+    GRANT ALL PRIVILEGES ON shop_subscription.* TO 'shop'@'%';
+    GRANT ALL PRIVILEGES ON shop_auth.* TO 'shop'@'%';
+    FLUSH PRIVILEGES;
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.4
+          ports:
+            - containerPort: 3306
+          envFrom:
+            - secretRef:
+                name: mysql-auth
+          volumeMounts:
+            - name: mysql-init-scripts
+              mountPath: /docker-entrypoint-initdb.d/01-create-databases.sql
+              subPath: 01-create-databases.sql
+      volumes:
+        - name: mysql-init-scripts
+          configMap:
+            name: mysql-init-scripts
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: shop
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.4
+          ports:
+            - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: shop
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+  namespace: shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: apache/kafka:3.9.0
+          ports:
+            - containerPort: 9092
+          env:
+            - name: KAFKA_NODE_ID
+              value: "0"
+            - name: KAFKA_PROCESS_ROLES
+              value: controller,broker
+            - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+              value: 0@kafka:9093
+            - name: KAFKA_LISTENERS
+              value: PLAINTEXT://:9092,CONTROLLER://:9093
+            - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+              value: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+            - name: KAFKA_CONTROLLER_LISTENER_NAMES
+              value: CONTROLLER
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: PLAINTEXT://kafka:9092
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "1"
+            - name: CLUSTER_ID
+              value: shop-kafka-cluster-id-0001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: shop
+spec:
+  selector:
+    app: kafka
+  ports:
+    - port: 9092
+      targetPort: 9092
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: meilisearch
+  namespace: shop
+spec:
+  serviceName: meilisearch
+  replicas: 1
+  selector:
+    matchLabels:
+      app: meilisearch
+  template:
+    metadata:
+      labels:
+        app: meilisearch
+    spec:
+      containers:
+        - name: meilisearch
+          image: getmeili/meilisearch:v1.12
+          ports:
+            - containerPort: 7700
+          env:
+            - name: MEILI_ENV
+              value: production
+            - name: MEILI_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: shop-shared-secret
+                  key: MEILI_MASTER_KEY
+          volumeMounts:
+            - name: meili-data
+              mountPath: /meili_data
+  volumeClaimTemplates:
+    - metadata:
+        name: meili-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: meilisearch
+  namespace: shop
+spec:
+  selector:
+    app: meilisearch
+  ports:
+    - port: 7700
+      targetPort: 7700
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailpit
+  namespace: shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailpit
+  template:
+    metadata:
+      labels:
+        app: mailpit
+    spec:
+      containers:
+        - name: mailpit
+          image: axllent/mailpit:latest
+          ports:
+            - containerPort: 8025
+            - containerPort: 1025
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8025
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailpit
+  namespace: shop
+spec:
+  selector:
+    app: mailpit
+  ports:
+    - name: web
+      port: 8025
+      targetPort: 8025
+    - name: smtp
+      port: 1025
+      targetPort: 1025
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: shop
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 256
+      batch:
+        timeout: 5s
+        send_batch_size: 512
+
+    exporters:
+      otlp/tempo:
+        endpoint: tempo.shop.svc.cluster.local:4317
+        tls:
+          insecure: true
+      loki:
+        endpoint: http://loki.shop.svc.cluster.local:3100/loki/api/v1/push
+        default_labels_enabled:
+          exporter: false
+          job: true
+      # Retain debug exporter for dev troubleshooting (disabled in pipelines by default)
+      debug:
+        verbosity: basic
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlp/tempo]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [loki]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.127.0
+          args:
+            - --config=/conf/config.yaml
+          volumeMounts:
+            - name: config
+              mountPath: /conf
+          ports:
+            - containerPort: 4317
+            - containerPort: 4318
+      volumes:
+        - name: config
+          configMap:
+            name: otel-collector-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: shop
+spec:
+  selector:
+    app: otel-collector
+  ports:
+    - name: grpc
+      port: 4317
+      targetPort: 4317
+    - name: http
+      port: 4318
+      targetPort: 4318
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: shop
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    rule_files:
+      - /etc/prometheus/rules/*.yaml
+    scrape_configs:
+      - job_name: shop-apps
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+              - auth-server:8081
+              - api-gateway:8081
+              - buyer-bff:8081
+              - seller-bff:8081
+              - profile-service:8081
+              - promotion-service:8081
+              - wallet-service:8081
+              - marketplace-service:8081
+              - search-service:8081
+              - order-service:8081
+              - loyalty-service:8081
+              - activity-service:8081
+              - notification-service:8081
+              - webhook-service:8081
+              - subscription-service:8081
+              - buyer-portal:8081
+              - seller-portal:8081
+      - job_name: kafka-exporter
+        static_configs:
+          - targets:
+              - kafka-exporter:9308
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v3.4.2
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --web.enable-remote-write-receiver
+            - --storage.tsdb.retention.time=7d
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+            - name: alert-rules
+              mountPath: /etc/prometheus/rules
+          ports:
+            - containerPort: 9090
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
+        - name: alert-rules
+          configMap:
+            name: prometheus-alert-rules
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: shop
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - port: 9090
+      targetPort: 9090
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-shop-internal
+  namespace: shop
+spec:
+  podSelector: {}
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: shop
+  egress:
+    - {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spring-cloud-kubernetes-configuration-watcher
+  namespace: shop
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: spring-cloud-kubernetes-configuration-watcher
+  namespace: shop
+rules:
+  - apiGroups: [""]
+    resources:
+      - configmaps
+      - secrets
+      - pods
+      - services
+      - endpoints
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: spring-cloud-kubernetes-configuration-watcher
+  namespace: shop
+subjects:
+  - kind: ServiceAccount
+    name: spring-cloud-kubernetes-configuration-watcher
+    namespace: shop
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: spring-cloud-kubernetes-configuration-watcher
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-cloud-kubernetes-configuration-watcher
+  namespace: shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-cloud-kubernetes-configuration-watcher
+  template:
+    metadata:
+      labels:
+        app: spring-cloud-kubernetes-configuration-watcher
+    spec:
+      serviceAccountName: spring-cloud-kubernetes-configuration-watcher
+      containers:
+        - name: watcher
+          image: springcloud/spring-cloud-kubernetes-configuration-watcher:3.3.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_CLOUD_KUBERNETES_RELOAD_NAMESPACES_0
+              value: shop
+            - name: SPRING_CLOUD_KUBERNETES_CONFIG_INFORMER_ENABLED
+              value: "true"
+            - name: SPRING_CLOUD_KUBERNETES_CONFIGURATION_WATCHER_REFRESHDELAY
+              value: "30000"
+            - name: SPRING_CLOUD_KUBERNETES_CONFIGURATION_WATCHER_ACTUATORPORT
+              value: "8081"
+            - name: SPRING_CLOUD_KUBERNETES_CONFIGURATION_WATCHER_ACTUATORPATH
+              value: /actuator
+          ports:
+            - containerPort: 8888
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8888
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8888
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-cloud-kubernetes-configuration-watcher
+  namespace: shop
+spec:
+  selector:
+    app: spring-cloud-kubernetes-configuration-watcher
+  ports:
+    - port: 8888
+      targetPort: 8888
+---
+# Prometheus alert rules — P1 (critical) and P2 (warning) SLOs.
+# Referenced by prometheus-config rule_files: /etc/prometheus/rules/*.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alert-rules
+  namespace: shop
+data:
+  shop-alerts.yaml: |
+    groups:
+      - name: shop.p1.alerts
+        rules:
+          - alert: ServiceDown
+            expr: up{job="shop-apps"} == 0
+            for: 1m
+            labels: {severity: critical, team: platform}
+            annotations:
+              summary: "{{ $labels.instance }} is DOWN"
+              description: "Service unreachable for > 1 minute."
+          - alert: HighHttpErrorRate
+            expr: |
+              sum by (instance) (rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
+              / sum by (instance) (rate(http_server_requests_seconds_count[5m])) > 0.05
+            for: 2m
+            labels: {severity: critical, team: platform}
+            annotations:
+              summary: "High 5xx rate on {{ $labels.instance }}"
+              description: "5xx error rate {{ $value | humanizePercentage }} > 5%."
+      - name: shop.p2.alerts
+        rules:
+          - alert: SlowCheckout
+            expr: histogram_quantile(0.99, rate(shop_checkout_duration_seconds_bucket[5m])) > 5
+            for: 5m
+            labels: {severity: warning, team: backend}
+            annotations:
+              summary: "P99 checkout > 5s"
+          - alert: KafkaConsumerLag
+            expr: kafka_consumergroup_lag > 1000
+            for: 5m
+            labels: {severity: warning, team: backend}
+            annotations:
+              summary: "Kafka lag > 1000 ({{ $labels.consumergroup }})"
+          - alert: KafkaConsumerLagCritical
+            expr: kafka_consumergroup_lag > 10000
+            for: 2m
+            labels: {severity: critical, team: backend}
+            annotations:
+              summary: "Kafka lag CRITICAL > 10000 ({{ $labels.consumergroup }})"
+          - alert: CircuitBreakerOpen
+            expr: resilience4j_circuitbreaker_state{state="open"} == 1
+            for: 5m
+            labels: {severity: warning, team: backend}
+            annotations:
+              summary: "CircuitBreaker {{ $labels.name }} is OPEN"
+          - alert: HighJvmHeapUsage
+            expr: |
+              sum by (instance) (jvm_memory_used_bytes{area="heap"})
+              / sum by (instance) (jvm_memory_max_bytes{area="heap"}) > 0.85
+            for: 5m
+            labels: {severity: warning, team: platform}
+            annotations:
+              summary: "High JVM heap on {{ $labels.instance }}"
+          - alert: OrderFailureRateHigh
+            expr: |
+              rate(shop_order_failed_total[5m])
+              / (rate(shop_order_created_total[5m]) + rate(shop_order_failed_total[5m])) > 0.1
+            for: 5m
+            labels: {severity: warning, team: backend}
+            annotations:
+              summary: "Order failure rate > 10%"
+          - alert: PaymentFailureRateHigh
+            expr: |
+              rate(shop_payment_failed_total[5m])
+              / (rate(shop_payment_success_total[5m]) + rate(shop_payment_failed_total[5m])) > 0.05
+            for: 5m
+            labels: {severity: warning, team: backend}
+            annotations:
+              summary: "Payment failure rate > 5%"

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Order Completed</title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h1 style="color: #333;">Order Completed 🎉</h1>
+    <p>Hi <span th:text="${username}">User</span>,</p>
+    <p>Your order <strong th:text="${orderId}">ORD-001</strong> has been completed.</p>
+    <p>Thank you for shopping with us! We hope you enjoy your purchase.</p>
+    <p>Don't forget to leave a review!</p>
+    <hr style="border: 1px solid #eee;"/>
+    <p style="color: #666; font-size: 12px;">This email was sent by Shop Platform.</p>
+</body>
+</html>

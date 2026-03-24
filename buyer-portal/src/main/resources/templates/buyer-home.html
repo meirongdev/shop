@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketplace - Shop Platform</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e}
+        .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+        .topbar h1{font-size:18px;color:#1a1a2e}
+        .nav-links{display:flex;gap:20px}
+        .nav-links a{color:#374151;text-decoration:none;font-size:14px;font-weight:500;padding:4px 0;border-bottom:2px solid transparent}
+        .nav-links a:hover{color:#3b82f6;border-bottom-color:#3b82f6}
+        .cart-link{position:relative}
+        .badge{position:absolute;top:-8px;right:-12px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px}
+        .user-info{display:flex;align-items:center;gap:16px;font-size:14px;color:#6b7280}
+        .user-info a{color:#3b82f6;text-decoration:none;font-weight:500}
+        .container{max-width:1200px;margin:24px auto;padding:0 24px}
+        .layout{display:flex;gap:24px}
+        .sidebar{width:220px;flex-shrink:0}
+        .sidebar .card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:16px}
+        .sidebar h3{font-size:14px;color:#374151;margin-bottom:12px}
+        .sidebar a{display:block;padding:6px 10px;margin:2px 0;border-radius:6px;color:#374151;text-decoration:none;font-size:13px}
+        .sidebar a:hover,.sidebar a.active{background:#eff6ff;color:#3b82f6}
+        .main{flex:1}
+        .search-bar{display:flex;gap:12px;margin-bottom:20px}
+        .search-bar input{flex:1;padding:10px 16px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;outline:none}
+        .search-bar input:focus{border-color:#3b82f6}
+        .search-bar button{padding:10px 24px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+        .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px}
+        .product-card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;transition:box-shadow .2s}
+        .product-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1)}
+        .product-img{height:160px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:13px}
+        .product-info{padding:16px}
+        .product-info h4{font-size:15px;margin-bottom:4px}
+        .product-info .price{font-size:18px;font-weight:700;color:#3b82f6;margin:8px 0}
+        .product-info .stock{font-size:12px;color:#6b7280}
+        .product-info .actions{display:flex;gap:8px;margin-top:12px}
+        .btn-sm{padding:6px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+        .btn-primary{background:#3b82f6;color:#fff}.btn-primary:hover{background:#2563eb}
+        .btn-outline{background:#fff;color:#3b82f6;border:1px solid #3b82f6}.btn-outline:hover{background:#eff6ff}
+        .tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#dbeafe;color:#1d4ed8;margin-bottom:4px}
+        .empty{text-align:center;padding:48px;color:#9ca3af}
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/buyer-nav :: nav}"></div>
+<div class="container">
+    <div class="layout">
+        <div class="sidebar">
+            <div class="card">
+                <h3>Categories</h3>
+                <a th:href="@{/buyer/home}" th:classappend="${selectedCategory == '' ? 'active' : ''}">All Products</a>
+                <a th:each="cat : ${categories}" th:href="@{/buyer/home(category=${cat.id()})}"
+                   th:classappend="${selectedCategory == cat.id().toString() ? 'active' : ''}" th:text="${cat.name()}"></a>
+            </div>
+        </div>
+        <div class="main">
+            <form method="get" th:action="@{/buyer/home}" class="search-bar">
+                <input type="text" name="q" th:value="${query}" placeholder="Search products..."/>
+                <input type="hidden" name="category" th:value="${selectedCategory}"/>
+                <button type="submit">Search</button>
+            </form>
+            <div class="product-grid">
+                <div th:each="product : ${products.hits()}" class="product-card">
+                    <a th:href="@{/buyer/product/{id}(id=${product.id()})}" style="text-decoration:none;color:inherit">
+                        <div class="product-img">
+                            <span th:if="${product.imageUrl() == null}">No Image</span>
+                            <img th:if="${product.imageUrl() != null}" th:src="${product.imageUrl()}" style="max-height:100%;max-width:100%"/>
+                        </div>
+                        <div class="product-info">
+                            <span th:if="${product.categoryName() != null}" class="tag" th:text="${product.categoryName()}"></span>
+                            <h4 th:text="${product.name()}"></h4>
+                            <div class="price" th:text="'$' + ${#numbers.formatDecimal(product.price(), 1, 2)}"></div>
+                            <div class="stock" th:text="'In stock: ' + ${product.inventory()}"></div>
+                        </div>
+                    </a>
+                    <div style="padding:0 16px 16px">
+                        <form method="post" th:action="@{/buyer/cart/add}">
+                            <input type="hidden" name="productId" th:value="${product.id()}"/>
+                            <input type="hidden" name="productName" th:value="${product.name()}"/>
+                            <input type="hidden" name="productPrice" th:value="${product.price()}"/>
+                            <input type="hidden" name="sellerId" th:value="${product.sellerId()}"/>
+                            <input type="hidden" name="quantity" value="1"/>
+                            <button type="submit" class="btn-sm btn-primary" style="width:100%">Add to Cart</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${products.hits().isEmpty()}" class="empty">No products found</div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

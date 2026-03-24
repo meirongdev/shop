@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loyalty - Shop Platform</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e}
+        .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+        .topbar h1{font-size:18px;color:#1a1a2e}
+        .nav-links{display:flex;gap:20px}.nav-links a{color:#374151;text-decoration:none;font-size:14px;font-weight:500;padding:4px 0;border-bottom:2px solid transparent}
+        .nav-links a:hover{color:#3b82f6;border-bottom-color:#3b82f6}
+        .cart-link{position:relative}.badge{position:absolute;top:-8px;right:-12px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px}
+        .user-info{display:flex;align-items:center;gap:16px;font-size:14px;color:#6b7280}
+        .user-info a{color:#3b82f6;text-decoration:none;font-weight:500}
+        .container{max-width:1200px;margin:24px auto;padding:0 24px}
+        .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:24px}
+        .card{background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:20px}
+        .card h2{font-size:18px;margin-bottom:16px}
+        .metric-label{font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em}
+        .metric-value{font-size:28px;font-weight:700;margin-top:8px}
+        .layout{display:grid;grid-template-columns:2fr 1fr;gap:24px}
+        .section{display:flex;flex-direction:column;gap:24px}
+        .actions{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+        .btn{padding:10px 18px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}
+        .btn-primary{background:#3b82f6;color:#fff}
+        .btn-primary:hover{background:#2563eb}
+        .tag{display:inline-block;padding:4px 10px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700}
+        .tasks{display:grid;gap:12px}
+        .task{padding:14px;border:1px solid #e5e7eb;border-radius:10px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+        .task strong{display:block;margin-bottom:4px}
+        .task small{color:#6b7280}
+        .reward-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+        .reward{border:1px solid #e5e7eb;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+        .reward img{width:100%;height:140px;object-fit:cover;border-radius:10px;background:#f3f4f6}
+        .reward h3{font-size:16px}
+        .reward p{color:#4b5563;font-size:14px;line-height:1.5}
+        .reward-footer{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#6b7280}
+        .reward form{display:flex;gap:8px;align-items:center}
+        .reward input{width:70px;padding:8px;border:1px solid #d1d5db;border-radius:8px}
+        table{width:100%;border-collapse:collapse;font-size:14px}
+        th{text-align:left;padding:10px 0;border-bottom:2px solid #e5e7eb;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+        td{padding:12px 0;border-bottom:1px solid #f3f4f6;color:#374151;vertical-align:top}
+        .empty{color:#9ca3af;font-size:14px}
+        .muted{color:#6b7280;font-size:14px}
+        @media (max-width: 1024px){.grid,.layout{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/buyer-nav :: nav}"></div>
+<div class="container">
+    <div class="grid">
+        <div class="card">
+            <div class="metric-label">Points balance</div>
+            <div class="metric-value" th:text="${loyalty.account().balance()}">0</div>
+        </div>
+        <div class="card">
+            <div class="metric-label">Total earned</div>
+            <div class="metric-value" th:text="${loyalty.account().totalPoints()}">0</div>
+        </div>
+        <div class="card">
+            <div class="metric-label">Total used</div>
+            <div class="metric-value" th:text="${loyalty.account().usedPoints()}">0</div>
+        </div>
+        <div class="card">
+            <div class="metric-label">Tier</div>
+            <div class="metric-value" th:text="${loyalty.account().tier()}">SILVER</div>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="section">
+            <div class="card">
+                <h2>Daily check-in</h2>
+                <div class="actions">
+                    <form method="post" th:action="@{/buyer/loyalty/checkin}">
+                        <button type="submit" class="btn btn-primary">Check in today</button>
+                    </form>
+                    <span class="muted">Earn points daily and keep your loyalty momentum going.</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Onboarding progress</h2>
+                <div class="tasks" th:if="${!loyalty.onboardingTasks().isEmpty()}">
+                    <div class="task" th:each="task : ${loyalty.onboardingTasks()}">
+                        <div>
+                            <strong th:text="${task.taskKey()}">FIRST_ORDER</strong>
+                            <small th:text="'Expires: ' + ${task.expireAt()}">Expires soon</small>
+                        </div>
+                        <div style="text-align:right">
+                            <span class="tag" th:text="${task.status()}">PENDING</span>
+                            <div class="muted" th:text="'+' + ${task.pointsIssued()} + ' pts'">+0 pts</div>
+                        </div>
+                    </div>
+                </div>
+                <p th:if="${loyalty.onboardingTasks().isEmpty()}" class="empty">No onboarding tasks available.</p>
+            </div>
+
+            <div class="card">
+                <h2>Points marketplace</h2>
+                <div class="reward-grid" th:if="${!loyalty.rewards().isEmpty()}">
+                    <div class="reward" th:each="reward : ${loyalty.rewards()}">
+                        <img th:if="${reward.imageUrl() != null}" th:src="${reward.imageUrl()}" alt="Reward"/>
+                        <div th:if="${reward.imageUrl() == null}" style="height:140px;border-radius:10px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#9ca3af">No image</div>
+                        <div class="tag" th:text="${reward.type()}">COUPON</div>
+                        <h3 th:text="${reward.name()}">Reward</h3>
+                        <p th:text="${reward.description()}">Reward description</p>
+                        <div class="reward-footer">
+                            <span th:text="${reward.pointsRequired()} + ' pts'">500 pts</span>
+                            <span th:text="'Stock: ' + ${reward.stock()}">Stock: 10</span>
+                        </div>
+                        <form method="post" th:action="@{/buyer/loyalty/redeem}">
+                            <input type="hidden" name="rewardItemId" th:value="${reward.id()}"/>
+                            <input type="number" name="quantity" min="1" value="1"/>
+                            <button type="submit" class="btn btn-primary">Redeem</button>
+                        </form>
+                    </div>
+                </div>
+                <p th:if="${loyalty.rewards().isEmpty()}" class="empty">No rewards are available right now.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="card">
+                <h2>Recent transactions</h2>
+                <table th:if="${!loyalty.recentTransactions().isEmpty()}">
+                    <thead>
+                    <tr><th>Source</th><th>Amount</th><th>Balance</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="txn : ${loyalty.recentTransactions()}">
+                        <td>
+                            <strong th:text="${txn.source()}">CHECKIN</strong>
+                            <div class="muted" th:text="${txn.createdAt()}">2026-03-22</div>
+                        </td>
+                        <td th:text="${txn.amount()}">10</td>
+                        <td th:text="${txn.balanceAfter()}">100</td>
+                    </tr>
+                    </tbody>
+                </table>
+                <p th:if="${loyalty.recentTransactions().isEmpty()}" class="empty">No transactions yet.</p>
+            </div>
+
+            <div class="card">
+                <h2>Recent redemptions</h2>
+                <table th:if="${!loyalty.recentRedemptions().isEmpty()}">
+                    <thead>
+                    <tr><th>Reward</th><th>Status</th><th>Points</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="redemption : ${loyalty.recentRedemptions()}">
+                        <td>
+                            <strong th:text="${redemption.rewardName()}">Coupon reward</strong>
+                            <div class="muted" th:text="${redemption.createdAt()}">2026-03-22</div>
+                        </td>
+                        <td>
+                            <span class="tag" th:text="${redemption.status()}">COMPLETED</span>
+                            <div class="muted" th:if="${redemption.couponCode() != null}" th:text="${redemption.couponCode()}">CODE123</div>
+                        </td>
+                        <td th:text="${redemption.pointsSpent()}">500</td>
+                    </tr>
+                    </tbody>
+                </table>
+                <p th:if="${loyalty.recentRedemptions().isEmpty()}" class="empty">No redemptions yet.</p>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

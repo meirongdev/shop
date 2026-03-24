@@ -1,0 +1,24 @@
+CREATE DATABASE IF NOT EXISTS shop_profile;
+CREATE DATABASE IF NOT EXISTS shop_promotion;
+CREATE DATABASE IF NOT EXISTS shop_wallet;
+CREATE DATABASE IF NOT EXISTS shop_marketplace;
+CREATE DATABASE IF NOT EXISTS shop_order;
+CREATE DATABASE IF NOT EXISTS shop_notification;
+CREATE DATABASE IF NOT EXISTS shop_loyalty;
+CREATE DATABASE IF NOT EXISTS shop_activity;
+CREATE DATABASE IF NOT EXISTS shop_webhook;
+CREATE DATABASE IF NOT EXISTS shop_subscription;
+CREATE DATABASE IF NOT EXISTS shop_auth;
+
+GRANT ALL PRIVILEGES ON shop_profile.* TO 'shop'@'%';
+GRANT ALL PRIVILEGES ON shop_promotion.* TO 'shop'@'%';
+GRANT ALL PRIVILEGES ON shop_wallet.* TO 'shop'@'%';
+GRANT ALL PRIVILEGES ON shop_marketplace.* TO 'shop'@'%';
+GRANT ALL PRIVILEGES ON shop_order.* TO 'shop'@'%';
+GRANT ALL PRIVILEGES ON shop_notification.* TO 'shop'@'%';
+GRANT ALL PRIVILEGES ON shop_loyalty.* TO 'shop'@'%';
+GRANT ALL PRIVILEGES ON shop_activity.* TO 'shop'@'%';
+GRANT ALL PRIVILEGES ON shop_webhook.* TO 'shop'@'%';
+GRANT ALL PRIVILEGES ON shop_subscription.* TO 'shop'@'%';
+GRANT ALL PRIVILEGES ON shop_auth.* TO 'shop'@'%';
+FLUSH PRIVILEGES;

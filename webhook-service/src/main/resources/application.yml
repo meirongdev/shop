@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: webhook-service
+  mvc:
+    problemdetails:
+      enabled: true
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  datasource:
+    url: ${WEBHOOK_DB_URL:jdbc:mysql://mysql:3306/shop_webhook?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${WEBHOOK_DB_USERNAME:shop}
+    password: ${WEBHOOK_DB_PASSWORD:shop}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+server:
+  port: 8080
+  shutdown: graceful
+
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+        liveness:
+          include: livenessState
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://otel-collector:4318/v1/traces}
+
+logging:
+  structured:
+    format:
+      console: logstash
+
+shop:
+  security:
+    internal:
+      enabled: true
+      token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
+      excluded-path-prefixes:
+        - /actuator
+        - /v3/api-docs
+        - /swagger-ui
+  webhook:
+    order-events-topic: ${ORDER_EVENTS_TOPIC:order.events.v1}
+    wallet-transactions-topic: ${WALLET_TRANSACTIONS_TOPIC:wallet.transactions.v1}
+    user-registered-topic: ${USER_REGISTERED_TOPIC:user.registered.v1}
+    delivery-timeout-seconds: ${WEBHOOK_DELIVERY_TIMEOUT:10}
+    retry-max-attempts: ${WEBHOOK_RETRY_MAX_ATTEMPTS:5}
+    retry-interval-seconds: ${WEBHOOK_RETRY_INTERVAL:60}
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /swagger-ui.html
+    persist-authorization: true
+  paths-to-exclude:
+    - /actuator/**
+    - /internal/**

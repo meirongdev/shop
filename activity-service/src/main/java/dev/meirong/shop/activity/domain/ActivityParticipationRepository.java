@@ -1,0 +1,26 @@
+package dev.meirong.shop.activity.domain;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import java.time.Instant;
+import java.util.List;
+
+public interface ActivityParticipationRepository extends JpaRepository<ActivityParticipation, String> {
+
+    List<ActivityParticipation> findByGameIdAndPlayerId(String gameId, String playerId);
+
+    @Query("SELECT COUNT(p) FROM ActivityParticipation p WHERE p.gameId = :gameId AND p.playerId = :playerId")
+    long countByGameIdAndPlayerId(String gameId, String playerId);
+
+    @Query("SELECT COUNT(p) FROM ActivityParticipation p WHERE p.gameId = :gameId AND p.playerId = :playerId AND p.participatedAt >= :since")
+    long countByGameIdAndPlayerIdSince(String gameId, String playerId, Instant since);
+
+    @Query("SELECT p FROM ActivityParticipation p WHERE p.rewardStatus = 'PENDING' AND p.result = 'WIN' AND p.participatedAt < :threshold")
+    List<ActivityParticipation> findPendingRewards(Instant threshold);
+
+    @Query("SELECT COUNT(p) FROM ActivityParticipation p WHERE p.gameId = :gameId AND p.result = 'WIN'")
+    long countWinningParticipationsByGameId(String gameId);
+
+    List<ActivityParticipation> findByGameIdAndPlayerIdOrderByParticipatedAtDesc(String gameId, String playerId);
+}

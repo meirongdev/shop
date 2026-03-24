@@ -1,0 +1,181 @@
+spring:
+  application:
+    name: seller-bff
+  mvc:
+    problemdetails:
+      enabled: true
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+server:
+  port: 8080
+  shutdown: graceful
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState
+        liveness:
+          include: livenessState
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://otel-collector:4318/v1/traces}
+logging:
+  structured:
+    format:
+      console: logstash
+shop:
+  security:
+    internal:
+      enabled: true
+      token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
+      excluded-path-prefixes:
+        - /actuator
+        - /v3/api-docs
+        - /swagger-ui
+  seller:
+    internal-token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
+    profile-service-url: ${PROFILE_SERVICE_URL:http://profile-service:8080}
+    promotion-service-url: ${PROMOTION_SERVICE_URL:http://promotion-service:8080}
+    wallet-service-url: ${WALLET_SERVICE_URL:http://wallet-service:8080}
+    marketplace-service-url: ${MARKETPLACE_SERVICE_URL:http://marketplace-service:8080}
+    order-service-url: ${ORDER_SERVICE_URL:http://order-service:8080}
+    search-service-url: ${SEARCH_SERVICE_URL:http://search-service:8080}
+    connect-timeout: ${SELLER_BFF_CONNECT_TIMEOUT:2s}
+    read-timeout: ${SELLER_BFF_READ_TIMEOUT:5s}
+resilience4j:
+  circuitbreaker:
+    instances:
+      searchService:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+      orderService:
+        sliding-window-size: 10
+        failure-rate-threshold: 40
+        wait-duration-in-open-state: 15s
+        permitted-number-of-calls-in-half-open-state: 2
+      marketplaceService:
+        sliding-window-size: 20
+        failure-rate-threshold: 40
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+      promotionService:
+        sliding-window-size: 20
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 20s
+        permitted-number-of-calls-in-half-open-state: 3
+      walletService:
+        sliding-window-size: 20
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 20s
+        permitted-number-of-calls-in-half-open-state: 3
+      profileService:
+        sliding-window-size: 20
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 5
+  retry:
+    instances:
+      searchService:
+        max-attempts: 3
+        wait-duration: 200ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - java.net.ConnectException
+        ignore-exceptions:
+          - dev.meirong.shop.common.error.BusinessException
+      marketplaceService:
+        max-attempts: 2
+        wait-duration: 200ms
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - java.net.ConnectException
+        ignore-exceptions:
+          - dev.meirong.shop.common.error.BusinessException
+      promotionService:
+        max-attempts: 2
+        wait-duration: 300ms
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - java.net.ConnectException
+        ignore-exceptions:
+          - dev.meirong.shop.common.error.BusinessException
+      profileService:
+        max-attempts: 2
+        wait-duration: 200ms
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - java.net.ConnectException
+        ignore-exceptions:
+          - dev.meirong.shop.common.error.BusinessException
+  bulkhead:
+    instances:
+      searchService:
+        max-concurrent-calls: 20
+        max-wait-duration: 50ms
+      orderService:
+        max-concurrent-calls: 8
+        max-wait-duration: 0ms
+      marketplaceService:
+        max-concurrent-calls: 15
+        max-wait-duration: 0ms
+      promotionService:
+        max-concurrent-calls: 10
+        max-wait-duration: 0ms
+      walletService:
+        max-concurrent-calls: 8
+        max-wait-duration: 0ms
+      profileService:
+        max-concurrent-calls: 15
+        max-wait-duration: 0ms
+  timelimiter:
+    instances:
+      searchService:
+        timeout-duration: 5s
+        cancel-running-future: true
+      orderService:
+        timeout-duration: 3s
+        cancel-running-future: true
+      marketplaceService:
+        timeout-duration: 3s
+        cancel-running-future: true
+      promotionService:
+        timeout-duration: 4s
+        cancel-running-future: true
+      walletService:
+        timeout-duration: 3s
+        cancel-running-future: true
+      profileService:
+        timeout-duration: 4s
+        cancel-running-future: true
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /swagger-ui.html
+    persist-authorization: true
+  paths-to-exclude:
+    - /actuator/**
+    - /internal/**

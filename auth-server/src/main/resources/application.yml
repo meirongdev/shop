@@ -1,0 +1,98 @@
+spring:
+  application:
+    name: auth-server
+  mvc:
+    problemdetails:
+      enabled: true
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  data:
+    redis:
+      host: ${AUTH_REDIS_HOST:redis}
+      port: ${AUTH_REDIS_PORT:6379}
+  datasource:
+    url: jdbc:mysql://${AUTH_DB_HOST:localhost}:${AUTH_DB_PORT:3306}/shop_auth?useSSL=false&allowPublicKeyRetrieval=true
+    username: ${AUTH_DB_USER:shop}
+    password: ${AUTH_DB_PASSWORD:shop_password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+server:
+  port: 8080
+  shutdown: graceful
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+        liveness:
+          include: livenessState
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://otel-collector:4318/v1/traces}
+logging:
+  structured:
+    format:
+      console: logstash
+shop:
+  auth:
+    issuer: shop-auth-server
+    secret: ${SHOP_AUTH_JWT_SECRET:change-this-to-a-32-byte-demo-secret}
+    token-ttl: PT8H
+    google-client-id: ${GOOGLE_OAUTH2_CLIENT_ID:placeholder-google-client-id}
+    apple-client-id: ${APPLE_OAUTH2_CLIENT_ID:placeholder-apple-client-id}
+    profile-service-url: ${PROFILE_SERVICE_URL:http://profile-service:8080}
+    internal-token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
+    user-registered-topic: ${USER_REGISTERED_TOPIC:user.registered.v1}
+  auth-otp:
+    code-ttl: ${AUTH_OTP_CODE_TTL:PT5M}
+    cooldown-ttl: ${AUTH_OTP_COOLDOWN_TTL:PT1M}
+    lockout-ttl: ${AUTH_OTP_LOCKOUT_TTL:PT30M}
+    max-attempts: ${AUTH_OTP_MAX_ATTEMPTS:5}
+    daily-limit: ${AUTH_OTP_DAILY_LIMIT:10}
+  auth-sms:
+    gateway: ${AUTH_SMS_GATEWAY:mock}
+    twilio-account-sid: ${TWILIO_ACCOUNT_SID:}
+    twilio-auth-token: ${TWILIO_AUTH_TOKEN:}
+    twilio-from-number: ${TWILIO_FROM_NUMBER:}
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /swagger-ui.html
+    persist-authorization: true
+  paths-to-exclude:
+    - /actuator/**
+    - /internal/**

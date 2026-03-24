@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Buyer Account - Shop Platform</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f3f4f6;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+        .card{background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(15,23,42,.08);padding:36px;width:100%;max-width:520px}
+        h1{font-size:28px;color:#111827;margin-bottom:8px}
+        .subtitle{color:#6b7280;font-size:14px;line-height:1.6;margin-bottom:24px}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        .field{margin-bottom:16px}
+        .field.full{grid-column:1 / -1}
+        label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+        input{width:100%;padding:11px 14px;border:1px solid #d1d5db;border-radius:10px;font-size:14px}
+        input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+        .tip,.error{border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.5;margin-bottom:16px}
+        .tip{background:#eff6ff;color:#1d4ed8}
+        .error{background:#fef2f2;color:#b91c1c}
+        button{width:100%;padding:12px 14px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+        .links{display:flex;justify-content:space-between;gap:12px;margin-top:16px;font-size:14px}
+        .links a{color:#2563eb;text-decoration:none;font-weight:600}
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Create buyer account</h1>
+    <p class="subtitle">Register once, get your welcome coupon bundle, and unlock invite rewards.</p>
+
+    <div class="tip">
+        Passwords must be at least 8 characters and include uppercase, lowercase, and a number.
+    </div>
+    <div class="error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <form method="post" th:action="@{/buyer/register}" th:object="${registrationForm}">
+        <div class="grid">
+            <div class="field">
+                <label for="username">Username</label>
+                <input type="text" th:field="*{username}" placeholder="alice123" minlength="3" maxlength="64" required/>
+            </div>
+            <div class="field">
+                <label for="email">Email</label>
+                <input type="email" th:field="*{email}" placeholder="alice@example.com" required/>
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" th:field="*{password}" placeholder="Passw0rd!" minlength="8" required/>
+            </div>
+            <div class="field">
+                <label for="confirmPassword">Confirm password</label>
+                <input type="password" th:field="*{confirmPassword}" placeholder="Repeat password" minlength="8" required/>
+            </div>
+            <div class="field full">
+                <label for="inviteCode">Invite code (optional)</label>
+                <input type="text" th:field="*{inviteCode}" placeholder="INV-01HXABCD12"/>
+            </div>
+        </div>
+        <button type="submit">Create account and sign in</button>
+    </form>
+
+    <div class="links">
+        <a th:href="@{/buyer/login}">Back to login</a>
+        <a th:href="@{/buyer/home}">Continue as guest</a>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/metalbear-co/mirrord/main/mirrord-schema.json",
+  "target": {
+    "namespace": "shop"
+  },
+  "feature": {
+    "network": {
+      "incoming": "mirror",
+      "outgoing": true
+    },
+    "fs": "local",
+    "env": true
+  },
+  "agent": {
+    "namespace": "shop"
+  }
+}

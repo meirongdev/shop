@@ -1,0 +1,300 @@
+spring:
+  application:
+    name: api-gateway
+  webflux:
+    problemdetails:
+      enabled: true
+  threads:
+    virtual:
+      enabled: true
+  data:
+    redis:
+      host: ${GATEWAY_REDIS_HOST:redis}
+      port: ${GATEWAY_REDIS_PORT:6379}
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            # Canary routes must stay before stable routes so the first match can divert traffic.
+            - id: seller-api-canary
+              uri: ${SELLER_BFF_V2_URI:http://seller-bff-v2:8080}
+              predicates:
+                - Path=/api/seller/**
+                - name: Canary
+                  args:
+                    routeId: seller-api
+              filters:
+                - StripPrefix=1
+
+            - id: buyer-api-canary
+              uri: ${BUYER_BFF_V2_URI:http://buyer-bff-v2:8080}
+              predicates:
+                - Path=/api/buyer/**
+                - name: Canary
+                  args:
+                    routeId: buyer-api
+              filters:
+                - StripPrefix=1
+
+            - id: auth-server
+              uri: ${AUTH_SERVER_URI:http://auth-server:8080}
+              predicates:
+                - Path=/auth/**
+
+            - id: buyer-portal
+              uri: ${BUYER_PORTAL_URI:http://buyer-portal:8080}
+              predicates:
+                - Path=/buyer/**
+              filters:
+                - PreserveHost
+
+            - id: seller-portal
+              uri: ${SELLER_PORTAL_URI:http://seller-portal:8080}
+              predicates:
+                - Path=/seller/**
+              filters:
+                - PreserveHost
+
+            - id: buyer-api
+              uri: ${BUYER_BFF_URI:http://buyer-bff:8080}
+              predicates:
+                - Path=/api/buyer/**
+              filters:
+                - StripPrefix=1
+
+            - id: seller-api
+              uri: ${SELLER_BFF_URI:http://seller-bff:8080}
+              predicates:
+                - Path=/api/seller/**
+              filters:
+                - StripPrefix=1
+
+            - id: loyalty-api
+              uri: ${LOYALTY_SERVICE_URI:http://loyalty-service:8080}
+              predicates:
+                - Path=/api/loyalty/**
+              filters:
+                - StripPrefix=1
+
+            - id: activity-api
+              uri: ${ACTIVITY_SERVICE_URI:http://activity-service:8080}
+              predicates:
+                - Path=/api/activity/**
+              filters:
+                - StripPrefix=1
+
+            - id: webhook-api
+              uri: ${WEBHOOK_SERVICE_URI:http://webhook-service:8080}
+              predicates:
+                - Path=/api/webhook/**
+              filters:
+                - StripPrefix=1
+
+            - id: subscription-api
+              uri: ${SUBSCRIPTION_SERVICE_URI:http://subscription-service:8080}
+              predicates:
+                - Path=/api/subscription/**
+              filters:
+                - StripPrefix=1
+
+
+
+            - id: api-docs-gateway
+              uri: ${API_GATEWAY_SELF_URI:http://api-gateway:8080}
+              predicates:
+                - Path=/v3/api-docs/gateway
+              filters:
+                - RewritePath=/v3/api-docs/gateway, /v3/api-docs
+
+            - id: api-docs-buyer-bff
+              uri: ${BUYER_BFF_URI:http://buyer-bff:8080}
+              predicates:
+                - Path=/v3/api-docs/buyer
+              filters:
+                - RewritePath=/v3/api-docs/buyer, /v3/api-docs
+
+            - id: api-docs-seller-bff
+              uri: ${SELLER_BFF_URI:http://seller-bff:8080}
+              predicates:
+                - Path=/v3/api-docs/seller
+              filters:
+                - RewritePath=/v3/api-docs/seller, /v3/api-docs
+
+            - id: api-docs-auth
+              uri: ${AUTH_SERVER_URI:http://auth-server:8080}
+              predicates:
+                - Path=/v3/api-docs/auth
+              filters:
+                - RewritePath=/v3/api-docs/auth, /v3/api-docs
+
+            - id: api-docs-activity
+              uri: ${ACTIVITY_SERVICE_URI:http://activity-service:8080}
+              predicates:
+                - Path=/v3/api-docs/activity
+              filters:
+                - RewritePath=/v3/api-docs/activity, /v3/api-docs
+
+            - id: api-docs-loyalty
+              uri: ${LOYALTY_SERVICE_URI:http://loyalty-service:8080}
+              predicates:
+                - Path=/v3/api-docs/loyalty
+              filters:
+                - RewritePath=/v3/api-docs/loyalty, /v3/api-docs
+
+            - id: api-docs-marketplace
+              uri: ${MARKETPLACE_SERVICE_URI:http://marketplace-service:8080}
+              predicates:
+                - Path=/v3/api-docs/marketplace
+              filters:
+                - RewritePath=/v3/api-docs/marketplace, /v3/api-docs
+
+            - id: api-docs-notification
+              uri: ${NOTIFICATION_SERVICE_URI:http://notification-service:8080}
+              predicates:
+                - Path=/v3/api-docs/notification
+              filters:
+                - RewritePath=/v3/api-docs/notification, /v3/api-docs
+
+            - id: api-docs-order
+              uri: ${ORDER_SERVICE_URI:http://order-service:8080}
+              predicates:
+                - Path=/v3/api-docs/order
+              filters:
+                - RewritePath=/v3/api-docs/order, /v3/api-docs
+
+            - id: api-docs-profile
+              uri: ${PROFILE_SERVICE_URI:http://profile-service:8080}
+              predicates:
+                - Path=/v3/api-docs/profile
+              filters:
+                - RewritePath=/v3/api-docs/profile, /v3/api-docs
+
+            - id: api-docs-promotion
+              uri: ${PROMOTION_SERVICE_URI:http://promotion-service:8080}
+              predicates:
+                - Path=/v3/api-docs/promotion
+              filters:
+                - RewritePath=/v3/api-docs/promotion, /v3/api-docs
+
+            - id: api-docs-search
+              uri: ${SEARCH_SERVICE_URI:http://search-service:8080}
+              predicates:
+                - Path=/v3/api-docs/search
+              filters:
+                - RewritePath=/v3/api-docs/search, /v3/api-docs
+
+            - id: api-docs-subscription
+              uri: ${SUBSCRIPTION_SERVICE_URI:http://subscription-service:8080}
+              predicates:
+                - Path=/v3/api-docs/subscription
+              filters:
+                - RewritePath=/v3/api-docs/subscription, /v3/api-docs
+
+            - id: api-docs-wallet
+              uri: ${WALLET_SERVICE_URI:http://wallet-service:8080}
+              predicates:
+                - Path=/v3/api-docs/wallet
+              filters:
+                - RewritePath=/v3/api-docs/wallet, /v3/api-docs
+
+            - id: api-docs-webhook
+              uri: ${WEBHOOK_SERVICE_URI:http://webhook-service:8080}
+              predicates:
+                - Path=/v3/api-docs/webhook
+              filters:
+                - RewritePath=/v3/api-docs/webhook, /v3/api-docs
+
+            - id: public-buyer-api
+              uri: ${BUYER_BFF_URI:http://buyer-bff:8080}
+              predicates:
+                - Path=/public/buyer/**
+              filters:
+                - StripPrefix=1
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /swagger-ui.html
+    urls:
+      - name: API Gateway
+        url: /v3/api-docs/gateway
+      - name: Buyer BFF
+        url: /v3/api-docs/buyer
+      - name: Seller BFF
+        url: /v3/api-docs/seller
+      - name: Auth Server
+        url: /v3/api-docs/auth
+      - name: Activity Service
+        url: /v3/api-docs/activity
+      - name: Loyalty Service
+        url: /v3/api-docs/loyalty
+      - name: Marketplace Service
+        url: /v3/api-docs/marketplace
+      - name: Notification Service
+        url: /v3/api-docs/notification
+      - name: Order Service
+        url: /v3/api-docs/order
+      - name: Profile Service
+        url: /v3/api-docs/profile
+      - name: Promotion Service
+        url: /v3/api-docs/promotion
+      - name: Search Service
+        url: /v3/api-docs/search
+      - name: Subscription Service
+        url: /v3/api-docs/subscription
+      - name: Wallet Service
+        url: /v3/api-docs/wallet
+      - name: Webhook Service
+        url: /v3/api-docs/webhook
+    urls-primary-name: Buyer BFF
+    persist-authorization: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+    display-request-duration: true
+    try-it-out-enabled: false
+server:
+  port: 8080
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState
+        liveness:
+          include: livenessState
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://otel-collector:4318/v1/traces}
+logging:
+  structured:
+    format:
+      console: logstash
+shop:
+  gateway:
+    jwt-secret: ${SHOP_AUTH_JWT_SECRET:change-this-to-a-32-byte-demo-secret}
+    internal-token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
+    rate-limit:
+      requests-per-minute: ${GATEWAY_RATE_LIMIT_RPM:100}
+      burst: ${GATEWAY_RATE_LIMIT_BURST:20}
+    cors:
+      allowed-origin-patterns: ${GATEWAY_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*,http://[::1]:*}
+      allowed-methods: ${GATEWAY_ALLOWED_METHODS:GET,POST,PUT,PATCH,DELETE,OPTIONS}
+      allowed-headers: ${GATEWAY_ALLOWED_HEADERS:Authorization,Content-Type,X-Request-Id,X-Device-Fingerprint}
+      exposed-headers: ${GATEWAY_EXPOSED_HEADERS:X-Request-Id}
+      allow-credentials: ${GATEWAY_ALLOW_CREDENTIALS:true}
+      max-age-seconds: ${GATEWAY_CORS_MAX_AGE_SECONDS:3600}

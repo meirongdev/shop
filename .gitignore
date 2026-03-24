@@ -1,0 +1,16 @@
+.idea/
+.vscode/
+target/
+*/target/
+.DS_Store
+.mvn/timing.properties
+.env
+node_modules/
+docs-site/build/
+docs-site/.docusaurus/
+.worktrees/
+# Gradle / KMP
+build/
+.gradle/
+kmp/*/build/
+local.properties

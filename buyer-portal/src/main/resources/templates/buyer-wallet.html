@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet - Shop Platform</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e}
+        .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+        .topbar h1{font-size:18px;color:#1a1a2e}
+        .nav-links{display:flex;gap:20px}.nav-links a{color:#374151;text-decoration:none;font-size:14px;font-weight:500;padding:4px 0;border-bottom:2px solid transparent}
+        .nav-links a:hover{color:#3b82f6;border-bottom-color:#3b82f6}
+        .cart-link{position:relative}.badge{position:absolute;top:-8px;right:-12px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px}
+        .user-info{display:flex;align-items:center;gap:16px;font-size:14px;color:#6b7280}
+        .user-info a{color:#3b82f6;text-decoration:none;font-weight:500}
+        .container{max-width:900px;margin:24px auto;padding:0 24px}
+        .card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+        .card h2{font-size:16px;color:#374151;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #f3f4f6}
+        .balance{font-size:36px;font-weight:700;color:#3b82f6}
+        .balance-label{font-size:13px;color:#6b7280;margin-top:4px}
+        .actions{display:flex;gap:12px;margin-top:20px;align-items:flex-end}
+        .field{margin-bottom:0}
+        .field label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:4px}
+        .field input{padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;width:120px}
+        .btn-sm{padding:8px 20px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer}
+        .btn-success{background:#10b981;color:#fff}.btn-success:hover{background:#059669}
+        .btn-danger{background:#ef4444;color:#fff}.btn-danger:hover{background:#dc2626}
+        table{width:100%;border-collapse:collapse;font-size:14px}
+        th{text-align:left;font-weight:600;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:.5px;padding:8px 12px;border-bottom:2px solid #e5e7eb}
+        td{padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#374151}
+        .tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+        .tag-green{background:#d1fae5;color:#065f46}
+        .tag-blue{background:#dbeafe;color:#1d4ed8}
+        .tag-red{background:#fee2e2;color:#991b1b}
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/buyer-nav :: nav}"></div>
+<div class="container">
+    <div class="card">
+        <h2>Wallet Balance</h2>
+        <div class="balance" th:text="'$' + ${#numbers.formatDecimal(wallet.balance(), 1, 2)}"></div>
+        <div class="balance-label">Current Balance</div>
+        <form method="post" th:action="@{/buyer/wallet/deposit}" th:object="${walletForm}" class="actions">
+            <div class="field"><label>Amount</label><input type="text" th:field="*{amount}"/></div>
+            <div class="field"><label>Currency</label><input type="text" th:field="*{currency}"/></div>
+            <button type="submit" class="btn-sm btn-success">Deposit</button>
+        </form>
+    </div>
+    <div class="card">
+        <h2>Recent Transactions</h2>
+        <table>
+            <thead><tr><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody>
+            <tr th:each="tx : ${wallet.recentTransactions()}">
+                <td><span class="tag" th:classappend="${tx.type() == 'DEPOSIT' ? 'tag-green' : (tx.type() == 'ORDER_PAYMENT' ? 'tag-red' : 'tag-blue')}" th:text="${tx.type()}"></span></td>
+                <td style="font-weight:600" th:text="'$' + ${#numbers.formatDecimal(tx.amount(), 1, 2)}"></td>
+                <td th:text="${tx.status()}"></td>
+                <td style="color:#6b7280" th:text="${tx.createdAt()}"></td>
+            </tr>
+            <tr th:if="${wallet.recentTransactions().isEmpty()}"><td colspan="4" style="color:#9ca3af;text-align:center">No transactions yet</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,577 @@
+services:
+
+  # ─────────────────── Infrastructure ───────────────────
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_USER: ${MYSQL_USER:-shop}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-shop}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7.4
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  kafka:
+    image: apache/kafka:3.9.0
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: "0"
+      KAFKA_PROCESS_ROLES: controller,broker
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      CLUSTER_ID: "shop-kafka-cluster-id-0001"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili-data:/meili_data
+    environment:
+      MEILI_ENV: production
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-masterKey123}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.127.0
+    command: ["--config=/conf/config.yaml"]
+    volumes:
+      - ./docker/otel-collector-config.yaml:/conf/config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+
+  prometheus:
+    image: prom/prometheus:v3.4.2
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8025 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ─────────────────── Platform Services ───────────────────
+
+  auth-server:
+    image: shop/auth-server:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: auth-server
+    environment:
+      SHOP_AUTH_JWT_SECRET: ${SHOP_AUTH_JWT_SECRET:-change-this-to-a-32-byte-demo-secret}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    ports:
+      - "8090:8080"
+    depends_on:
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+
+  api-gateway:
+    image: shop/api-gateway:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: api-gateway
+    environment:
+      SHOP_AUTH_JWT_SECRET: ${SHOP_AUTH_JWT_SECRET:-change-this-to-a-32-byte-demo-secret}
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      AUTH_SERVER_URI: http://auth-server:8080
+      BUYER_PORTAL_URI: http://buyer-portal:8080
+      SELLER_PORTAL_URI: http://seller-portal:8080
+      BUYER_BFF_URI: http://buyer-bff:8080
+      SELLER_BFF_URI: http://seller-bff:8080
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    ports:
+      - "8080:8080"
+    depends_on:
+      auth-server:
+        condition: service_healthy
+      buyer-bff:
+        condition: service_healthy
+      seller-bff:
+        condition: service_healthy
+      buyer-portal:
+        condition: service_healthy
+      seller-portal:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+
+  buyer-bff:
+    image: shop/buyer-bff:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: buyer-bff
+    environment:
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      PROFILE_SERVICE_URL: http://profile-service:8080
+      PROMOTION_SERVICE_URL: http://promotion-service:8080
+      WALLET_SERVICE_URL: http://wallet-service:8080
+      MARKETPLACE_SERVICE_URL: http://marketplace-service:8080
+      ORDER_SERVICE_URL: http://order-service:8080
+      SEARCH_SERVICE_URL: http://search-service:8080
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    depends_on:
+      profile-service:
+        condition: service_healthy
+      promotion-service:
+        condition: service_healthy
+      wallet-service:
+        condition: service_healthy
+      marketplace-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      search-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+
+  seller-bff:
+    image: shop/seller-bff:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: seller-bff
+    environment:
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      PROFILE_SERVICE_URL: http://profile-service:8080
+      PROMOTION_SERVICE_URL: http://promotion-service:8080
+      MARKETPLACE_SERVICE_URL: http://marketplace-service:8080
+      ORDER_SERVICE_URL: http://order-service:8080
+      SEARCH_SERVICE_URL: http://search-service:8080
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    depends_on:
+      profile-service:
+        condition: service_healthy
+      promotion-service:
+        condition: service_healthy
+      marketplace-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      search-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+
+  # ─────────────────── Domain Services ───────────────────
+
+  profile-service:
+    image: shop/profile-service:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: profile-service
+    environment:
+      PROFILE_DB_URL: jdbc:mysql://mysql:3306/shop_profile?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      PROFILE_DB_USERNAME: ${MYSQL_USER:-shop}
+      PROFILE_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 40s
+
+  promotion-service:
+    image: shop/promotion-service:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: promotion-service
+    environment:
+      PROMOTION_DB_URL: jdbc:mysql://mysql:3306/shop_promotion?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      PROMOTION_DB_USERNAME: ${MYSQL_USER:-shop}
+      PROMOTION_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 40s
+
+  wallet-service:
+    image: shop/wallet-service:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: wallet-service
+    environment:
+      WALLET_DB_URL: jdbc:mysql://mysql:3306/shop_wallet?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      WALLET_DB_USERNAME: ${MYSQL_USER:-shop}
+      WALLET_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      STRIPE_ENABLED: ${STRIPE_ENABLED:-false}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 40s
+
+  marketplace-service:
+    image: shop/marketplace-service:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: marketplace-service
+    environment:
+      MARKETPLACE_DB_URL: jdbc:mysql://mysql:3306/shop_marketplace?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      MARKETPLACE_DB_USERNAME: ${MYSQL_USER:-shop}
+      MARKETPLACE_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MARKETPLACE_PRODUCT_TOPIC: marketplace.product.events.v1
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 40s
+
+  order-service:
+    image: shop/order-service:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: order-service
+    environment:
+      ORDER_DB_URL: jdbc:mysql://mysql:3306/shop_order?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      ORDER_DB_USERNAME: ${MYSQL_USER:-shop}
+      ORDER_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 40s
+
+  search-service:
+    image: shop/search-service:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: search-service
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MARKETPLACE_PRODUCT_TOPIC: marketplace.product.events.v1
+      MEILISEARCH_URL: http://meilisearch:7700
+      MEILISEARCH_ADMIN_KEY: ${MEILISEARCH_ADMIN_KEY:-masterKey123}
+      MEILISEARCH_SEARCH_KEY: ${MEILISEARCH_SEARCH_KEY:-masterKey123}
+      MARKETPLACE_SERVICE_URL: http://marketplace-service:8080
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    ports:
+      - "8091:8080"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+      marketplace-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 40s
+
+  notification-service:
+    image: shop/notification-service:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: notification-service
+    environment:
+      NOTIFICATION_DB_URL: jdbc:mysql://mysql:3306/shop_notification?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      NOTIFICATION_DB_USERNAME: ${MYSQL_USER:-shop}
+      NOTIFICATION_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: 1025
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    ports:
+      - "8092:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 40s
+
+  loyalty-service:
+    image: shop/loyalty-service:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: loyalty-service
+    environment:
+      LOYALTY_DB_URL: jdbc:mysql://mysql:3306/shop_loyalty?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      LOYALTY_DB_USERNAME: ${MYSQL_USER:-shop}
+      LOYALTY_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    ports:
+      - "8088:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 40s
+
+  activity-service:
+    image: shop/activity-service:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: activity-service
+    environment:
+      ACTIVITY_DB_URL: jdbc:mysql://mysql:3306/shop_activity?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      ACTIVITY_DB_USERNAME: ${MYSQL_USER:-shop}
+      ACTIVITY_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      LOYALTY_SERVICE_URL: http://loyalty-service:8080
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    ports:
+      - "8089:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 40s
+
+  webhook-service:
+    image: shop/webhook-service:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: webhook-service
+    environment:
+      WEBHOOK_DB_URL: jdbc:mysql://mysql:3306/shop_webhook?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      WEBHOOK_DB_USERNAME: ${MYSQL_USER:-shop}
+      WEBHOOK_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    ports:
+      - "8093:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 40s
+
+  subscription-service:
+    image: shop/subscription-service:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: subscription-service
+    environment:
+      SUBSCRIPTION_DB_URL: jdbc:mysql://mysql:3306/shop_subscription?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SUBSCRIPTION_DB_USERNAME: ${MYSQL_USER:-shop}
+      SUBSCRIPTION_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
+      ORDER_SERVICE_URL: http://order-service:8080
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    ports:
+      - "8094:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 40s
+
+  # ─────────────────── Portals ───────────────────
+
+  buyer-portal:
+    image: shop/buyer-portal:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: buyer-portal
+    environment:
+      AUTH_BASE_URL: http://auth-server:8080
+      GATEWAY_BASE_URL: http://api-gateway:8080
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    depends_on:
+      auth-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+
+  seller-portal:
+    image: shop/seller-portal:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.module
+      args:
+        MODULE: seller-portal
+    environment:
+      AUTH_BASE_URL: http://auth-server:8080
+      GATEWAY_BASE_URL: http://api-gateway:8080
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+    depends_on:
+      auth-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+
+volumes:
+  mysql-data:
+  meili-data:

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Withdrawal Processed</title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h1 style="color: #333;">Withdrawal Processed 💸</h1>
+    <p>Hi <span th:text="${username}">User</span>,</p>
+    <p>Your withdrawal of <strong>$<span th:text="${amount}">0.00</span></strong>
+       <span th:if="${currency != null}">(<span th:text="${currency}">USD</span>)</span>
+       has been processed.</p>
+    <p>Please allow a few business days for the funds to arrive.</p>
+    <hr style="border: 1px solid #eee;"/>
+    <p style="color: #666; font-size: 12px;">This email was sent by Shop Platform.</p>
+</body>
+</html>

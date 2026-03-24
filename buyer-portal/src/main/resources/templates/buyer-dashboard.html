@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buyer Dashboard - Shop Platform</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e}
+        .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+        .topbar h1{font-size:18px;color:#1a1a2e}
+        .topbar .user-info{display:flex;align-items:center;gap:16px;font-size:14px;color:#6b7280}
+        .topbar a{color:#3b82f6;text-decoration:none;font-weight:500;font-size:14px}
+        .topbar a:hover{text-decoration:underline}
+        .container{max-width:1100px;margin:24px auto;padding:0 24px}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+        .card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+        .card h2{font-size:16px;color:#374151;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #f3f4f6}
+        .stat{font-size:32px;font-weight:700;color:#3b82f6}
+        .stat-label{font-size:13px;color:#6b7280;margin-top:4px}
+        label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:4px}
+        input[type=text],input[type=email],input[type=number]{width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;outline:none;transition:border-color .2s}
+        input:focus{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.12)}
+        .field{margin-bottom:14px}
+        .inline-fields{display:flex;gap:12px;align-items:flex-end}
+        .inline-fields .field{flex:1;margin-bottom:0}
+        button{padding:8px 20px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s}
+        .btn-primary{background:#3b82f6;color:#fff}
+        .btn-primary:hover{background:#2563eb}
+        .btn-success{background:#10b981;color:#fff}
+        .btn-success:hover{background:#059669}
+        .btn-danger{background:#ef4444;color:#fff}
+        .btn-danger:hover{background:#dc2626}
+        table{width:100%;border-collapse:collapse;font-size:14px}
+        th{text-align:left;font-weight:600;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:.5px;padding:8px 12px;border-bottom:2px solid #e5e7eb}
+        td{padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#374151}
+        .tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+        .tag-blue{background:#dbeafe;color:#1d4ed8}
+        .tag-green{background:#d1fae5;color:#065f46}
+        .full-width{grid-column:1/-1}
+    </style>
+</head>
+<body>
+<div class="topbar">
+    <h1>Shop Platform <span style="color:#6b7280;font-weight:400;font-size:14px">/ Buyer Portal</span></h1>
+    <div class="user-info">
+        <span th:text="${sessionUser.displayName} + ' (' + ${sessionUser.username} + ')'"></span>
+        <a th:href="@{/buyer/logout}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Wallet Summary -->
+    <div class="card">
+        <h2>Wallet</h2>
+        <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap">
+            <div>
+                <div class="stat" th:text="'$' + ${#numbers.formatDecimal(dashboard.wallet.balance, 1, 2)}"></div>
+                <div class="stat-label">Current Balance</div>
+            </div>
+            <form method="post" th:action="@{/buyer/wallet/deposit}" th:object="${walletForm}" class="inline-fields" style="flex:1">
+                <div class="field">
+                    <label>Amount</label>
+                    <input type="text" th:field="*{amount}"/>
+                </div>
+                <div class="field">
+                    <label>Currency</label>
+                    <input type="text" th:field="*{currency}"/>
+                </div>
+                <button type="submit" class="btn-success">Deposit</button>
+            </form>
+            <form method="post" th:action="@{/buyer/wallet/withdraw}" th:object="${walletForm}" style="margin-left:8px">
+                <button type="submit" class="btn-danger">Withdraw</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="grid">
+        <!-- Profile -->
+        <div class="card">
+            <h2>Profile</h2>
+            <form method="post" th:action="@{/buyer/profile}" th:object="${profileForm}">
+                <div class="field">
+                    <label>Display Name</label>
+                    <input type="text" th:field="*{displayName}"/>
+                </div>
+                <div class="field">
+                    <label>Email</label>
+                    <input type="email" th:field="*{email}"/>
+                </div>
+                <div class="field">
+                    <label>Tier</label>
+                    <input type="text" th:field="*{tier}" readonly style="background:#f9fafb;cursor:not-allowed"/>
+                </div>
+                <button type="submit" class="btn-primary">Save Profile</button>
+            </form>
+        </div>
+
+        <!-- Promotions -->
+        <div class="card">
+            <h2>Promotions</h2>
+            <table>
+                <thead><tr><th>Code</th><th>Title</th><th>Reward</th></tr></thead>
+                <tbody>
+                <tr th:each="offer : ${dashboard.promotions}">
+                    <td><span class="tag tag-green" th:text="${offer.code}"></span></td>
+                    <td th:text="${offer.title}"></td>
+                    <td th:text="'$' + ${#numbers.formatDecimal(offer.rewardAmount, 1, 2)}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(dashboard.promotions)}"><td colspan="3" style="color:#9ca3af;text-align:center">No promotions available</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Marketplace -->
+        <div class="card full-width">
+            <h2>Marketplace</h2>
+            <table>
+                <thead><tr><th>Product</th><th>Description</th><th>Price</th><th>Stock</th></tr></thead>
+                <tbody>
+                <tr th:each="product : ${dashboard.marketplace}">
+                    <td style="font-weight:600" th:text="${product.name}"></td>
+                    <td style="color:#6b7280" th:text="${product.description}"></td>
+                    <td th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}"></td>
+                    <td><span class="tag tag-blue" th:text="${product.inventory}"></span></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(dashboard.marketplace)}"><td colspan="4" style="color:#9ca3af;text-align:center">No products available</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

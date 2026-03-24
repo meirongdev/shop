@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${game.game().name()} + ' - Activity - Shop Platform'">Activity detail</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e}
+        .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+        .topbar h1{font-size:18px;color:#1a1a2e}
+        .nav-links{display:flex;gap:20px}.nav-links a{color:#374151;text-decoration:none;font-size:14px;font-weight:500;padding:4px 0;border-bottom:2px solid transparent}
+        .nav-links a:hover{color:#3b82f6;border-bottom-color:#3b82f6}
+        .cart-link{position:relative}.badge{position:absolute;top:-8px;right:-12px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px}
+        .user-info{display:flex;align-items:center;gap:16px;font-size:14px;color:#6b7280}
+        .user-info a{color:#3b82f6;text-decoration:none;font-weight:500}
+        .container{max-width:1200px;margin:24px auto;padding:0 24px}
+        .hero{background:#fff;border-radius:18px;padding:28px 32px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:24px}
+        .hero .tag{display:inline-block;padding:5px 10px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;margin-bottom:12px}
+        .hero h2{font-size:32px;margin-bottom:10px}
+        .meta{display:flex;gap:18px;flex-wrap:wrap;color:#6b7280;font-size:14px}
+        .layout{display:grid;grid-template-columns:2fr 1fr;gap:24px}
+        .card{background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:20px}
+        .card h3{font-size:18px;margin-bottom:16px}
+        .actions{display:flex;gap:12px;flex-wrap:wrap}
+        .btn{padding:10px 18px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}
+        .btn-primary{background:#2563eb;color:#fff}
+        .btn-secondary{background:#0f766e;color:#fff}
+        .notice{padding:14px 16px;border-radius:10px;background:#eff6ff;color:#1d4ed8;line-height:1.5}
+        .notice a{color:#2563eb;font-weight:700;text-decoration:none}
+        .result{padding:16px;border-radius:12px;background:#f8fafc;border:1px solid #e5e7eb;margin-top:16px;display:grid;gap:10px}
+        .hint-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+        .hint-item{padding:12px;border-radius:10px;background:#fff;border:1px solid #e5e7eb}
+        .hint-item strong{display:block;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+        .prize-list,.history{display:grid;gap:12px}
+        .prize,.history-item{padding:14px;border:1px solid #e5e7eb;border-radius:10px}
+        .prize small,.history-item small{display:block;color:#6b7280;margin-top:4px}
+        .muted{color:#6b7280;font-size:14px;line-height:1.6}
+        @media (max-width: 1024px){.layout{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/buyer-nav :: nav}"></div>
+<div class="container">
+    <div class="hero">
+        <span class="tag" th:text="${game.game().type()}">INSTANT_LOTTERY</span>
+        <h2 th:text="${game.game().name()}">Activity</h2>
+        <div class="meta">
+            <span th:text="'Status: ' + ${game.game().status()}">ACTIVE</span>
+            <span th:text="'Participants: ' + ${game.game().participantCount()}">0</span>
+            <span th:text="'Starts: ' + ${game.game().startAt()}">2026-03-22</span>
+            <span th:text="'Ends: ' + ${game.game().endAt()}">2026-03-23</span>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="card">
+            <h3>Play this activity</h3>
+            <div th:if="${guestPlayer}" class="notice">
+                You can browse activity rules as a guest, but participation requires a signed-in buyer account.
+                <a th:href="@{/buyer/login}">Sign in to play</a>
+            </div>
+
+            <div th:if="${!guestPlayer}" class="actions">
+                <form th:if="${game.game().type() == 'INSTANT_LOTTERY'}" method="post" th:action="@{/buyer/activities/{gameId}/play(gameId=${game.game().id()})}">
+                    <input type="hidden" name="gameType" value="INSTANT_LOTTERY"/>
+                    <button class="btn btn-primary" type="submit">Spin the draw</button>
+                </form>
+                <form th:if="${game.game().type() == 'RED_ENVELOPE'}" method="post" th:action="@{/buyer/activities/{gameId}/play(gameId=${game.game().id()})}">
+                    <input type="hidden" name="gameType" value="RED_ENVELOPE"/>
+                    <button class="btn btn-primary" type="submit">Grab envelope</button>
+                </form>
+                <form th:if="${game.game().type() == 'COLLECT_CARD'}" method="post" th:action="@{/buyer/activities/{gameId}/play(gameId=${game.game().id()})}">
+                    <input type="hidden" name="gameType" value="COLLECT_CARD"/>
+                    <button class="btn btn-primary" type="submit">Draw card</button>
+                </form>
+                <form th:if="${game.game().type() == 'VIRTUAL_FARM'}" method="post" th:action="@{/buyer/activities/{gameId}/play(gameId=${game.game().id()})}">
+                    <input type="hidden" name="gameType" value="VIRTUAL_FARM"/>
+                    <input type="hidden" name="action" value="WATER"/>
+                    <button class="btn btn-primary" type="submit">Water crop</button>
+                </form>
+                <form th:if="${game.game().type() == 'VIRTUAL_FARM'}" method="post" th:action="@{/buyer/activities/{gameId}/play(gameId=${game.game().id()})}">
+                    <input type="hidden" name="gameType" value="VIRTUAL_FARM"/>
+                    <input type="hidden" name="action" value="HARVEST"/>
+                    <button class="btn btn-secondary" type="submit">Harvest reward</button>
+                </form>
+            </div>
+
+            <div th:if="${gameResult != null}" class="result">
+                <div>
+                    <strong th:text="${gameResult.win()} ? 'Result: WIN' : 'Result: MISS'">Result</strong>
+                    <p class="muted" th:text="${gameResult.message()}">You played the activity.</p>
+                </div>
+
+                <div class="hint-grid" th:if="${gameHint != null}">
+                    <div class="hint-item" th:if="${gameHint['amount'] != null}">
+                        <strong>Envelope amount</strong>
+                        <span th:text="${gameHint['amount']}">0.00</span>
+                    </div>
+                    <div class="hint-item" th:if="${gameHint['target_index'] != null}">
+                        <strong>Target slot</strong>
+                        <span th:text="${gameHint['target_index']}">0</span>
+                    </div>
+                    <div class="hint-item" th:if="${gameHint['total_slots'] != null}">
+                        <strong>Total slots</strong>
+                        <span th:text="${gameHint['total_slots']}">8</span>
+                    </div>
+                    <div class="hint-item" th:if="${gameHint['cardName'] != null}">
+                        <strong>Card</strong>
+                        <span th:text="${gameHint['cardName']}">Lucky Card</span>
+                    </div>
+                    <div class="hint-item" th:if="${gameHint['rarity'] != null}">
+                        <strong>Rarity</strong>
+                        <span th:text="${gameHint['rarity']}">RARE</span>
+                    </div>
+                    <div class="hint-item" th:if="${gameHint['uniqueCards'] != null}">
+                        <strong>Unique cards</strong>
+                        <span th:text="${gameHint['uniqueCards']} + '/' + ${gameHint['totalCards']}">1/5</span>
+                    </div>
+                    <div class="hint-item" th:if="${gameHint['stage'] != null}">
+                        <strong>Farm stage</strong>
+                        <span th:text="${gameHint['stage']} + '/' + ${gameHint['maxStage']}">1/4</span>
+                    </div>
+                    <div class="hint-item" th:if="${gameHint['progress'] != null}">
+                        <strong>Farm progress</strong>
+                        <span th:text="${gameHint['progress']} + '/' + ${gameHint['maxProgress']}">10/100</span>
+                    </div>
+                    <div class="hint-item" th:if="${gameHint['matured'] != null}">
+                        <strong>Matured</strong>
+                        <span th:text="${gameHint['matured']}">false</span>
+                    </div>
+                    <div class="hint-item" th:if="${gameHint['harvested'] != null}">
+                        <strong>Harvested</strong>
+                        <span th:text="${gameHint['harvested']}">false</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Prize pool</h3>
+            <div class="prize-list" th:if="${!game.prizes().isEmpty()}">
+                <div class="prize" th:each="prize : ${game.prizes()}">
+                    <strong th:text="${prize.name()}">Reward</strong>
+                    <small th:text="'Type: ' + ${prize.type()}">COUPON</small>
+                    <small th:text="'Value: ' + ${prize.value()}">10</small>
+                </div>
+            </div>
+            <p th:if="${game.prizes().isEmpty()}" class="muted">No prizes configured for this activity.</p>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+        <h3>My participation history</h3>
+        <div class="history" th:if="${!history.isEmpty()}">
+            <div class="history-item" th:each="entry : ${history}">
+                <strong th:text="${entry.result()}">WIN</strong>
+                <small th:text="${entry.participatedAt()}">2026-03-22</small>
+                <small th:if="${entry.prizeSnapshot() != null}" th:text="${entry.prizeSnapshot()}">Prize snapshot</small>
+                <small th:text="'Reward status: ' + ${entry.rewardStatus()}">PENDING</small>
+            </div>
+        </div>
+        <p th:if="${history.isEmpty()}" class="muted">No participation records yet.</p>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tempo-config
+  namespace: shop
+data:
+  tempo.yaml: |
+    stream_over_http_enabled: true
+
+    server:
+      http_listen_port: 3200
+      log_level: info
+
+    distributor:
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+
+    compactor:
+      compaction:
+        block_retention: 48h
+
+    metrics_generator:
+      registry:
+        external_labels:
+          source: tempo
+          cluster: shop-kind
+      storage:
+        path: /tmp/tempo/generator/wal
+        remote_write:
+          - url: http://prometheus.shop.svc.cluster.local:9090/api/v1/write
+            send_exemplars: true
+
+    storage:
+      trace:
+        backend: s3
+        wal:
+          path: /tmp/tempo/wal
+        s3:
+          bucket: tempo-traces
+          endpoint: garage.shop.svc.cluster.local:3900
+          access_key: garageshop
+          secret_key: garageshopsecret2026
+          insecure: true
+          forcepathstyle: true
+          region: garage
+
+    overrides:
+      defaults:
+        metrics_generator:
+          processors: [service-graphs, span-metrics]

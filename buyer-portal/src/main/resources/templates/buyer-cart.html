@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart - Shop Platform</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e}
+        .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+        .topbar h1{font-size:18px;color:#1a1a2e}
+        .nav-links{display:flex;gap:20px}.nav-links a{color:#374151;text-decoration:none;font-size:14px;font-weight:500;padding:4px 0;border-bottom:2px solid transparent}
+        .nav-links a:hover{color:#3b82f6;border-bottom-color:#3b82f6}
+        .cart-link{position:relative}.badge{position:absolute;top:-8px;right:-12px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px}
+        .user-info{display:flex;align-items:center;gap:16px;font-size:14px;color:#6b7280}
+        .user-info a{color:#3b82f6;text-decoration:none;font-weight:500}
+        .container{max-width:900px;margin:24px auto;padding:0 24px}
+        .card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+        .card h2{font-size:16px;color:#374151;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #f3f4f6}
+        table{width:100%;border-collapse:collapse;font-size:14px}
+        th{text-align:left;font-weight:600;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:.5px;padding:8px 12px;border-bottom:2px solid #e5e7eb}
+        td{padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#374151}
+        .qty-input{width:60px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;text-align:center;font-size:14px}
+        .btn-sm{padding:6px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+        .btn-primary{background:#3b82f6;color:#fff}.btn-primary:hover{background:#2563eb}
+        .btn-danger{background:#ef4444;color:#fff}.btn-danger:hover{background:#dc2626}
+        .btn-success{background:#10b981;color:#fff}.btn-success:hover{background:#059669}
+        .summary{display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px;padding-top:16px;border-top:2px solid #e5e7eb}
+        .summary .total{font-size:24px;font-weight:700;color:#1a1a2e}
+        .coupon-row{display:flex;gap:8px;align-items:center;margin-bottom:16px}
+        .coupon-row input,.coupon-row select{padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;width:200px;background:#fff}
+        .empty{text-align:center;padding:48px;color:#9ca3af}
+        .notice{margin-bottom:16px;padding:14px 16px;border-radius:10px;background:#eff6ff;color:#1d4ed8;font-size:14px;line-height:1.5}
+        .notice a{color:#2563eb;font-weight:700;text-decoration:none}
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/buyer-nav :: nav}"></div>
+<div class="container">
+    <div class="card">
+        <h2>Shopping Cart</h2>
+        <div th:if="${guestBuyer}" class="notice">
+            Your cart is being saved to a guest session. <a th:href="@{/buyer/login}">Sign in</a> to merge it into your buyer account and continue to checkout.
+        </div>
+        <div th:if="${cart.items().isEmpty()}" class="empty">
+            <p>Your cart is empty</p>
+            <a th:href="@{/buyer/home}" style="color:#3b82f6;margin-top:8px;display:inline-block">Browse Products</a>
+        </div>
+        <div th:if="${!cart.items().isEmpty()}">
+            <table>
+                <thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr></thead>
+                <tbody>
+                <tr th:each="item : ${cart.items()}">
+                    <td style="font-weight:600" th:text="${item.productName()}"></td>
+                    <td th:text="'$' + ${#numbers.formatDecimal(item.productPrice(), 1, 2)}"></td>
+                    <td>
+                        <form method="post" th:action="@{/buyer/cart/update}" style="display:flex;gap:4px;align-items:center">
+                            <input type="hidden" name="productId" th:value="${item.productId()}"/>
+                            <input type="number" name="quantity" th:value="${item.quantity()}" min="1" class="qty-input"/>
+                            <button type="submit" class="btn-sm btn-primary">Update</button>
+                        </form>
+                    </td>
+                    <td style="font-weight:600" th:text="'$' + ${#numbers.formatDecimal(item.productPrice() * item.quantity(), 1, 2)}"></td>
+                    <td>
+                        <form method="post" th:action="@{/buyer/cart/remove}">
+                            <input type="hidden" name="productId" th:value="${item.productId()}"/>
+                            <button type="submit" class="btn-sm btn-danger">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="summary">
+                <form th:if="${checkoutAllowed}" method="post" th:action="@{/buyer/checkout/confirm}" th:object="${checkoutForm}">
+                    <div class="coupon-row">
+                        <input type="text" th:field="*{couponCode}" placeholder="Coupon code (optional)"/>
+                    </div>
+                    <div th:if="${loyaltyAccount != null}" class="coupon-row" style="margin-top:8px;align-items:flex-start;flex-direction:column">
+                        <label style="font-size:13px;color:#6b7280">Use loyalty points (100 pts = $1, capped at 20% of subtotal)</label>
+                        <input type="number" th:field="*{pointsToUse}" min="0" step="100" placeholder="Available: 0"
+                               th:placeholder="'Available: ' + ${loyaltyAccount.balance()}"/>
+                    </div>
+                    <div class="coupon-row" style="margin-top:8px;align-items:flex-start;flex-direction:column">
+                        <label style="font-size:13px;color:#6b7280">Payment method</label>
+                        <select th:field="*{paymentMethod}">
+                            <option th:each="method : ${paymentMethods}"
+                                    th:value="${method.method()}"
+                                    th:text="${method.displayName() + ' (' + method.provider() + ')'}"></option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-sm btn-success" style="padding:10px 32px;font-size:14px">Checkout &rarr;</button>
+                </form>
+                <div th:if="${!checkoutAllowed}" style="font-size:14px;color:#4b5563;max-width:320px;line-height:1.5">
+                    Cart editing is available for guests, but checkout requires a signed-in buyer account.
+                    <a th:href="@{/buyer/login}" style="color:#2563eb;font-weight:700;text-decoration:none">Sign in to merge and checkout</a>
+                </div>
+                <div>
+                    <div style="font-size:13px;color:#6b7280">Subtotal</div>
+                    <div class="total" th:text="'$' + ${#numbers.formatDecimal(cart.subtotal(), 1, 2)}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

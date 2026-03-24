@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Detail - Shop Platform</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e}
+        .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+        .topbar h1{font-size:18px;color:#1a1a2e}
+        .nav-links{display:flex;gap:20px}.nav-links a{color:#374151;text-decoration:none;font-size:14px;font-weight:500;padding:4px 0;border-bottom:2px solid transparent}
+        .nav-links a:hover{color:#f59e0b;border-bottom-color:#f59e0b}
+        .user-info{display:flex;align-items:center;gap:16px;font-size:14px;color:#6b7280}
+        .user-info a{color:#f59e0b;text-decoration:none;font-weight:500}
+        .container{max-width:900px;margin:24px auto;padding:0 24px}
+        .back{color:#f59e0b;text-decoration:none;font-size:14px;display:inline-block;margin-bottom:16px}
+        .card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+        .card h2{font-size:16px;color:#374151;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #f3f4f6}
+        .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+        .meta-item{font-size:13px}.meta-item .label{color:#6b7280}.meta-item .value{font-weight:600;color:#1a1a2e}
+        table{width:100%;border-collapse:collapse;font-size:14px}
+        th{text-align:left;font-weight:600;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:.5px;padding:8px 12px;border-bottom:2px solid #e5e7eb}
+        td{padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#374151}
+        .status{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
+        .status-PAID{background:#dbeafe;color:#1d4ed8}.status-SHIPPED{background:#fef3c7;color:#b45309}
+        .status-DELIVERED{background:#d1fae5;color:#065f46}.status-CANCELLED{background:#fee2e2;color:#991b1b}
+        .totals{text-align:right;padding-top:12px;border-top:2px solid #e5e7eb}
+        .totals .line{display:flex;justify-content:flex-end;gap:24px;font-size:14px;padding:4px 0}
+        .totals .total{font-size:18px;font-weight:700}
+        .btn-sm{padding:8px 20px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin-top:16px}
+        .btn-primary{background:#f59e0b;color:#fff}.btn-primary:hover{background:#d97706}
+        .btn-success{background:#10b981;color:#fff}.btn-success:hover{background:#059669}
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/seller-nav :: nav}"></div>
+<div class="container">
+    <a th:href="@{/seller/orders}" class="back">&larr; Back to Orders</a>
+    <div class="card">
+        <h2>Order <span th:text="${#strings.abbreviate(order.id().toString(), 12)}"></span></h2>
+        <div class="meta-grid">
+            <div class="meta-item"><div class="label">Status</div><div class="value"><span class="status" th:classappend="'status-' + ${order.status()}" th:text="${order.status()}"></span></div></div>
+            <div class="meta-item"><div class="label">Buyer</div><div class="value" th:text="${order.buyerId()}"></div></div>
+            <div class="meta-item"><div class="label">Created</div><div class="value" th:text="${order.createdAt()}"></div></div>
+            <div class="meta-item" th:if="${order.couponCode() != null}"><div class="label">Coupon</div><div class="value" th:text="${order.couponCode()}"></div></div>
+        </div>
+        <table>
+            <thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Line Total</th></tr></thead>
+            <tbody>
+            <tr th:each="item : ${order.items()}">
+                <td style="font-weight:600" th:text="${item.productName()}"></td>
+                <td th:text="'$' + ${#numbers.formatDecimal(item.productPrice(), 1, 2)}"></td>
+                <td th:text="${item.quantity()}"></td>
+                <td th:text="'$' + ${#numbers.formatDecimal(item.lineTotal(), 1, 2)}"></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="totals">
+            <div class="line"><span>Subtotal:</span><span th:text="'$' + ${#numbers.formatDecimal(order.subtotal(), 1, 2)}"></span></div>
+            <div class="line" th:if="${order.discountAmount().doubleValue() > 0}"><span>Discount:</span><span th:text="'-$' + ${#numbers.formatDecimal(order.discountAmount(), 1, 2)}"></span></div>
+            <div class="line total"><span>Total:</span><span th:text="'$' + ${#numbers.formatDecimal(order.totalAmount(), 1, 2)}"></span></div>
+        </div>
+        <form th:if="${order.status() == 'PROCESSING'}" method="post" th:action="@{/seller/order/ship}">
+            <input type="hidden" name="orderId" th:value="${order.id()}"/>
+            <button type="submit" class="btn-sm btn-primary">Mark as Shipped</button>
+        </form>
+        <form th:if="${order.status() == 'SHIPPED'}" method="post" th:action="@{/seller/order/deliver}">
+            <input type="hidden" name="orderId" th:value="${order.id()}"/>
+            <button type="submit" class="btn-sm btn-success">Mark as Delivered</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

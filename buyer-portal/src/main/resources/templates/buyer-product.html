@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${product.name()} + ' - Shop Platform'">Product</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e}
+        .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+        .topbar h1{font-size:18px;color:#1a1a2e}
+        .nav-links{display:flex;gap:20px}
+        .nav-links a{color:#374151;text-decoration:none;font-size:14px;font-weight:500;padding:4px 0;border-bottom:2px solid transparent}
+        .nav-links a:hover{color:#3b82f6;border-bottom-color:#3b82f6}
+        .cart-link{position:relative}.badge{position:absolute;top:-8px;right:-12px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px}
+        .user-info{display:flex;align-items:center;gap:16px;font-size:14px;color:#6b7280}
+        .user-info a{color:#3b82f6;text-decoration:none;font-weight:500}
+        .container{max-width:900px;margin:24px auto;padding:0 24px}
+        .back{color:#3b82f6;text-decoration:none;font-size:14px;display:inline-block;margin-bottom:16px}
+        .detail{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;gap:32px;padding:32px}
+        .detail-img{width:360px;height:300px;background:#f3f4f6;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af;flex-shrink:0}
+        .detail-info{flex:1}
+        .detail-info h2{font-size:24px;margin-bottom:8px}
+        .detail-info .price{font-size:28px;font-weight:700;color:#3b82f6;margin:16px 0}
+        .detail-info .desc{color:#6b7280;line-height:1.6;margin-bottom:16px}
+        .detail-info .meta{font-size:13px;color:#9ca3af;margin-bottom:24px}
+        .tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#dbeafe;color:#1d4ed8;margin-bottom:8px}
+        .qty-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+        .qty-row label{font-size:14px;font-weight:500}
+        .qty-row input{width:80px;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;text-align:center}
+        .btn-lg{padding:12px 32px;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;background:#3b82f6;color:#fff}
+        .btn-lg:hover{background:#2563eb}
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/buyer-nav :: nav}"></div>
+<div class="container">
+    <a th:href="@{/buyer/home}" class="back">&larr; Back to Marketplace</a>
+    <div class="detail">
+        <div class="detail-img">
+            <span th:if="${product.imageUrl() == null}">No Image</span>
+            <img th:if="${product.imageUrl() != null}" th:src="${product.imageUrl()}" style="max-height:100%;max-width:100%"/>
+        </div>
+        <div class="detail-info">
+            <span th:if="${product.categoryName() != null}" class="tag" th:text="${product.categoryName()}"></span>
+            <h2 th:text="${product.name()}"></h2>
+            <div class="price" th:text="'$' + ${#numbers.formatDecimal(product.price(), 1, 2)}"></div>
+            <div class="desc" th:text="${product.description()}"></div>
+            <div class="meta">SKU: <span th:text="${product.sku()}"></span> &bull; Stock: <span th:text="${product.inventory()}"></span></div>
+            <form method="post" th:action="@{/buyer/cart/add}">
+                <input type="hidden" name="productId" th:value="${product.id()}"/>
+                <input type="hidden" name="productName" th:value="${product.name()}"/>
+                <input type="hidden" name="productPrice" th:value="${product.price()}"/>
+                <input type="hidden" name="sellerId" th:value="${product.sellerId()}"/>
+                <div class="qty-row">
+                    <label>Qty:</label>
+                    <input type="number" name="quantity" value="1" min="1" th:max="${product.inventory()}"/>
+                </div>
+                <button type="submit" class="btn-lg">Add to Cart</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activities - Shop Platform</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e}
+        .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+        .topbar h1{font-size:18px;color:#1a1a2e}
+        .nav-links{display:flex;gap:20px}.nav-links a{color:#374151;text-decoration:none;font-size:14px;font-weight:500;padding:4px 0;border-bottom:2px solid transparent}
+        .nav-links a:hover{color:#3b82f6;border-bottom-color:#3b82f6}
+        .cart-link{position:relative}.badge{position:absolute;top:-8px;right:-12px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px}
+        .user-info{display:flex;align-items:center;gap:16px;font-size:14px;color:#6b7280}
+        .user-info a{color:#3b82f6;text-decoration:none;font-weight:500}
+        .container{max-width:1200px;margin:24px auto;padding:0 24px}
+        .hero{background:linear-gradient(135deg,#1d4ed8,#7c3aed);color:#fff;border-radius:18px;padding:28px 32px;margin-bottom:24px}
+        .hero h2{font-size:30px;margin-bottom:10px}
+        .hero p{max-width:760px;line-height:1.6;opacity:.92}
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px}
+        .card{background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:20px;display:flex;flex-direction:column;gap:12px}
+        .tag{display:inline-block;padding:4px 10px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700}
+        .card h3{font-size:18px}
+        .meta{color:#6b7280;font-size:14px;line-height:1.5}
+        .actions{margin-top:auto}
+        .actions a{display:inline-block;padding:10px 16px;border-radius:8px;background:#2563eb;color:#fff;text-decoration:none;font-weight:700}
+        .empty{background:#fff;border-radius:14px;padding:40px;text-align:center;color:#9ca3af}
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/buyer-nav :: nav}"></div>
+<div class="container">
+    <div class="hero">
+        <h2>Activity Plaza</h2>
+        <p>Play the live games backed by `activity-service`: lucky draws, red envelopes, card collection, and the virtual farm. Guests can browse, signed-in buyers can participate and track their history.</p>
+    </div>
+
+    <div class="grid" th:if="${!games.isEmpty()}">
+        <div class="card" th:each="game : ${games}">
+            <span class="tag" th:text="${game.type()}">INSTANT_LOTTERY</span>
+            <h3 th:text="${game.name()}">Lucky Spin</h3>
+            <div class="meta">
+                <div th:text="'Status: ' + ${game.status()}">ACTIVE</div>
+                <div th:text="'Participants: ' + ${game.participantCount()}">0</div>
+                <div th:text="'Starts: ' + ${game.startAt()}">2026-03-22</div>
+                <div th:text="'Ends: ' + ${game.endAt()}">2026-03-23</div>
+            </div>
+            <div class="actions">
+                <a th:href="@{/buyer/activities/{gameId}(gameId=${game.id()})}">Open activity</a>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${games.isEmpty()}" class="empty">
+        No active activities are available right now.
+    </div>
+</div>
+</body>
+</html>

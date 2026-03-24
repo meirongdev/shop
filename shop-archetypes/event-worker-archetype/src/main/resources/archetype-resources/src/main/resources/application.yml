@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: ${artifactId}
+  mvc:
+    problemdetails:
+      enabled: true
+  datasource:
+    url: jdbc:mysql://localhost:3306/shop_worker?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: shop
+    password: shop-secret
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: ${artifactId}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+
+server:
+  port: 8080
+
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://otel-collector:4318/v1/traces
+
+
+
+shop:
+  security:
+    internal:
+      enabled: true
+      token: change-me

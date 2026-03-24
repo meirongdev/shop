@@ -1,0 +1,3 @@
+dev.meirong.shop.common.feature.FeatureToggleAutoConfiguration
+dev.meirong.shop.common.idempotency.IdempotencyAutoConfiguration
+dev.meirong.shop.common.resilience.ResilienceAutoConfiguration

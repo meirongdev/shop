@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invite Center - Shop Platform</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f8fafc;color:#111827}
+        .container{max-width:1040px;margin:24px auto;padding:0 24px}
+        .hero{background:#fff;border-radius:18px;padding:24px 28px;box-shadow:0 8px 24px rgba(15,23,42,.06);margin-bottom:20px}
+        .hero h2{font-size:28px;margin-bottom:10px}
+        .hero p{color:#6b7280;line-height:1.6;max-width:720px}
+        .share-box{margin-top:18px;display:grid;gap:12px}
+        .pill{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:14px;font-weight:700}
+        .link-box{padding:12px 14px;border-radius:12px;background:#f8fafc;border:1px solid #e5e7eb;word-break:break-all}
+        .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-bottom:20px}
+        .card{background:#fff;border-radius:16px;padding:22px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+        .metric{font-size:34px;font-weight:800;color:#2563eb}
+        .muted{font-size:13px;color:#6b7280;line-height:1.6}
+        table{width:100%;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+        th,td{padding:14px 16px;text-align:left;border-bottom:1px solid #f1f5f9}
+        th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;background:#f8fafc}
+        tr:last-child td{border-bottom:none}
+        .status{display:inline-block;padding:4px 10px;border-radius:999px;background:#eef2ff;color:#4338ca;font-size:12px;font-weight:700}
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/buyer-nav :: nav}"></div>
+<div class="container">
+    <section class="hero">
+        <h2>Invite friends, earn rewards</h2>
+        <p>
+            Every invited buyer who completes a first order helps you progress toward your monthly referral reward cap.
+        </p>
+        <div class="share-box">
+            <div class="pill" th:text="${inviteStats.inviteCode()}">INV-123</div>
+            <div class="link-box" th:text="${inviteStats.inviteLink()}">https://shop.example.com/register?invite=INV-123</div>
+        </div>
+    </section>
+
+    <div class="grid">
+        <div class="card">
+            <div class="metric" th:text="${inviteStats.totalInvited()}">0</div>
+            <div class="muted">Total invited buyers</div>
+        </div>
+        <div class="card">
+            <div class="metric" th:text="${inviteStats.totalRewarded()}">0</div>
+            <div class="muted">Rewards already issued</div>
+        </div>
+        <div class="card">
+            <div class="metric" th:text="${inviteStats.monthlyRewardCount()} + ' / ' + ${inviteStats.monthlyRewardLimit()}">0 / 10</div>
+            <div class="muted">Monthly rewarded referrals</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Invitee</th>
+            <th>Status</th>
+            <th>Registered at</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="record : ${inviteStats.records()}">
+            <td th:text="${record.inviteeNickname()}">A***</td>
+            <td><span class="status" th:text="${record.status()}">REGISTERED</span></td>
+            <td th:text="${record.registeredAt()}">2026-03-23T12:00:00Z</td>
+        </tr>
+        <tr th:if="${inviteStats.records().isEmpty()}">
+            <td colspan="3" class="muted">No invite records yet. Share your code to get started.</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

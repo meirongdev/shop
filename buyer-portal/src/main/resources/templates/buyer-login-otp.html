@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Login - Shop Platform</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f3f4f6;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+        .card{background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(15,23,42,.08);padding:36px;width:100%;max-width:460px}
+        h1{font-size:26px;color:#111827;margin-bottom:8px}
+        .subtitle{color:#6b7280;font-size:14px;line-height:1.6;margin-bottom:24px}
+        .section{padding:18px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:16px}
+        .section h2{font-size:16px;color:#111827;margin-bottom:12px}
+        .field{margin-bottom:14px}
+        label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+        input{width:100%;padding:11px 14px;border:1px solid #d1d5db;border-radius:10px;font-size:14px}
+        input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+        button{width:100%;padding:12px 14px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+        .muted{font-size:13px;color:#6b7280;line-height:1.5;margin-bottom:12px}
+        .message,.error{border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.5;margin-bottom:16px}
+        .message{background:#ecfdf5;color:#047857}
+        .error{background:#fef2f2;color:#b91c1c}
+        .links{display:flex;justify-content:space-between;gap:12px;margin-top:16px;font-size:14px}
+        .links a{color:#2563eb;text-decoration:none;font-weight:600}
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Login with SMS OTP</h1>
+    <p class="subtitle">Use your phone number to sign in quickly. New phone users will be provisioned as buyers automatically.</p>
+
+    <div class="message" th:if="${successMessage}" th:text="${successMessage}"></div>
+    <div class="error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <div class="section">
+        <h2>1. Send code</h2>
+        <p class="muted">Use E.164 format such as <code>+8613800138000</code>.</p>
+        <form method="post" th:action="@{/buyer/login/otp/send}" th:object="${otpPhoneForm}">
+            <div class="field">
+                <label for="phoneNumber">Phone number</label>
+                <input type="text" th:field="*{phoneNumber}" placeholder="+8613800138000" required/>
+            </div>
+            <div class="field">
+                <label for="locale">Locale</label>
+                <input type="text" th:field="*{locale}" placeholder="zh-CN" required/>
+            </div>
+            <button type="submit">Send OTP</button>
+        </form>
+        <p class="muted" th:if="${otpResponse}">
+            Code expires in <strong th:text="${otpResponse.expiresIn()}"></strong>s,
+            resend cooldown <strong th:text="${otpResponse.cooldownRemaining()}"></strong>s.
+        </p>
+    </div>
+
+    <div class="section">
+        <h2>2. Verify code</h2>
+        <form method="post" th:action="@{/buyer/login/otp/verify}" th:object="${otpVerifyForm}">
+            <div class="field">
+                <label for="phoneNumber">Phone number</label>
+                <input type="text" th:field="*{phoneNumber}" placeholder="+8613800138000" required/>
+            </div>
+            <div class="field">
+                <label for="otp">OTP code</label>
+                <input type="text" th:field="*{otp}" placeholder="123456" minlength="6" maxlength="6" required/>
+            </div>
+            <button type="submit">Verify and sign in</button>
+        </form>
+    </div>
+
+    <div class="links">
+        <a th:href="@{/buyer/login}">Back to password login</a>
+        <a th:href="@{/buyer/register}">Create account</a>
+    </div>
+</div>
+</body>
+</html>

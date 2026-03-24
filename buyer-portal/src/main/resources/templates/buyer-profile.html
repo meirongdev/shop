@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Shop Platform</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e}
+        .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+        .topbar h1{font-size:18px;color:#1a1a2e}
+        .nav-links{display:flex;gap:20px}.nav-links a{color:#374151;text-decoration:none;font-size:14px;font-weight:500;padding:4px 0;border-bottom:2px solid transparent}
+        .nav-links a:hover{color:#3b82f6;border-bottom-color:#3b82f6}
+        .cart-link{position:relative}.badge{position:absolute;top:-8px;right:-12px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px}
+        .user-info{display:flex;align-items:center;gap:16px;font-size:14px;color:#6b7280}
+        .user-info a{color:#3b82f6;text-decoration:none;font-weight:500}
+        .container{max-width:600px;margin:24px auto;padding:0 24px}
+        .card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:24px}
+        .card h2{font-size:16px;color:#374151;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #f3f4f6}
+        .field{margin-bottom:14px}
+        .field label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:4px}
+        .field input{width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;outline:none}
+        .field input:focus{border-color:#3b82f6}
+        button{padding:10px 24px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;background:#3b82f6;color:#fff}
+        button:hover{background:#2563eb}
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/buyer-nav :: nav}"></div>
+<div class="container">
+    <div class="card">
+        <h2>Edit Profile</h2>
+        <form method="post" th:action="@{/buyer/profile}" th:object="${profileForm}">
+            <div class="field"><label>Display Name</label><input type="text" th:field="*{displayName}"/></div>
+            <div class="field"><label>Email</label><input type="email" th:field="*{email}"/></div>
+            <div class="field"><label>Tier</label><input type="text" th:field="*{tier}" readonly style="background:#f9fafb;cursor:not-allowed"/></div>
+            <button type="submit">Save Profile</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

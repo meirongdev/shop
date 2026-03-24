@@ -1,0 +1,149 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alert-rules
+  namespace: shop
+data:
+  shop-alerts.yaml: |
+    groups:
+      # ──────────────── P1: Critical — page immediately ────────────────
+      - name: shop.p1.alerts
+        rules:
+          - alert: ServiceDown
+            expr: up{job="shop-apps"} == 0
+            for: 1m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "{{ $labels.instance }} is DOWN"
+              description: "Service {{ $labels.instance }} has been unreachable for > 1 minute."
+
+          - alert: HighHttpErrorRate
+            expr: |
+              sum by (instance) (
+                rate(http_server_requests_seconds_count{status=~"5.."}[5m])
+              )
+              /
+              sum by (instance) (
+                rate(http_server_requests_seconds_count[5m])
+              ) > 0.05
+            for: 2m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "High 5xx rate on {{ $labels.instance }}"
+              description: "5xx error rate is {{ $value | humanizePercentage }} (> 5%) for 2 min."
+
+          - alert: CheckoutServiceDown
+            expr: |
+              absent(up{instance="buyer-bff:8081"}) == 1
+              or up{instance="buyer-bff:8081"} == 0
+            for: 1m
+            labels:
+              severity: critical
+              team: backend
+            annotations:
+              summary: "Buyer BFF (checkout gateway) is DOWN"
+              description: "buyers cannot place orders."
+
+      # ──────────────── P2: Warning — notify within 30 min ─────────────
+      - name: shop.p2.alerts
+        rules:
+          - alert: SlowCheckout
+            expr: |
+              histogram_quantile(0.99,
+                rate(shop_checkout_duration_seconds_bucket[5m])
+              ) > 5
+            for: 5m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "P99 checkout latency > 5 s"
+              description: "P99 checkout time is {{ $value | humanizeDuration }}."
+
+          - alert: HighP99ResponseTime
+            expr: |
+              histogram_quantile(0.99,
+                sum by (instance, le) (
+                  rate(http_server_requests_seconds_bucket[5m])
+                )
+              ) > 2
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "P99 latency > 2s on {{ $labels.instance }}"
+              description: "P99 response time is {{ $value | humanizeDuration }}."
+
+          - alert: KafkaConsumerLag
+            expr: kafka_consumergroup_lag > 1000
+            for: 5m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "Kafka consumer lag > 1000 ({{ $labels.consumergroup }})"
+              description: "Group {{ $labels.consumergroup }} on {{ $labels.topic }} has lag {{ $value }}."
+
+          - alert: KafkaConsumerLagCritical
+            expr: kafka_consumergroup_lag > 10000
+            for: 2m
+            labels:
+              severity: critical
+              team: backend
+            annotations:
+              summary: "Kafka consumer lag CRITICAL > 10000 ({{ $labels.consumergroup }})"
+              description: "Group {{ $labels.consumergroup }} on {{ $labels.topic }} has lag {{ $value }}. Possible consumer failure."
+
+          - alert: CircuitBreakerOpen
+            expr: resilience4j_circuitbreaker_state{state="open"} == 1
+            for: 5m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "CircuitBreaker {{ $labels.name }} is OPEN"
+              description: "CircuitBreaker {{ $labels.name }} on {{ $labels.application }} has been open for > 5 minutes."
+
+          - alert: HighJvmHeapUsage
+            expr: |
+              sum by (instance) (jvm_memory_used_bytes{area="heap"})
+              /
+              sum by (instance) (jvm_memory_max_bytes{area="heap"}) > 0.85
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High JVM heap usage on {{ $labels.instance }}"
+              description: "JVM heap usage is {{ $value | humanizePercentage }} (> 85%)."
+
+          - alert: OrderFailureRateHigh
+            expr: |
+              rate(shop_order_failed_total[5m])
+              /
+              (rate(shop_order_created_total[5m]) + rate(shop_order_failed_total[5m])) > 0.1
+            for: 5m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "Order failure rate > 10%"
+              description: "{{ $value | humanizePercentage }} of order attempts are failing."
+
+          - alert: PaymentFailureRateHigh
+            expr: |
+              rate(shop_payment_failed_total[5m])
+              /
+              (rate(shop_payment_success_total[5m]) + rate(shop_payment_failed_total[5m])) > 0.05
+            for: 5m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "Payment failure rate > 5%"
+              description: "{{ $value | humanizePercentage }} of payment attempts are failing."

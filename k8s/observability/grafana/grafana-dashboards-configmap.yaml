@@ -1,0 +1,164 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: shop
+data:
+  service-health.json: |
+    {
+      "title": "Shop Platform — Service Health",
+      "uid": "shop-service-health",
+      "tags": ["shop", "sre"],
+      "schemaVersion": 39,
+      "refresh": "30s",
+      "panels": [
+        {
+          "id": 1,
+          "title": "HTTP 5xx Error Rate",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "targets": [{
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "expr": "sum by (job) (rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) / sum by (job) (rate(http_server_requests_seconds_count[5m]))",
+            "legendFormat": "{{job}}"
+          }],
+          "fieldConfig": {"defaults": {"unit": "percentunit"}}
+        },
+        {
+          "id": 2,
+          "title": "P99 HTTP Response Time",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "targets": [{
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "expr": "histogram_quantile(0.99, sum by (job, le) (rate(http_server_requests_seconds_bucket[5m])))",
+            "legendFormat": "{{job}}"
+          }],
+          "fieldConfig": {"defaults": {"unit": "s"}}
+        },
+        {
+          "id": 3,
+          "title": "JVM Heap Usage",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "targets": [{
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "expr": "sum by (job) (jvm_memory_used_bytes{area=\"heap\"}) / sum by (job) (jvm_memory_max_bytes{area=\"heap\"})",
+            "legendFormat": "{{job}}"
+          }],
+          "fieldConfig": {"defaults": {"unit": "percentunit"}}
+        },
+        {
+          "id": 4,
+          "title": "Kafka Consumer Lag",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "targets": [{
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "expr": "kafka_consumergroup_lag",
+            "legendFormat": "{{consumergroup}} / {{topic}}"
+          }],
+          "fieldConfig": {"defaults": {"unit": "short"}}
+        },
+        {
+          "id": 5,
+          "title": "CircuitBreaker State",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 24, "x": 0, "y": 16},
+          "targets": [{
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "expr": "resilience4j_circuitbreaker_state",
+            "legendFormat": "{{name}} ({{state}})"
+          }]
+        }
+      ]
+    }
+  business-overview.json: |
+    {
+      "title": "Shop Platform — Business Overview",
+      "uid": "shop-business",
+      "tags": ["shop", "business"],
+      "schemaVersion": 39,
+      "refresh": "1m",
+      "panels": [
+        {
+          "id": 1,
+          "title": "Orders Created / min",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
+          "targets": [{
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "expr": "rate(shop_order_created_total[1m]) * 60",
+            "legendFormat": "orders/min"
+          }]
+        },
+        {
+          "id": 2,
+          "title": "Payment Success Rate",
+          "type": "gauge",
+          "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+          "targets": [{
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "expr": "rate(shop_payment_success_total[5m]) / (rate(shop_payment_success_total[5m]) + rate(shop_payment_failed_total[5m]))",
+            "legendFormat": "success rate"
+          }],
+          "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1}}
+        },
+        {
+          "id": 3,
+          "title": "Checkout P99 Latency",
+          "type": "stat",
+          "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+          "targets": [{
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "expr": "histogram_quantile(0.99, rate(shop_checkout_duration_seconds_bucket[5m]))",
+            "legendFormat": "P99"
+          }],
+          "fieldConfig": {"defaults": {"unit": "s"}}
+        },
+        {
+          "id": 4,
+          "title": "Coupons Redeemed",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "targets": [{
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "expr": "rate(shop_coupon_redeemed_total[5m])",
+            "legendFormat": "redeemed/s"
+          }]
+        },
+        {
+          "id": 5,
+          "title": "Loyalty Points Earned",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "targets": [{
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "expr": "rate(shop_loyalty_points_earned_total[5m])",
+            "legendFormat": "points/s"
+          }]
+        },
+        {
+          "id": 6,
+          "title": "Activity Participations",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+          "targets": [{
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "expr": "rate(shop_activity_participations_total[5m])",
+            "legendFormat": "{{game_type}}"
+          }]
+        },
+        {
+          "id": 7,
+          "title": "Wallet Deposits",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+          "targets": [{
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "expr": "rate(shop_wallet_deposit_total[5m])",
+            "legendFormat": "deposits/s"
+          }]
+        }
+      ]
+    }

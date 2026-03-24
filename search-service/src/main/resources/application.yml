@@ -1,0 +1,83 @@
+spring:
+  application:
+    name: search-service
+  mvc:
+    problemdetails:
+      enabled: true
+  config:
+    import: optional:file:${SHOP_FEATURE_TOGGLE_CONFIG_PATH:/workspace/config/feature-toggles/feature-toggles.yaml}
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: search-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,refresh
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState
+        liveness:
+          include: livenessState
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://otel-collector:4318/v1/traces}
+logging:
+  structured:
+    format:
+      console: logstash
+shop:
+  search:
+    meilisearch:
+      url: ${MEILISEARCH_URL:http://localhost:7700}
+      admin-key: ${MEILISEARCH_ADMIN_KEY:${MEILI_MASTER_KEY:}}
+      search-key: ${MEILISEARCH_SEARCH_KEY:${MEILI_MASTER_KEY:}}
+    analytics:
+      retention: ${SEARCH_ANALYTICS_RETENTION:P7D}
+      max-tracked-queries: ${SEARCH_ANALYTICS_MAX_TRACKED_QUERIES:5000}
+      minimum-trending-searches: ${SEARCH_ANALYTICS_MIN_TRENDING_SEARCHES:2}
+    product-topic: ${MARKETPLACE_PRODUCT_TOPIC:marketplace.product.events.v1}
+    marketplace-service-url: ${MARKETPLACE_SERVICE_URL:http://marketplace-service:8080}
+    internal-token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
+  security:
+    internal:
+      enabled: true
+      token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
+      excluded-path-prefixes:
+        - /actuator
+        - /v3/api-docs
+        - /swagger-ui
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}
+    path: /swagger-ui.html
+    persist-authorization: true
+  paths-to-exclude:
+    - /actuator/**
+    - /internal/**

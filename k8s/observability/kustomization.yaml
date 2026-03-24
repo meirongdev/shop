@@ -13,12 +13,11 @@ resources:
   # Log aggregation
   - loki/loki-configmap.yaml
   - loki/loki-deployment.yaml
-  - promtail/promtail-rbac.yaml
-  - promtail/promtail-configmap.yaml
-  - promtail/promtail-daemonset.yaml
+  - otel-collector/otel-collector-rbac.yaml
   # Distributed tracing
   - tempo/tempo-configmap.yaml
   - tempo/tempo-deployment.yaml
+  - pyroscope/pyroscope-deployment.yaml
   # Visualisation
   - grafana/grafana-datasources-configmap.yaml
   - grafana/grafana-dashboard-provider-configmap.yaml
@@ -28,3 +27,4 @@ resources:
   - kafka-exporter/kafka-exporter-deployment.yaml
   # Alert rules (standalone copy — also embedded in infra/base.yaml)
   - prometheus/alert-rules.yaml
+  - prometheus/slo-rules.yaml

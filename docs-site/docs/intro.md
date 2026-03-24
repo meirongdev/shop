@@ -6,40 +6,42 @@ title: 项目概览
 
 # Shop Platform
 
-基于 **Java 25 + Spring Boot 3.5 + Spring Cloud 2025.0** 的云原生微服务电商技术验证平台。
+基于 **Java 25 + Spring Boot 3.5 + Spring Cloud 2025.0** 的云原生微服务电商技术验证平台，用来验证一套可以持续扩展的电商工程底座：**Gateway → Thin BFF → Domain Service → Event / Worker → Portal**。
 
-## 这是什么
+## 这套项目重点验证什么
 
-Shop Platform 聚焦验证 **Gateway → Thin BFF → Domain Service** 三层模型在真实交易链路中的工程可行性，覆盖浏览、搜索、加购、结账、支付、通知、积分、活动与开放能力。
+- 交易主链路如何保持清晰的服务边界，而不是把所有逻辑都塞进单体应用。
+- BFF 如何只做聚合编排，不持有领域事实。
+- Outbox + Kafka 如何替代跨服务分布式事务。
+- Redis / Redisson / Lua 如何解决限流、库存、批处理抢占等共享协调问题。
+- 指标、链路、日志、profile 如何统一进一套可观测栈，而不是事后补洞。
 
-Redis / Redisson 在本项目中承担共享协调平面角色：既服务于限流、OTP、guest cart、活动防作弊和 Bloom Filter 幂等，也用于库存写入、优惠券发放和批处理调度的多实例协调。
+## 分层全景
 
-## 服务全景
+| 层 | 代表服务 | 主技术 | 解决的问题 |
+|---|---|---|---|
+| Edge | `api-gateway` | Spring Cloud Gateway MVC、Spring Security、Redis Lua | 统一鉴权、限流、灰度、追踪关联 |
+| Identity | `auth-server` | Spring Security、JWT、JPA、Redis | 集中处理登录、社交登录、OTP、guest token |
+| BFF | `buyer-bff`、`seller-bff` | RestClient、Virtual Threads、局部 Resilience4j | 面向端侧聚合下游接口，但不持有领域事实 |
+| Domain | `profile`、`marketplace`、`order`、`wallet`、`promotion`、`loyalty`、`activity`、`subscription` | Spring MVC、JPA、Flyway、MySQL、Kafka、Redis/Redisson | 各自独立拥有业务事实、状态机、规则与调度 |
+| Worker / Integration | `notification`、`webhook`、`search` | Kafka、Thymeleaf、Meilisearch、重试任务 | 异步通知、对外回调、搜索投影、开放能力 |
+| Portal | `buyer-portal`、`seller-portal` | Kotlin、Thymeleaf | 用 SSR 快速交付买家与卖家门户 |
 
-| 服务 | 端口 | 职责 |
-|---|---:|---|
-| api-gateway | 8080 | 统一入口、JWT 校验、Trusted Headers、限流与灰度 |
-| buyer-bff | 8081 | 买家聚合：商品、购物车、结账、订单、积分 Hub |
-| seller-bff | 8082 | 卖家聚合：商品、订单履约、促销、店铺管理 |
-| profile-service | 8083 | 买家/卖家档案与店铺资料 |
-| marketplace-service | 8084 | 商品目录、SKU、评价、库存 |
-| order-service | 8085 | 订单状态机、结账、游客直购、订单追踪 |
-| wallet-service | 8086 | 余额账户、充值/提现、支付意图 |
-| promotion-service | 8087 | 促销与优惠券引擎（legacy + template/instance 双轨） |
-| loyalty-service | 8088 | 积分账户、签到、兑换、新手任务 |
-| activity-service | 8089 | 互动活动（砸金蛋、红包、集卡、农场） |
-| auth-server | 8090 | 登录、JWT 签发、Google 社交登录、guest token |
-| search-service | 8091 | Meilisearch 搜索、联想词、热词、开关控制 |
-| notification-service | 8092 | Kafka 事件通知、邮件模板、幂等重试 |
-| webhook-service | 8093 | 卖家 Webhook 订阅与投递 |
-| subscription-service | 8094 | 订阅计划与订阅生命周期 |
-| buyer-portal | 8100 | 买家 SSR 门户（Kotlin + Thymeleaf） |
-| seller-portal | 8101 | 卖家 SSR 门户（Kotlin + Thymeleaf） |
+## 技术如何解决架构问题
 
-## 推荐阅读路径
+| 问题 | 当前技术组合 | 结果 |
+|---|---|---|
+| 外部流量如何统一鉴权和限流 | Gateway + JWT + Trusted Headers + Redis Lua | 下游服务不必重复做 northbound 安全治理 |
+| 多下游接口聚合如何既可读又扛并发 | RestClient + Virtual Threads + timeout | 保持同步代码模型，同时减少线程阻塞成本 |
+| 跨服务事务如何保证可恢复 | Outbox Pattern + Kafka + consumer 幂等 | 业务写库和事件发布解耦，但仍可重放、可补偿 |
+| 高并发库存与批处理如何多实例协调 | Redis / Redisson / RLock / Lua | 避免超卖、重复续费、重复批处理 |
+| 促销、活动、通知这类规则如何扩展 | Strategy / Plugin / Channel 接口 | 新玩法、新规则、新渠道以新实现接入，不重写核心应用服务 |
+| 如何统一排障视角 | Prometheus + OTLP Collector + Tempo + Loki + Grafana + Pyroscope | 能从慢请求直接关联到 metrics、trace、log、profile |
 
-- 新同学快速上手：[`快速开始`](/getting-started/quick-start)
-- 本地完整环境：[`本地部署`](/getting-started/local-deployment)
-- 核心设计理念：[`架构设计`](/architecture)
-- 服务职责分组：[`服务模块`](/services/core)
-- 进度与优先级：[`Roadmap`](/roadmap)
+## 读文档的推荐路径
+
+- 先看 [`架构设计`](/architecture) 了解边界和同步/异步分层。
+- 再看 [`入口与聚合服务`](/services/edge-and-entry) 与 [`核心交易服务`](/services/core) 了解主链路。
+- 如果你要做二次开发，直接看 [`扩展能力与二次开发`](/services/extensibility)。
+- 想理解为什么要这样选型，看 [`技术栈`](/tech-stack) 和 [`技术栈最佳实践`](/tech-stack/best-practices)。
+- 想排障或补监控，看 [`可观测性`](/engineering/observability)。

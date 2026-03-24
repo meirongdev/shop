@@ -39,7 +39,7 @@ public record GatewayProperties(String jwtSecret,
             allowedHeaders = allowedHeaders == null || allowedHeaders.isEmpty()
                     ? List.of("Authorization", "Content-Type", "X-Request-Id", "X-Device-Fingerprint")
                     : List.copyOf(allowedHeaders);
-            exposedHeaders = exposedHeaders == null ? List.of("X-Request-Id") : List.copyOf(exposedHeaders);
+            exposedHeaders = exposedHeaders == null ? List.of("X-Request-Id", "X-Trace-Id") : List.copyOf(exposedHeaders);
             maxAgeSeconds = maxAgeSeconds <= 0 ? 3600 : maxAgeSeconds;
         }
     }

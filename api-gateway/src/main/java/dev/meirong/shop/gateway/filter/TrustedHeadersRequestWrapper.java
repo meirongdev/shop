@@ -15,6 +15,7 @@ public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
 
     private static final String REQUEST_ID = "X-Request-Id";
     private static final String PLAYER_ID = "X-Player-Id";
+    private static final String USER_ID = "X-User-Id";
     private static final String USERNAME = "X-Username";
     private static final String ROLES = "X-Roles";
     private static final String PORTAL = "X-Portal";
@@ -22,6 +23,7 @@ public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
 
     private static final Set<String> STRIPPED_HEADERS = Set.of(
             PLAYER_ID.toLowerCase(Locale.ROOT),
+            USER_ID.toLowerCase(Locale.ROOT),
             USERNAME.toLowerCase(Locale.ROOT),
             ROLES.toLowerCase(Locale.ROOT),
             PORTAL.toLowerCase(Locale.ROOT),
@@ -41,6 +43,7 @@ public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
         Map<String, String> headers = new LinkedHashMap<>();
         putIfPresent(headers, REQUEST_ID, requestId);
         putIfPresent(headers, PLAYER_ID, playerId);
+        putIfPresent(headers, USER_ID, playerId);
         putIfPresent(headers, USERNAME, username);
         putIfPresent(headers, ROLES, roles);
         putIfPresent(headers, PORTAL, portal);

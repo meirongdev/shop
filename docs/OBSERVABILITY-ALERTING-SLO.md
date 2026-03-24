@@ -1,6 +1,6 @@
 # Shop Platform — Observability, Alerting, and SLO Baseline
 
-> 版本：1.1 | 更新时间：2026-03-23
+> 版本：1.2 | 更新时间：2026-03-24
 
 ---
 
@@ -12,6 +12,7 @@
 - 核心 SLI / SLO 草案
 - 告警分级
 - Runbook 最小模板
+- traces / logs / metrics / profiles 的默认接入方式
 
 当前仓库的运行基线已经统一为：
 
@@ -20,73 +21,58 @@
 - Prometheus 暴露：`/actuator/prometheus`
 - 健康检查：`/actuator/health/readiness`、`/actuator/health/liveness`
 - Trace 导出：OTLP HTTP → `http://otel-collector:4318/v1/traces`
+- Log 导出：OTLP HTTP → `http://otel-collector:4318/v1/logs`
+- Profiling：`shop.profiling.*` → Pyroscope
 
-当前本地 / Kind 默认清单已经落地：
+当前 K8s / Kind 默认清单已经落地：
 
-- Prometheus（`k8s/infra/base.yaml`，scrape interval 15s）
-- OpenTelemetry Collector（OTLP HTTP/gRPC 接收，**当前仅 debug exporter，trace 不持久化**）
-- 结构化日志（Logstash JSON 格式，各服务统一）
+- Prometheus（启用 exemplar storage）
+- OpenTelemetry Collector（接收 OTLP traces / logs，补充 `k8sattributes`，过滤健康噪音）
+- Tempo（trace 存储，Garage S3 backend）
+- Loki（日志聚合，OTLP 原生写入 + structured metadata）
+- Grafana（Prometheus + Loki + Tempo + Pyroscope 数据源）
+- Pyroscope（持续性能分析）
+- Kafka Exporter（consumer lag 指标）
+- Prometheus Alert Rules 与 SLO Rules
 
-当前默认清单尚未统一部署：
+本地 `docker-compose.yml` 侧重点是让所有应用都具备统一的 OTLP 与 Prometheus 入口；K8s 清单则提供更完整的多信号观测平台。
 
-- **Garage S3** — Kind 内 S3 兼容对象存储，作为 Loki/Tempo 存储后端和文件存储基础
-- **Tempo** — 分布式 Trace 存储与查询（接 Garage S3 backend）
-- **Loki** — 日志聚合与查询（接 Garage S3 backend）
-- **Grafana** — 统一可视化（接 Prometheus + Loki + Tempo）
-- **Prometheus Alert Rules** — P1/P2 告警规则（本文第五节已定义，尚未写入 `prometheus.yml`）
-- **Kafka consumer lag** — `kafka_consumergroup_lag` 指标未暴露
-
-> **当前痛点**：OTEL Collector 的 trace 数据只输出到 debug 日志，链路追踪无法持久化查询。建议优先部署 Garage S3 → Tempo，再接 Grafana，完成三支柱（指标/日志/链路）闭环。
-
-因此本文档中的 SLO / 告警 / runbook 基线是**当前可观测采集能力之上的平台标准**，不代表所有可视化组件已经在本仓库中默认交付。
+> **当前重点**已经从“把日志/trace 采进来”转为“把告警、保留策略、容量和 runbook 治理做得更稳”。
 
 ---
 
-## 零、部署路线（待实施）
+## 零、当前部署拓扑
 
-### 0.1 目标架构
+### 0.1 当前链路
 
 ```
 应用服务 (所有服务)
   ├─ /actuator/prometheus  →  Prometheus  →  Grafana
   ├─ OTLP traces           →  OTEL Collector  →  Tempo  →  Grafana
-  └─ 结构化日志 (stdout)   →  Loki (Promtail)  →  Grafana
+  ├─ OTLP logs             →  OTEL Collector  →  Loki   →  Grafana
+  └─ shop.profiling.*      →  Pyroscope       →  Grafana
 
 Tempo、Loki 数据持久化
-  └─  Garage S3 (Kind 内)
-      ├─ bucket: traces
-      ├─ bucket: logs
-      ├─ bucket: product-images      (商品图片)
-      └─ bucket: datalake            (Kafka → S3 行为数据归档)
+  └─ Garage S3
+      ├─ bucket: tempo-traces
+      ├─ bucket: loki-chunks
+      └─ bucket: loki-ruler
 ```
 
-### 0.2 部署顺序
+### 0.2 当前实现要点
 
-1. **Garage S3** — 加入 `k8s/infra/base.yaml`，暴露 S3 endpoint（`http://garage:3900`）
-2. **Tempo** — StatefulSet，S3 backend 指向 Garage `traces` bucket
-3. **Loki** — StatefulSet，S3 backend 指向 Garage `logs` bucket；Promtail DaemonSet 采集 stdout
-4. **OTEL Collector** — 更新 `otel-collector-config` ConfigMap，追加 `otlp/tempo` exporter
-5. **Grafana** — Deployment，数据源：Prometheus + Loki + Tempo
-6. **Alert Rules** — 在 `prometheus-config` ConfigMap 中追加 `alerting_rules.yml`
+1. **应用侧统一配置**：所有 Java/Kotlin 运行模块都已拆分 traces / logs OTLP endpoint，并通过 logback appender 输出 OTLP 日志。
+2. **关联字段统一**：Gateway 响应默认返回 `X-Request-Id` 与 `X-Trace-Id`；日志、trace、指标优先通过低基数标签 + 高价值业务字段关联排障。
+3. **日志采集不再依赖 Promtail**：日志通过 OTLP 直接进 Collector，再写 Loki，减少 sidecar / daemonset 级复杂度。
+4. **Prometheus 支持 exemplars**：可把 metrics 面板与 trace 直接串起来。
+5. **Grafana 已预置 datasource / dashboard**：Prometheus、Loki、Tempo、Pyroscope 已联通，告警规则和 SLO 规则也在清单中。
 
-### 0.3 Garage S3 关键配置（参考）
+### 0.3 仍需继续演进
 
-```yaml
-# Garage 配置要点（garage.toml）
-replication_mode = "none"   # Kind 单节点开发模式
-db_engine = "lmdb"
-metadata_dir = "/var/lib/garage/meta"
-data_dir = "/var/lib/garage/data"
-
-[s3_api]
-s3_region = "garage"
-api_bind_addr = "0.0.0.0:3900"
-
-[admin]
-api_bind_addr = "0.0.0.0:3903"
-```
-
----
+- Alertmanager 接入与值班通知闭环
+- 多环境保留周期、存储成本与容量治理
+- 更多 Kafka lag / JVM / virtual thread / business dashboard 的精细化面板
+- 生产级高可用部署拓扑与灾备策略
 
 ---
 
@@ -102,12 +88,20 @@ api_bind_addr = "0.0.0.0:3903"
 
 - 所有服务统一接入 Micrometer Tracing + OTLP 导出。
 - Trace ID 必须贯穿 Gateway → BFF → Domain / Worker。
-- 所有核心链路异常日志必须带 Trace ID 或 Request ID。
+- Gateway 对外响应统一返回 `X-Trace-Id` 与 `X-Request-Id`，方便客户端和运维人员拿着一次请求去 Grafana / Loki / Tempo 里串联排障。
+- 核心链路建议继续透传低基数 baggage / context 字段，例如 `x-user-id`、`x-order-id`。
 
 ### 2.3 Logging
 
-- 统一使用结构化日志（Logstash 风格）。
-- 生产问题定位优先通过：`requestId / traceId / playerId / orderId / subscriptionId` 等业务标识串联。
+- 所有 Java/Kotlin 服务统一使用结构化 JSON 控制台日志，并通过 OpenTelemetry logback appender 发送 OTLP logs。
+- Collector 负责把日志写入 Loki，并限制只把低基数 resource attributes 提升为 label。
+- 生产问题定位优先通过：`requestId / traceId / playerId / userId / orderId / subscriptionId` 等业务标识串联。
+
+### 2.4 Profiling 与跨信号关联
+
+- `shop.profiling.enabled=true` 时，应用会把 profile 发送到 Pyroscope。
+- Grafana 中已打通 trace ↔ log ↔ profile 的基础关联关系，可从一次慢请求继续下钻到日志与 profile。
+- 只有对排障和容量判断有价值的字段才应该进入 profile / log / trace 上下文，避免高基数污染指标面。
 
 ---
 

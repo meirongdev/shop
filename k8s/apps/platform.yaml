@@ -19,7 +19,10 @@ metadata:
   name: shop-shared-config
   namespace: shop
 data:
-  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
+  OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://otel-collector:4318/v1/logs
+  PYROSCOPE_ENABLED: "true"
+  PYROSCOPE_SERVER_ADDRESS: http://pyroscope.shop.svc.cluster.local:4040
   KAFKA_BOOTSTRAP_SERVERS: kafka:9092
   MEILISEARCH_URL: http://meilisearch:7700
   MARKETPLACE_SERVICE_URL: http://marketplace-service:8080

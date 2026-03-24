@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-slo-rules
+  namespace: shop
+data:
+  slo-rules.yaml: |
+    groups:
+      - name: shop.slo.recording
+        interval: 30s
+        rules:
+          - record: shop:checkout_errors:ratio_rate5m
+            expr: |
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create",status=~"5.."}[5m]))
+              /
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create"}[5m]))
+
+          - record: shop:checkout_errors:ratio_rate30m
+            expr: |
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create",status=~"5.."}[30m]))
+              /
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create"}[30m]))
+
+          - record: shop:checkout_errors:ratio_rate1h
+            expr: |
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create",status=~"5.."}[1h]))
+              /
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create"}[1h]))
+
+          - record: shop:checkout_errors:ratio_rate6h
+            expr: |
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create",status=~"5.."}[6h]))
+              /
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create"}[6h]))
+
+      - name: shop.slo.alerts
+        rules:
+          - alert: CheckoutSLOFastBurn
+            expr: |
+              shop:checkout_errors:ratio_rate5m > (14.4 * 0.001)
+              and
+              shop:checkout_errors:ratio_rate30m > (14.4 * 0.001)
+            for: 2m
+            labels:
+              severity: critical
+              slo: checkout-availability
+            annotations:
+              summary: "Checkout SLO fast burn — error budget depleting rapidly"
+              description: "5m checkout error rate {{ $value | humanizePercentage }} exceeds 14.4x budget (SLO 99.9%)"
+
+          - alert: CheckoutSLOSlowBurn
+            expr: |
+              shop:checkout_errors:ratio_rate30m > (6 * 0.001)
+              and
+              shop:checkout_errors:ratio_rate6h > (6 * 0.001)
+            for: 15m
+            labels:
+              severity: warning
+              slo: checkout-availability
+            annotations:
+              summary: "Checkout SLO slow burn — error budget steadily depleting"
+              description: "30m checkout error rate {{ $value | humanizePercentage }} exceeds 6x budget (SLO 99.9%)"

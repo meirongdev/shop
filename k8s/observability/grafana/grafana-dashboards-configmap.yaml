@@ -111,7 +111,7 @@ data:
           "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
           "targets": [{
             "datasource": {"type": "prometheus", "uid": "prometheus"},
-            "expr": "histogram_quantile(0.99, rate(shop_checkout_duration_seconds_bucket[5m]))",
+            "expr": "histogram_quantile(0.99, sum by (service, le) (rate(shop_order_checkout_duration_seconds_bucket{result=\"success\"}[5m])))",
             "legendFormat": "P99"
           }],
           "fieldConfig": {"defaults": {"unit": "s"}}
@@ -159,6 +159,105 @@ data:
             "expr": "rate(shop_wallet_deposit_total[5m])",
             "legendFormat": "deposits/s"
           }]
+        }
+      ]
+    }
+  jvm-virtual-threads.json: |
+    {
+      "title": "Shop Platform — JVM & Virtual Threads",
+      "uid": "shop-jvm-vt",
+      "tags": ["shop", "jvm", "virtual-threads"],
+      "schemaVersion": 39,
+      "refresh": "30s",
+      "panels": [
+        {
+          "id": 1,
+          "title": "Live Threads",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "sum by (instance, daemon) (jvm_threads_live_threads)",
+              "legendFormat": "{{instance}} daemon={{daemon}}"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "short"}}
+        },
+        {
+          "id": 2,
+          "title": "HikariCP Utilization",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "sum by (instance) (hikaricp_connections_active) / clamp_min(sum by (instance) (hikaricp_connections_max), 1)",
+              "legendFormat": "{{instance}}"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1}}
+        },
+        {
+          "id": 3,
+          "title": "GC Pause vs Checkout P99",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "max by (instance) (jvm_gc_pause_seconds_max)",
+              "legendFormat": "{{instance}} GC pause"
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "histogram_quantile(0.99, sum by (service, le) (rate(shop_order_checkout_duration_seconds_bucket{result=\"success\"}[5m])))",
+              "legendFormat": "{{service}} checkout p99"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "s"}}
+        },
+        {
+          "id": 4,
+          "title": "Heap & Metaspace Usage",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "sum by (instance, id) (jvm_memory_used_bytes{id=~\"G1 Eden Space|G1 Old Gen|Metaspace\"})",
+              "legendFormat": "{{instance}} {{id}}"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "bytes"}}
+        },
+        {
+          "id": 5,
+          "title": "HikariCP Pending Connections",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "sum by (instance) (hikaricp_connections_pending)",
+              "legendFormat": "{{instance}}"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "short"}}
+        },
+        {
+          "id": 6,
+          "title": "Started Threads Rate",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "sum by (instance) (rate(jvm_threads_started_total[5m]))",
+              "legendFormat": "{{instance}}"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "ops"}}
         }
       ]
     }

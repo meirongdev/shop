@@ -75,7 +75,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v3.4.2
-    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--enable-feature=exemplar-storage"]
     volumes:
       - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
@@ -103,7 +103,8 @@ services:
         MODULE: auth-server
     environment:
       SHOP_AUTH_JWT_SECRET: ${SHOP_AUTH_JWT_SECRET:-change-this-to-a-32-byte-demo-secret}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     ports:
       - "8090:8080"
     depends_on:
@@ -131,7 +132,8 @@ services:
       SELLER_PORTAL_URI: http://seller-portal:8080
       BUYER_BFF_URI: http://buyer-bff:8080
       SELLER_BFF_URI: http://seller-bff:8080
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     ports:
       - "8080:8080"
     depends_on:
@@ -167,7 +169,8 @@ services:
       MARKETPLACE_SERVICE_URL: http://marketplace-service:8080
       ORDER_SERVICE_URL: http://order-service:8080
       SEARCH_SERVICE_URL: http://search-service:8080
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     depends_on:
       profile-service:
         condition: service_healthy
@@ -202,7 +205,8 @@ services:
       MARKETPLACE_SERVICE_URL: http://marketplace-service:8080
       ORDER_SERVICE_URL: http://order-service:8080
       SEARCH_SERVICE_URL: http://search-service:8080
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     depends_on:
       profile-service:
         condition: service_healthy
@@ -235,7 +239,8 @@ services:
       PROFILE_DB_USERNAME: ${MYSQL_USER:-shop}
       PROFILE_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
       SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     depends_on:
       mysql:
         condition: service_healthy
@@ -259,7 +264,8 @@ services:
       PROMOTION_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     depends_on:
       mysql:
         condition: service_healthy
@@ -287,7 +293,8 @@ services:
       SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
       STRIPE_ENABLED: ${STRIPE_ENABLED:-false}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     depends_on:
       mysql:
         condition: service_healthy
@@ -314,7 +321,8 @@ services:
       SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       MARKETPLACE_PRODUCT_TOPIC: marketplace.product.events.v1
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     depends_on:
       mysql:
         condition: service_healthy
@@ -339,7 +347,8 @@ services:
       ORDER_DB_USERNAME: ${MYSQL_USER:-shop}
       ORDER_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
       SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     depends_on:
       mysql:
         condition: service_healthy
@@ -365,7 +374,8 @@ services:
       MEILISEARCH_SEARCH_KEY: ${MEILISEARCH_SEARCH_KEY:-masterKey123}
       MARKETPLACE_SERVICE_URL: http://marketplace-service:8080
       SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     ports:
       - "8091:8080"
     depends_on:
@@ -397,7 +407,8 @@ services:
       SPRING_MAIL_HOST: mailpit
       SPRING_MAIL_PORT: 1025
       SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     ports:
       - "8092:8080"
     depends_on:
@@ -427,7 +438,8 @@ services:
       LOYALTY_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     ports:
       - "8088:8080"
     depends_on:
@@ -456,7 +468,8 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
       LOYALTY_SERVICE_URL: http://loyalty-service:8080
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     ports:
       - "8089:8080"
     depends_on:
@@ -484,7 +497,8 @@ services:
       WEBHOOK_DB_PASSWORD: ${MYSQL_PASSWORD:-shop}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     ports:
       - "8093:8080"
     depends_on:
@@ -513,7 +527,8 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN:-local-dev-internal-token-change-me}
       ORDER_SERVICE_URL: http://order-service:8080
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     ports:
       - "8094:8080"
     depends_on:
@@ -540,7 +555,8 @@ services:
     environment:
       AUTH_BASE_URL: http://auth-server:8080
       GATEWAY_BASE_URL: http://api-gateway:8080
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     depends_on:
       auth-server:
         condition: service_healthy
@@ -561,7 +577,8 @@ services:
     environment:
       AUTH_BASE_URL: http://auth-server:8080
       GATEWAY_BASE_URL: http://api-gateway:8080
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://otel-collector:4318/v1/logs}
     depends_on:
       auth-server:
         condition: service_healthy

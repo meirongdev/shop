@@ -1,6 +1,6 @@
 # Shop Platform — 架构设计文档
 
-> 版本：2.1 | 日期：2026-03-22 | 技术基线：Java 25 / Spring Boot 3.5 / Spring Cloud 2025.0
+> 版本：2.2 | 日期：2026-03-24 | 技术基线：Java 25 / Spring Boot 3.5 / Spring Cloud 2025.0
 > 工程标准：`docs/ENGINEERING-STANDARDS-2026.md`
 > 技术栈权威文档：`docs/TECH-STACK-BEST-PRACTICES-2026.md`
 
@@ -101,22 +101,22 @@
 │  Meilisearch 1.12    │   │                                                  │
 │  （search-service）  │   │                                                  │
 │                      │   │                                                  │
-│  Garage S3 ← 规划中  │   │                                                  │
+│  Garage S3            │   │                                                  │
 │  S3 兼容对象存储      │   │                                                  │
-│  • 商品图片存储       │   │                                                  │
-│  • Loki/Tempo 后端    │   │                                                  │
-│  • 行为数据冷归档     │   │                                                  │
+│  • Tempo / Loki 后端  │   │                                                  │
+│  • 商品图片与文件存储 │   │                                                  │
+│  • 未来数据冷归档     │   │                                                  │
 └──────────────────────┘   └──────────────────────────────────────────────────┘
           │
 ┌────────┴──────────────────────────────────────────────────┐
 │                   可观测层 (Observability)                   │
-│  ✅ Prometheus（指标采集，scrape 15s）                      │
-│  ✅ OpenTelemetry Collector（OTLP 接收，当前 debug exporter）│
-│  ✅ Logstash JSON Structured Logs                           │
-│  🔲 Tempo（Trace 存储，接 Garage S3）                       │
-│  🔲 Loki（日志聚合，接 Garage S3）                          │
-│  🔲 Grafana（统一可视化，接 Prometheus + Loki + Tempo）      │
-│  🔲 Prometheus Alert Rules（P1/P2 规则）                    │
+│  ✅ Prometheus（指标采集 + exemplar storage）               │
+│  ✅ OpenTelemetry Collector（traces/logs + k8s enrich）     │
+│  ✅ Tempo（Trace 存储，接 Garage S3）                       │
+│  ✅ Loki（OTLP 原生日志接入 + structured metadata）          │
+│  ✅ Grafana（Prometheus + Loki + Tempo + Pyroscope）        │
+│  ✅ Pyroscope（持续分析，和 Trace / Log 双向关联）            │
+│  ✅ Prometheus Alert + SLO Rules（P1/P2 + burn-rate）       │
 └────────────────────────────────────────────────────────────┘
 ```
 
@@ -146,6 +146,7 @@
 
 > 端口为外部（host）映射端口，仅供开发直连。生产环境所有流量经 api-gateway (:8080) 统一入口。
 > 详细模块归属说明见 `docs/services/SERVICE-DEPENDENCY-MAP.md`
+> 服务技术栈与扩展点速查见 `docs/SERVICE-TECH-STACK-AND-EXTENSIBILITY.md`
 
 ---
 
@@ -189,8 +190,8 @@ public-paths:
 ```
 外部请求
   → Gateway: 验证 JWT → 注入 Trusted Headers
-           (当前：X-Player-Id, X-Username, X-Roles, X-Portal, X-Internal-Token)
-           (游客 Session Header / 购物车策略仍属后续任务)
+           (当前：X-Request-Id, X-Player-Id, X-User-Id, X-Username, X-Roles, X-Portal, X-Internal-Token)
+           (Gateway 响应默认返回 X-Request-Id / X-Trace-Id 供客户端关联排障)
   → 各服务: 信任 Trusted Headers，拒绝无 X-Internal-Token 的直接调用
 
 activity-service 特殊规则：

@@ -288,6 +288,29 @@ data:
       memory_limiter:
         check_interval: 1s
         limit_mib: 256
+      k8sattributes:
+        auth_type: serviceAccount
+        extract:
+          metadata:
+            - k8s.pod.name
+            - k8s.namespace.name
+            - k8s.node.name
+            - k8s.deployment.name
+        pod_association:
+          - sources:
+              - from: resource_attribute
+                name: k8s.pod.ip
+          - sources:
+              - from: connection
+      filter/health:
+        error_mode: ignore
+        traces:
+          span:
+            - 'IsMatch(attributes["url.path"], "/actuator.*")'
+            - 'IsMatch(attributes["http.target"], "/actuator.*")'
+            - 'IsMatch(attributes["http.route"], "/actuator.*")'
+            - 'IsMatch(attributes["url.path"], "/healthz")'
+            - 'IsMatch(attributes["http.target"], "/healthz")'
       batch:
         timeout: 5s
         send_batch_size: 512
@@ -297,11 +320,8 @@ data:
         endpoint: tempo.shop.svc.cluster.local:4317
         tls:
           insecure: true
-      loki:
-        endpoint: http://loki.shop.svc.cluster.local:3100/loki/api/v1/push
-        default_labels_enabled:
-          exporter: false
-          job: true
+      otlphttp/loki:
+        endpoint: http://loki.shop.svc.cluster.local:3100/otlp
       # Retain debug exporter for dev troubleshooting (disabled in pipelines by default)
       debug:
         verbosity: basic
@@ -310,12 +330,12 @@ data:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [memory_limiter, batch]
+          processors: [memory_limiter, k8sattributes, filter/health, batch]
           exporters: [otlp/tempo]
         logs:
           receivers: [otlp]
-          processors: [batch]
-          exporters: [loki]
+          processors: [memory_limiter, k8sattributes, batch]
+          exporters: [otlphttp/loki]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -332,6 +352,7 @@ spec:
       labels:
         app: otel-collector
     spec:
+      serviceAccountName: otel-collector
       containers:
         - name: otel-collector
           image: otel/opentelemetry-collector-contrib:0.127.0
@@ -425,6 +446,7 @@ spec:
             - --config.file=/etc/prometheus/prometheus.yml
             - --web.enable-remote-write-receiver
             - --storage.tsdb.retention.time=7d
+            - --enable-feature=exemplar-storage
           volumeMounts:
             - name: config
               mountPath: /etc/prometheus
@@ -437,8 +459,12 @@ spec:
           configMap:
             name: prometheus-config
         - name: alert-rules
-          configMap:
-            name: prometheus-alert-rules
+          projected:
+            sources:
+              - configMap:
+                  name: prometheus-alert-rules
+              - configMap:
+                  name: prometheus-slo-rules
 ---
 apiVersion: v1
 kind: Service
@@ -597,7 +623,12 @@ data:
       - name: shop.p2.alerts
         rules:
           - alert: SlowCheckout
-            expr: histogram_quantile(0.99, rate(shop_checkout_duration_seconds_bucket[5m])) > 5
+            expr: |
+              histogram_quantile(0.99,
+                sum by (le) (
+                  rate(shop_order_checkout_duration_seconds_bucket{result="success"}[5m])
+                )
+              ) > 5
             for: 5m
             labels: {severity: warning, team: backend}
             annotations:

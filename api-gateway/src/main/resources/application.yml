@@ -277,14 +277,26 @@ management:
   tracing:
     sampling:
       probability: 1.0
+    baggage:
+      remote-fields:
+        - x-user-id
+        - x-order-id
+      correlation-fields:
+        - x-user-id
+        - x-order-id
   otlp:
     tracing:
-      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://otel-collector:4318/v1/traces}
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://otel-collector:4318/v1/traces}
+    logging:
+      endpoint: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:http://otel-collector:4318/v1/logs}
 logging:
   structured:
     format:
       console: logstash
 shop:
+  profiling:
+    enabled: ${PYROSCOPE_ENABLED:false}
+    server-address: ${PYROSCOPE_SERVER_ADDRESS:http://pyroscope:4040}
   gateway:
     jwt-secret: ${SHOP_AUTH_JWT_SECRET:change-this-to-a-32-byte-demo-secret}
     internal-token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
@@ -295,6 +307,6 @@ shop:
       allowed-origin-patterns: ${GATEWAY_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*,http://[::1]:*}
       allowed-methods: ${GATEWAY_ALLOWED_METHODS:GET,POST,PUT,PATCH,DELETE,OPTIONS}
       allowed-headers: ${GATEWAY_ALLOWED_HEADERS:Authorization,Content-Type,X-Request-Id,X-Device-Fingerprint}
-      exposed-headers: ${GATEWAY_EXPOSED_HEADERS:X-Request-Id}
+      exposed-headers: ${GATEWAY_EXPOSED_HEADERS:X-Request-Id,X-Trace-Id}
       allow-credentials: ${GATEWAY_ALLOW_CREDENTIALS:true}
       max-age-seconds: ${GATEWAY_CORS_MAX_AGE_SECONDS:3600}

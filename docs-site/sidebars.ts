@@ -27,7 +27,13 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: '📦 服务模块',
-      items: ['services/core', 'services/growth', 'services/platform'],
+      items: [
+        'services/edge-and-entry',
+        'services/core',
+        'services/growth',
+        'services/platform',
+        'services/extensibility',
+      ],
     },
     {
       type: 'category',

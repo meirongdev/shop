@@ -36,6 +36,16 @@
             <artifactId>micrometer-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-logback-appender-1.0</artifactId>
+            <version>${opentelemetry.instrumentation.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.pyroscope</groupId>
+            <artifactId>agent</artifactId>
+            <version>${pyroscope.version}</version>
+        </dependency>
+        <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
         </dependency>

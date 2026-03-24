@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.core.Authentication;
@@ -58,6 +59,11 @@ public class TrustedHeadersFilter extends OncePerRequestFilter {
                 String.join(",", roles),
                 jwt.getClaimAsString("portal"),
                 properties.internalToken());
-        chain.doFilter(wrapped, response);
+        MDC.put("requestId", requestId);
+        try {
+            chain.doFilter(wrapped, response);
+        } finally {
+            MDC.remove("requestId");
+        }
     }
 }

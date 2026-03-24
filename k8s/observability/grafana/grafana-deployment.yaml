@@ -31,7 +31,7 @@ spec:
             - name: GF_FEATURE_TOGGLES_ENABLE
               value: "traceqlEditor traceToMetrics"
             - name: GF_INSTALL_PLUGINS
-              value: ""
+              value: "grafana-pyroscope-datasource"
           volumeMounts:
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources

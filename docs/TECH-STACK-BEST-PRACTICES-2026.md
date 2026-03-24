@@ -1,6 +1,6 @@
 # Shop Platform — 2026 技术栈最佳实践与复用指南
 
-> 版本：1.0 | 更新时间：2026-03-22
+> 版本：1.1 | 更新时间：2026-03-24
 
 ---
 
@@ -21,6 +21,7 @@
 
 - 工程标准：`docs/ENGINEERING-STANDARDS-2026.md`
 - 架构与边界：`docs/ARCHITECTURE-DESIGN.md`
+- 服务技术栈与扩展面：`docs/SERVICE-TECH-STACK-AND-EXTENSIBILITY.md`
 - 安全基线：`docs/SECURITY-BASELINE-2026.md`
 - 可观测基线：`docs/OBSERVABILITY-ALERTING-SLO.md`
 - Feature Toggle：`docs/FEATURE-TOGGLE-AND-CONFIG-RELOAD.md`
@@ -62,7 +63,7 @@
 | 消息队列 | Kafka 3.9（KRaft） | 订单、钱包、搜索、通知等链路已使用 |
 | 缓存 | Redis 7.4 | 本地/Kind 基线为单实例模式 |
 | 搜索 | Meilisearch 1.12 | `search-service` 事件驱动同步商品索引 |
-| 可观测 | Prometheus + OTLP Collector + 结构化日志 | Kind 基线已落地；Grafana/Tempo/Loki 仍属后续增强 |
+| 可观测 | Prometheus + OTLP Collector + Tempo + Loki + Grafana + Pyroscope + 结构化日志 | Kind/K8s 验证栈已落地；本地 compose 与其保持 OTLP/Prometheus 基线对齐 |
 | 配置热更新 | ConfigMap + Configuration Watcher + `/actuator/refresh` | 已在 `search-service` Feature Toggle 方案中验证 |
 
 ### 2.4 共享能力
@@ -74,6 +75,7 @@
 | 内部安全 | `X-Internal-Token` + `InternalAccessFilter` | 服务间可信调用链校验 |
 | 契约集中化 | `shop-contracts` | API path 常量、DTO、event envelope 统一管理 |
 | Feature Toggle | OpenFeature + property provider | 当前已在 `search-service` 试点 |
+| 可观测自举 | `shop-common` + OTLP logback appender + `shop.profiling` | Java 服务默认具备 metrics / traces / logs / profiling 接入点 |
 | 脚手架 | `shop-archetypes` | 已实现 6 类 Maven Archetype，并完成样板工程验证 |
 
 ---
@@ -111,6 +113,19 @@
 - 使用 OpenFeature 保留供应商无关的 API 抽象
 - 第一阶段选择仓库内 property provider，而不是一开始就引入 `flagd` / Unleash 控制面
 - 用 ConfigMap 目录挂载 + Configuration Watcher + `/actuator/refresh` 处理热更新，符合 K8s 原生实践
+
+### 3.6 技术选型与架构问题是一一对应的
+
+| 架构/设计问题 | 当前技术选择 | 为什么是这组技术 |
+|------|----------|------|
+| 外部流量如何统一鉴权、限流和追踪 | Spring Cloud Gateway MVC + Spring Security + Redis Lua | 让 northbound 规则集中落在 edge 层，而不是散在每个服务里 |
+| 多下游聚合如何既保留同步代码可读性，又承受高并发 I/O | RestClient + Virtual Threads + timeout / CircuitBreaker | 代码模型简单，可并发读多个下游，失败边界也更清晰 |
+| 服务数据所有权如何保持清晰 | 每服务独立 schema + Flyway | 事实边界和迁移节奏都能独立演进 |
+| 跨服务事务怎么避免分布式事务 | Outbox Pattern + Kafka + consumer 幂等 | 保住本地事务原子性，同时保留重放与补偿能力 |
+| 高并发库存、续费、定时扫描如何协调 | Redis / Redisson / Lua / RLock | 在共享缓存平面里解决高频原子操作和多实例抢占 |
+| 经常变动的促销、活动、通知规则如何持续扩展 | Strategy / Plugin / Channel 接口 | 通过新增实现扩容业务能力，避免核心应用服务越来越臃肿 |
+| 搜索、联想词、热词为什么不直接查交易库 | Meilisearch + Kafka 投影 | 让读模型独立优化，减少对交易库的检索压力 |
+| 如何让新服务默认可观测 | Micrometer + OTLP + Collector + Tempo/Loki/Grafana/Pyroscope | 把 metrics / traces / logs / profiles 一次性接入统一平台 |
 
 ---
 
@@ -150,22 +165,23 @@
 
 - **当前状态应表述为：Resilience4j 已试点，但仍是 P1 待统一。**
 
-### 4.3 可观测基线已经统一，但可观测平台尚未完整
+### 4.3 开发 / 验证环境的可观测平台已经落地
 
 当前事实：
 
-- Prometheus、OTLP Collector、结构化日志、Trace ID 注入都已落地
-- Kind 清单中已有 Prometheus 和 OTEL Collector
+- K8s 默认清单已经包含 Prometheus、OTEL Collector、Tempo、Loki、Grafana、Pyroscope、Alert Rules、SLO Rules 和 Garage S3 后端
+- Collector 已按链路把 traces 发往 Tempo、logs 发往 Loki OTLP，并补充 `k8sattributes` 与健康流量过滤
+- Java 服务已经统一接入结构化 JSON 日志、OTLP logback appender、`shop.profiling` 配置与 `X-Trace-Id` 关联头
 
-但当前本地 / Kind 默认清单**没有**完整部署：
+仍需要继续演进的主要是：
 
-- Grafana
-- Tempo
-- Loki
+- Alertmanager / runbook 自动化联动
+- 多环境保留策略、容量规划与成本治理
+- 跨集群或生产级高可用部署模板
 
 结论：
 
-- **当前状态应表述为：采集基线已统一，平台化可视化栈属于后续增强。**
+- **当前状态应表述为：开发 / 验证环境的完整 observability platform 已落地，生产级治理仍有演进空间。**
 
 ### 4.4 安全基线是“共享 internal token + trusted headers”，不是服务网格
 
@@ -304,7 +320,7 @@
 
 - OpenRewrite 批量升级配方
 - 更多可复用 archetype 版本
-- Grafana / Tempo / Loki 观测平台化
+- Alertmanager / runbook / retention / 多环境观测治理
 - 更成熟的 feature management（`flagd` / Unleash）
 
 ### P3：面向生产安全与大规模治理
@@ -365,4 +381,4 @@
 - Resilience4j
 - 契约测试 / 架构规则
 - CI 中的 Kind 验证
-- 更成熟的安全与可观测平台
+- 更成熟的安全与多环境观测治理

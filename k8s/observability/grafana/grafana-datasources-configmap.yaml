@@ -30,6 +30,17 @@ data:
               url: "$${__value.raw}"
               datasourceUid: tempo
               urlDisplayLabel: "View in Tempo"
+            - name: TraceIDMetadata
+              matcherType: label
+              matcherRegex: trace[_]?id
+              url: "$${__value.raw}"
+              datasourceUid: tempo
+              urlDisplayLabel: "View in Tempo"
+
+      - name: Pyroscope
+        type: grafana-pyroscope-datasource
+        uid: pyroscope
+        url: http://pyroscope.shop.svc.cluster.local:4040
 
       - name: Tempo
         type: tempo
@@ -46,6 +57,11 @@ data:
             datasourceUid: prometheus
           nodeGraph:
             enabled: true
+          tracesToProfilesV2:
+            datasourceUid: pyroscope
+            profileTypeId: process_cpu:cpu:nanoseconds:cpu:nanoseconds
+            customQuery: true
+            query: "$${__span.tags[\"service.name\"]}"
           search:
             hide: false
           lokiSearch:

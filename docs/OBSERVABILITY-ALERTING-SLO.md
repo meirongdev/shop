@@ -95,7 +95,7 @@ Tempo、Loki 数据持久化
 
 - 所有 Java/Kotlin 服务统一使用结构化 JSON 控制台日志，并通过 OpenTelemetry logback appender 发送 OTLP logs。
 - Collector 负责把日志写入 Loki，并限制只把低基数 resource attributes 提升为 label。
-- 生产问题定位优先通过：`requestId / traceId / playerId / userId / orderId / subscriptionId` 等业务标识串联。
+- 生产问题定位优先通过：`requestId / traceId / buyerId / userId / orderId / subscriptionId` 等业务标识串联。
 
 ### 2.4 Profiling 与跨信号关联
 
@@ -126,7 +126,7 @@ Tempo、Loki 数据持久化
 
 禁止直接使用高基数字段作为标签：
 
-- `playerId`
+- `buyerId`
 - `orderId`
 - `requestId`
 - `email`

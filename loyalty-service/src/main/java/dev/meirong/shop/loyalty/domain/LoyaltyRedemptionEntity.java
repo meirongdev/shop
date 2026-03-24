@@ -18,7 +18,7 @@ public class LoyaltyRedemptionEntity {
     private String id;
 
     @Column(name = "player_id", nullable = false, length = 64)
-    private String playerId;
+    private String buyerId;
 
     @Column(name = "reward_item_id", nullable = false, length = 36)
     private String rewardItemId;
@@ -56,10 +56,10 @@ public class LoyaltyRedemptionEntity {
     protected LoyaltyRedemptionEntity() {
     }
 
-    public LoyaltyRedemptionEntity(String playerId, String rewardItemId, String rewardName,
+    public LoyaltyRedemptionEntity(String buyerId, String rewardItemId, String rewardName,
                                    long pointsSpent, int quantity, String type) {
         this.id = UUID.randomUUID().toString();
-        this.playerId = playerId;
+        this.buyerId = buyerId;
         this.rewardItemId = rewardItemId;
         this.rewardName = rewardName;
         this.pointsSpent = pointsSpent;
@@ -92,7 +92,7 @@ public class LoyaltyRedemptionEntity {
     }
 
     public String getId() { return id; }
-    public String getPlayerId() { return playerId; }
+    public String getBuyerId() { return buyerId; }
     public String getRewardItemId() { return rewardItemId; }
     public String getRewardName() { return rewardName; }
     public long getPointsSpent() { return pointsSpent; }

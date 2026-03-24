@@ -190,12 +190,12 @@ public-paths:
 ```
 外部请求
   → Gateway: 验证 JWT → 注入 Trusted Headers
-           (当前：X-Request-Id, X-Player-Id, X-User-Id, X-Username, X-Roles, X-Portal, X-Internal-Token)
+           (当前：X-Request-Id, X-Buyer-Id, X-Buyer-Id, X-Username, X-Roles, X-Portal, X-Internal-Token)
            (Gateway 响应默认返回 X-Request-Id / X-Trace-Id 供客户端关联排障)
   → 各服务: 信任 Trusted Headers，拒绝无 X-Internal-Token 的直接调用
 
 activity-service 特殊规则：
-  → 游戏参与接口检查 X-Player-Id（登录用户）或 X-Guest-Session-Id（游客）
+  → 游戏参与接口检查 X-Buyer-Id（登录用户）或 X-Guest-Session-Id（游客）
   → 奖励发放内部调用 loyalty/promotion/wallet 必须携带 X-Internal-Token
 ```
 
@@ -270,14 +270,14 @@ Outbox Poller (5s):
 | 商品详情 | `cache:product:{id}` | 10 分钟 | Cache-Aside |
 | 商品列表 | `cache:products:{hash}` | 2 分钟 | Cache-Aside |
 | 游客购物车 | `cart:{session_id}` | 7 天 | Session Key |
-| 登录购物车 | `cart:{player_id}` | 30 天 | Player Key |
+| 登录购物车 | `cart:{buyer_id}` | 30 天 | Player Key |
 | 库存（热商品） | `cache:stock:{sku_id}` | 30 秒 | Write-Through |
 | JWT 黑名单 | `jwt:blacklist:{jti}` | Token TTL | Set |
 | **游戏活跃状态** | **`game:state:{game_id}`** | **活动时长** | **Write-Through** |
 | **游戏奖品库存** | **`prize:stock:{prize_id}`** | **活动时长** | **Atomic DECR** |
 | **红包池** | **`re:packets:{game_id}`** | **活动时长** | **Redis List LPOP** |
-| **参与防重** | **`game:joined:{game_id}:{player_id}`** | **24h / 活动时长** | **SET NX** |
-| **限速** | **`ratelimit:game:{game_id}:{player_id}`** | **滑动窗口** | **INCR + EXPIRE** |
+| **参与防重** | **`game:joined:{game_id}:{buyer_id}`** | **24h / 活动时长** | **SET NX** |
+| **限速** | **`ratelimit:game:{game_id}:{buyer_id}`** | **滑动窗口** | **INCR + EXPIRE** |
 
 ---
 
@@ -291,7 +291,7 @@ Outbox Poller (5s):
 3. 进入结账     → POST /buyer/checkout/guest
    Body: { email, shipping_address, payment_method }
 4. buyer-bff 验证库存 → marketplace-service
-5. order-service 创建订单 (type=GUEST, player_id=null, order_token=UUID)
+5. order-service 创建订单 (type=GUEST, buyer_id=null, order_token=UUID)
 6. 前端跳转支付 → wallet-service / Stripe
 7. 支付成功 → Kafka: order.events.v1 (PAID)
 8. notification-service 发邮件给 guest_email（含 order_token 追踪链接）
@@ -302,7 +302,7 @@ Outbox Poller (5s):
 ```
 1. 买家进入游戏页 → GET /activity/v1/games/{id}/info（公开）
 2. 点击参与       → POST /activity/v1/games/{id}/participate
-   Gateway 注入 X-Player-Id
+   Gateway 注入 X-Buyer-Id
 3. activity-service → AntiCheatGuard 检查（限速 + 每日次数）
 4. activity-service → GamePlugin.participate()（由 InstantLotteryPlugin 处理）
    → Redis Lua Script: DECR prize:stock + 加权随机 → 得到 prizeId
@@ -482,7 +482,7 @@ activity_reward_pending_gauge                           # 待补偿奖励数量�
   "traceId": "abc123",
   "game_id": "game-redenvelope-618",
   "game_type": "RED_ENVELOPE",
-  "player_id": "player-1001",
+  "buyer_id": "buyer-1001",
   "result": "WIN",
   "prize_type": "POINTS",
   "prize_value": 88,

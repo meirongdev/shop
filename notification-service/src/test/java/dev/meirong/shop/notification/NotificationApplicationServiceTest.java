@@ -48,7 +48,7 @@ class NotificationApplicationServiceTest {
         when(repository.existsByEventIdAndChannel("evt-1", "EMAIL")).thenReturn(false);
         when(repository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        service.processEvent("evt-1", "USER_REGISTERED", "player-1001",
+        service.processEvent("evt-1", "BUYER_REGISTERED", "player-1001",
                 "test@example.com", Map.of("username", "Alice"));
 
         ArgumentCaptor<NotificationLogEntity> captor = ArgumentCaptor.forClass(NotificationLogEntity.class);
@@ -64,7 +64,7 @@ class NotificationApplicationServiceTest {
     void processEvent_duplicateEvent_skips() {
         when(repository.existsByEventIdAndChannel("evt-1", "EMAIL")).thenReturn(true);
 
-        service.processEvent("evt-1", "USER_REGISTERED", "player-1001",
+        service.processEvent("evt-1", "BUYER_REGISTERED", "player-1001",
                 "test@example.com", Map.of("username", "Alice"));
 
         verify(repository, never()).save(any());

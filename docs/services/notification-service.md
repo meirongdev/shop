@@ -19,7 +19,7 @@
 
 当前已消费的核心 Topic：
 
-- `user.registered.v1`
+- `buyer.registered.v1`
 - `order.events.v1`
 - `wallet.transactions.v1`
 
@@ -39,7 +39,7 @@ Listener 解析事件后，会调用 `NotificationApplicationService#processEven
 
 - JSON 反序列化失败
 - `eventId` 缺失
-- 关键业务字段缺失（如 `playerId`、`transactionId`、`status`）
+- 关键业务字段缺失（如 `buyerId`、`transactionId`、`status`）
 
 这类消息说明契约已经坏掉，继续热重试只会反复失败，因此 listener 会抛出 `NonRetryableKafkaConsumerException`，直接进入 DLT。
 

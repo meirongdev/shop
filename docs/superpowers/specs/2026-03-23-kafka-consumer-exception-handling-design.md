@@ -47,16 +47,16 @@
 - `WelcomeCouponListener`
 - `WalletRewardListener`
 - Topic:
-  - `user.registered.v1`
+  - `buyer.registered.v1`
   - `wallet.transactions.v1`
 - 特点：有业务副作用（发券、创建活动），依赖 `IdempotencyGuard`
 
 #### `loyalty-service`
 
-- `UserRegisteredListener`
+- `BuyerRegisteredListener`
 - `OrderEventListener`
 - Topic:
-  - `user.registered.v1`
+  - `buyer.registered.v1`
   - `order.events.v1`
 - 特点：有业务副作用（送积分、初始化任务、首单任务推进），依赖 `IdempotencyGuard`
 
@@ -64,11 +64,11 @@
 
 #### `notification-service`
 
-- `UserRegisteredListener`
+- `BuyerRegisteredListener`
 - `OrderEventListener`
 - `WalletTransactionListener`
 - Topic:
-  - `user.registered.v1`
+  - `buyer.registered.v1`
   - `order.events.v1`
   - `wallet.transactions.v1`
 - 特点：真正的“发送”失败会被持久化为 `notification_log`，后续由 `NotificationRetryScheduler` 重试
@@ -79,7 +79,7 @@
 - Topic:
   - `order.events.v1`
   - `wallet.transactions.v1`
-  - `user.registered.v1`
+  - `buyer.registered.v1`
 - 特点：真实投递失败会落库为 `webhook_delivery`，后续由 `WebhookDeliveryService.retryFailedDeliveries()` 重试
 
 ---
@@ -166,7 +166,7 @@
 
 ### 5.3 `loyalty-service`
 
-- 为 `UserRegisteredListener` / `OrderEventListener` 去掉“吃掉所有异常”的模式
+- 为 `BuyerRegisteredListener` / `OrderEventListener` 去掉“吃掉所有异常”的模式
 - 对反序列化错误、明显业务无效错误直送 DLT
 - 对数据库或 profile-service 等下游瞬时错误允许 Kafka retry
 

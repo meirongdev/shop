@@ -41,7 +41,7 @@ public class ProfileController {
 
     @PostMapping("/seller/storefront")
     public ApiResponse<ProfileApi.SellerStorefrontResponse> getSellerStorefront(@Valid @RequestBody ProfileApi.GetProfileRequest request) {
-        return ApiResponse.success(service.getSellerStorefront(request.playerId()));
+        return ApiResponse.success(service.getSellerStorefront(request.buyerId()));
     }
 
     @PostMapping("/seller/shop/update")

@@ -60,10 +60,10 @@ public final class BuyerApi {
     private BuyerApi() {
     }
 
-    public record BuyerContextRequest(@NotBlank String playerId) {
+    public record BuyerContextRequest(@NotBlank String buyerId) {
     }
 
-    public record MergeGuestCartRequest(@NotBlank String guestPlayerId) {
+    public record MergeGuestCartRequest(@NotBlank String guestBuyerId) {
     }
 
     public record DashboardResponse(ProfileApi.ProfileResponse profile,
@@ -73,7 +73,7 @@ public final class BuyerApi {
                                     LoyaltyApi.AccountResponse loyalty) {
     }
 
-    public record CheckoutRequest(@NotBlank String playerId,
+    public record CheckoutRequest(@NotBlank String buyerId,
                                   String couponCode,
                                   String paymentMethod,
                                   Long pointsToUse) {

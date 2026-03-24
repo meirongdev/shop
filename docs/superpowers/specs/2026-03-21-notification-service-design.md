@@ -34,7 +34,7 @@
 ### 2.1 系统位置
 
 ```
-profile-service ──→ Kafka (user.registered.v1) ──┐
+profile-service ──→ Kafka (buyer.registered.v1) ──┐
 order-service   ──→ Kafka (order.events.v1)    ──┤
 wallet-service  ──→ Kafka (wallet.transactions.v1)┘
                                                   │
@@ -63,7 +63,7 @@ wallet-service  ──→ Kafka (wallet.transactions.v1)┘
 
 | 层 | 类 | 职责 |
 |---|---|---|
-| **EventListener** | `UserRegisteredListener`, `OrderEventListener`, `WalletTransactionListener` | Kafka 消费者，反序列化事件，调用 Router |
+| **EventListener** | `BuyerRegisteredListener`, `OrderEventListener`, `WalletTransactionListener` | Kafka 消费者，反序列化事件，调用 Router |
 | **NotificationRouter** | `NotificationRouter` | 根据事件类型决定模板、收件人、渠道 |
 | **ChannelDispatcher** | `ChannelDispatcher` | 查找对应 Channel 实现并调用发送 |
 | **Channel SPI** | `NotificationChannel` 接口 + `EmailChannel` | 具体发送实现 |
@@ -80,7 +80,7 @@ CREATE TABLE notification_log (
     id              CHAR(26)     NOT NULL PRIMARY KEY,  -- ULID
     event_id        VARCHAR(64)  NOT NULL,              -- 事件唯一 ID（幂等键）
     event_type      VARCHAR(64)  NOT NULL,              -- e.g. ORDER_CONFIRMED
-    recipient_id    VARCHAR(64)  NOT NULL,              -- player_id
+    recipient_id    VARCHAR(64)  NOT NULL,              -- buyer_id
     channel         VARCHAR(16)  NOT NULL,              -- EMAIL / SMS / WHATSAPP
     recipient_addr  VARCHAR(255) NOT NULL,              -- 邮箱/手机号
     template_code   VARCHAR(64)  NOT NULL,              -- e.g. welcome-email
@@ -141,7 +141,7 @@ public record NotificationRequest(
 
 | Topic | 事件类型 | 触发通知 | 模板 |
 |---|---|---|---|
-| `user.registered.v1` | USER_REGISTERED | 欢迎邮件 | `welcome-email` |
+| `buyer.registered.v1` | USER_REGISTERED | 欢迎邮件 | `welcome-email` |
 | `order.events.v1` | ORDER_CONFIRMED | 下单成功 | `order-confirmed` |
 | `order.events.v1` | ORDER_SHIPPED | 已发货 | `order-shipped` |
 | `order.events.v1` | ORDER_COMPLETED | 已完成 | `order-completed` |
@@ -234,8 +234,8 @@ resources/templates/email/
 
 ### 8.1 profile-service
 
-- 注册时写 outbox，发布 `user.registered.v1`
-- Payload：`UserRegisteredEventData(playerId, username, email)`
+- 注册时写 outbox，发布 `buyer.registered.v1`
+- Payload：`BuyerRegisteredEventData(buyerId, username, email)`
 
 ### 8.2 order-service
 
@@ -251,7 +251,7 @@ resources/templates/email/
 // 在现有 record 末尾追加（Jackson 反序列化时缺失字段默认 null，向后兼容）
 public record WalletTransactionEventData(
     String transactionId,   // 已有字段
-    String playerId,        // 已有字段
+    String buyerId,        // 已有字段
     String type,            // 已有字段：DEPOSIT / WITHDRAW
     BigDecimal amount,      // 已有字段
     String currency,        // 已有字段
@@ -266,8 +266,8 @@ public record WalletTransactionEventData(
 ### 8.4 事件 DTO（shop-contracts）
 
 ```java
-public record UserRegisteredEventData(
-    String playerId,
+public record BuyerRegisteredEventData(
+    String buyerId,
     String username,
     String email
 ) {}

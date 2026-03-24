@@ -64,13 +64,13 @@ public class BuyerAggregationService {
         this.objectMapper = objectMapper;
     }
 
-    public BuyerApi.DashboardResponse loadDashboard(String playerId) {
+    public BuyerApi.DashboardResponse loadDashboard(String buyerId) {
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var profileFuture = executor.submit(() -> getProfile(playerId));
-            var walletFuture = executor.submit(() -> getWallet(playerId));
+            var profileFuture = executor.submit(() -> getProfile(buyerId));
+            var walletFuture = executor.submit(() -> getWallet(buyerId));
             var promotionsFuture = executor.submit(this::listPromotions);
             var marketplaceFuture = executor.submit(this::listMarketplace);
-            var loyaltyFuture = executor.submit(() -> getLoyaltyAccount(playerId));
+            var loyaltyFuture = executor.submit(() -> getLoyaltyAccount(buyerId));
             return new BuyerApi.DashboardResponse(
                     profileFuture.get(),
                     walletFuture.get(),
@@ -88,10 +88,10 @@ public class BuyerAggregationService {
 
     // ── Profile ──
 
-    public ProfileApi.ProfileResponse getProfile(String playerId) {
+    public ProfileApi.ProfileResponse getProfile(String buyerId) {
         return call("profileService", true,
                 () -> post(properties.profileServiceUrl() + ProfileApi.GET,
-                        new ProfileApi.GetProfileRequest(playerId),
+                        new ProfileApi.GetProfileRequest(buyerId),
                         new ParameterizedTypeReference<ApiResponse<ProfileApi.ProfileResponse>>() {}),
                 "Profile service is temporarily unavailable");
     }
@@ -105,10 +105,10 @@ public class BuyerAggregationService {
 
     // ── Wallet ──
 
-    public WalletApi.WalletAccountResponse getWallet(String playerId) {
+    public WalletApi.WalletAccountResponse getWallet(String buyerId) {
         return call("walletService", false,
                 () -> post(properties.walletServiceUrl() + WalletApi.GET,
-                        new WalletApi.GetWalletRequest(playerId),
+                        new WalletApi.GetWalletRequest(buyerId),
                         new ParameterizedTypeReference<ApiResponse<WalletApi.WalletAccountResponse>>() {}),
                 "Wallet service is temporarily unavailable");
     }
@@ -143,27 +143,27 @@ public class BuyerAggregationService {
 
     // ── Loyalty ──
 
-    public LoyaltyApi.AccountResponse getLoyaltyAccount(String playerId) {
+    public LoyaltyApi.AccountResponse getLoyaltyAccount(String buyerId) {
         return call("loyaltyService", false,
-                () -> get(properties.loyaltyServiceUrl() + LoyaltyApi.INTERNAL_BALANCE + "/" + playerId,
+                () -> get(properties.loyaltyServiceUrl() + LoyaltyApi.INTERNAL_BALANCE + "/" + buyerId,
                         new ParameterizedTypeReference<ApiResponse<LoyaltyApi.AccountResponse>>() {}),
                 "Loyalty service is temporarily unavailable");
     }
 
-    public LoyaltyApi.CheckinResponse loyaltyCheckin(String playerId) {
+    public LoyaltyApi.CheckinResponse loyaltyCheckin(String buyerId) {
         return call("loyaltyService", false,
-                () -> postWithHeader(properties.loyaltyServiceUrl() + LoyaltyApi.CHECKIN, Map.of(), playerId,
+                () -> postWithHeader(properties.loyaltyServiceUrl() + LoyaltyApi.CHECKIN, Map.of(), buyerId,
                         new ParameterizedTypeReference<ApiResponse<LoyaltyApi.CheckinResponse>>() {}),
                 "Loyalty service is temporarily unavailable");
     }
 
-    public BuyerApi.LoyaltyHubResponse loadLoyaltyHub(String playerId) {
+    public BuyerApi.LoyaltyHubResponse loadLoyaltyHub(String buyerId) {
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var accountFuture = executor.submit(() -> getLoyaltyAccount(playerId));
-            var tasksFuture = executor.submit(() -> getLoyaltyOnboardingTasks(playerId));
+            var accountFuture = executor.submit(() -> getLoyaltyAccount(buyerId));
+            var tasksFuture = executor.submit(() -> getLoyaltyOnboardingTasks(buyerId));
             var rewardsFuture = executor.submit(this::listLoyaltyRewards);
-            var transactionsFuture = executor.submit(() -> getLoyaltyTransactions(playerId, 0, 10));
-            var redemptionsFuture = executor.submit(() -> getLoyaltyRedemptions(playerId, 0, 10));
+            var transactionsFuture = executor.submit(() -> getLoyaltyTransactions(buyerId, 0, 10));
+            var redemptionsFuture = executor.submit(() -> getLoyaltyRedemptions(buyerId, 0, 10));
             return new BuyerApi.LoyaltyHubResponse(
                     accountFuture.get(),
                     tasksFuture.get(),
@@ -178,22 +178,22 @@ public class BuyerAggregationService {
         }
     }
 
-    public List<LoyaltyApi.CheckinResponse> loyaltyCheckinCalendar(String playerId, int year, int month) {
+    public List<LoyaltyApi.CheckinResponse> loyaltyCheckinCalendar(String buyerId, int year, int month) {
         String url = properties.loyaltyServiceUrl() + LoyaltyApi.CHECKIN_CALENDAR
                 + "?year=" + year + "&month=" + month;
         return call("loyaltyService", false,
-                () -> getWithHeader(url, playerId,
+                () -> getWithHeader(url, buyerId,
                         new ParameterizedTypeReference<ApiResponse<List<LoyaltyApi.CheckinResponse>>>() {}),
                 "Loyalty service is temporarily unavailable");
     }
 
-    public List<LoyaltyApi.TransactionResponse> getLoyaltyTransactions(String playerId, int page, int size) {
+    public List<LoyaltyApi.TransactionResponse> getLoyaltyTransactions(String buyerId, int page, int size) {
         String url = UriComponentsBuilder.fromHttpUrl(properties.loyaltyServiceUrl() + LoyaltyApi.TRANSACTIONS)
                 .queryParam("page", page)
                 .queryParam("size", size)
                 .toUriString();
         PageResponse<LoyaltyApi.TransactionResponse> response = call("loyaltyService", false,
-                () -> getWithHeader(url, playerId,
+                () -> getWithHeader(url, buyerId,
                         new ParameterizedTypeReference<ApiResponse<PageResponse<LoyaltyApi.TransactionResponse>>>() {}),
                 "Loyalty service is temporarily unavailable");
         return response.content();
@@ -206,43 +206,43 @@ public class BuyerAggregationService {
                 "Loyalty service is temporarily unavailable");
     }
 
-    public LoyaltyApi.RedemptionResponse redeemLoyaltyReward(String playerId, LoyaltyApi.RedeemRequest request) {
+    public LoyaltyApi.RedemptionResponse redeemLoyaltyReward(String buyerId, LoyaltyApi.RedeemRequest request) {
         return call("loyaltyService", false,
-                () -> postWithHeader(properties.loyaltyServiceUrl() + LoyaltyApi.REDEEM, request, playerId,
+                () -> postWithHeader(properties.loyaltyServiceUrl() + LoyaltyApi.REDEEM, request, buyerId,
                         new ParameterizedTypeReference<ApiResponse<LoyaltyApi.RedemptionResponse>>() {}),
                 "Loyalty service is temporarily unavailable");
     }
 
-    public List<LoyaltyApi.RedemptionResponse> getLoyaltyRedemptions(String playerId, int page, int size) {
+    public List<LoyaltyApi.RedemptionResponse> getLoyaltyRedemptions(String buyerId, int page, int size) {
         String url = UriComponentsBuilder.fromHttpUrl(properties.loyaltyServiceUrl() + LoyaltyApi.REDEMPTIONS)
                 .queryParam("page", page)
                 .queryParam("size", size)
                 .toUriString();
         PageResponse<LoyaltyApi.RedemptionResponse> response = call("loyaltyService", false,
-                () -> getWithHeader(url, playerId,
+                () -> getWithHeader(url, buyerId,
                         new ParameterizedTypeReference<ApiResponse<PageResponse<LoyaltyApi.RedemptionResponse>>>() {}),
                 "Loyalty service is temporarily unavailable");
         return response.content();
     }
 
-    public List<LoyaltyApi.OnboardingTaskResponse> getLoyaltyOnboardingTasks(String playerId) {
+    public List<LoyaltyApi.OnboardingTaskResponse> getLoyaltyOnboardingTasks(String buyerId) {
         return call("loyaltyService", false,
-                () -> getWithHeader(properties.loyaltyServiceUrl() + LoyaltyApi.ONBOARDING_TASKS, playerId,
+                () -> getWithHeader(properties.loyaltyServiceUrl() + LoyaltyApi.ONBOARDING_TASKS, buyerId,
                         new ParameterizedTypeReference<ApiResponse<List<LoyaltyApi.OnboardingTaskResponse>>>() {}),
                 "Loyalty service is temporarily unavailable");
     }
 
-    public BuyerApi.WelcomeSummaryResponse loadWelcomeSummary(String playerId) {
+    public BuyerApi.WelcomeSummaryResponse loadWelcomeSummary(String buyerId) {
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var accountFuture = executor.submit(() -> getLoyaltyAccount(playerId));
-            var tasksFuture = executor.submit(() -> getLoyaltyOnboardingTasks(playerId));
+            var accountFuture = executor.submit(() -> getLoyaltyAccount(buyerId));
+            var tasksFuture = executor.submit(() -> getLoyaltyOnboardingTasks(buyerId));
             var couponsFuture = executor.submit(() -> post(
                     properties.promotionServiceUrl() + PromotionInternalApi.BUYER_AVAILABLE_COUPONS,
-                    new PromotionInternalApi.BuyerCouponsRequest(playerId),
+                    new PromotionInternalApi.BuyerCouponsRequest(buyerId),
                     new ParameterizedTypeReference<ApiResponse<PromotionInternalApi.BuyerCouponsResponse>>() {}));
             var inviteFuture = executor.submit(() -> post(
                     properties.profileServiceUrl() + ProfileInternalApi.INVITE_STATS,
-                    new ProfileInternalApi.InviteStatsRequest(playerId),
+                    new ProfileInternalApi.InviteStatsRequest(buyerId),
                     new ParameterizedTypeReference<ApiResponse<ProfileInternalApi.InviteStatsResponse>>() {}));
             return new BuyerApi.WelcomeSummaryResponse(
                     accountFuture.get().balance(),
@@ -259,10 +259,10 @@ public class BuyerAggregationService {
         }
     }
 
-    public BuyerApi.InviteStatsResponse getInviteStats(String playerId) {
+    public BuyerApi.InviteStatsResponse getInviteStats(String buyerId) {
         ProfileInternalApi.InviteStatsResponse response = post(
                 properties.profileServiceUrl() + ProfileInternalApi.INVITE_STATS,
-                new ProfileInternalApi.InviteStatsRequest(playerId),
+                new ProfileInternalApi.InviteStatsRequest(buyerId),
                 new ParameterizedTypeReference<ApiResponse<ProfileInternalApi.InviteStatsResponse>>() {});
         return new BuyerApi.InviteStatsResponse(
                 response.inviteCode(),
@@ -279,10 +279,10 @@ public class BuyerAggregationService {
                         .toList());
     }
 
-    public LoyaltyApi.TransactionResponse loyaltyDeductPoints(String playerId, long points, String referenceId, String remark) {
+    public LoyaltyApi.TransactionResponse loyaltyDeductPoints(String buyerId, long points, String referenceId, String remark) {
         return call("loyaltyService", false,
                 () -> post(properties.loyaltyServiceUrl() + LoyaltyApi.INTERNAL_DEDUCT,
-                        new LoyaltyApi.DeductPointsRequest(playerId, "CHECKOUT", points, referenceId, remark),
+                        new LoyaltyApi.DeductPointsRequest(buyerId, "CHECKOUT", points, referenceId, remark),
                         new ParameterizedTypeReference<ApiResponse<LoyaltyApi.TransactionResponse>>() {}),
                 "Loyalty service is temporarily unavailable");
     }
@@ -333,23 +333,23 @@ public class BuyerAggregationService {
         return null;
     }
 
-    public boolean deductLoyaltyPointsForCheckout(String playerId, long points, String referenceId, String remark) {
+    public boolean deductLoyaltyPointsForCheckout(String buyerId, long points, String referenceId, String remark) {
         return resilienceHelper.write("loyaltyService",
                 () -> {
-                    loyaltyDeductPoints(playerId, points, referenceId, remark);
+                    loyaltyDeductPoints(buyerId, points, referenceId, remark);
                     return true;
                 },
-                throwable -> deductLoyaltyPointsForCheckoutFallback(playerId, points, referenceId, remark, throwable));
+                throwable -> deductLoyaltyPointsForCheckoutFallback(buyerId, points, referenceId, remark, throwable));
     }
 
     public boolean deductLoyaltyPointsForCheckoutFallback(
-            String playerId, long points, String referenceId, String remark, Throwable throwable) {
+            String buyerId, long points, String referenceId, String remark, Throwable throwable) {
         if (throwable instanceof BusinessException businessException
                 && shouldPropagateLoyaltyFailure(businessException)) {
             throw businessException;
         }
         log.warn("loyalty-service unavailable during checkout, skipping points deduction for buyer {}: {}",
-                playerId, throwable.getMessage());
+                buyerId, throwable.getMessage());
         return false;
     }
 
@@ -509,12 +509,12 @@ public class BuyerAggregationService {
                 "Order service is temporarily unavailable");
     }
 
-    public OrderApi.CartView mergeGuestCart(String buyerId, String guestPlayerId) {
-        if (!guestCartStore.isGuestBuyer(guestPlayerId)) {
+    public OrderApi.CartView mergeGuestCart(String buyerId, String guestBuyerId) {
+        if (!guestCartStore.isGuestBuyer(guestBuyerId)) {
             throw new BusinessException(CommonErrorCode.FORBIDDEN,
                     "Cart merge requires a guest buyer source cart");
         }
-        OrderApi.CartView guestCart = guestCartStore.listCart(guestPlayerId);
+        OrderApi.CartView guestCart = guestCartStore.listCart(guestBuyerId);
         for (OrderApi.CartItemResponse item : guestCart.items()) {
             call("orderService", false,
                     () -> post(properties.orderServiceUrl() + OrderApi.CART_ADD,
@@ -527,17 +527,17 @@ public class BuyerAggregationService {
                                     item.quantity()),
                             new ParameterizedTypeReference<ApiResponse<OrderApi.CartItemResponse>>() {}),
                     "Order service is temporarily unavailable");
-            guestCartStore.removeFromCart(new OrderApi.RemoveFromCartRequest(guestPlayerId, item.productId()));
+            guestCartStore.removeFromCart(new OrderApi.RemoveFromCartRequest(guestBuyerId, item.productId()));
         }
         return listCart(buyerId);
     }
 
     // ── Orders ──
 
-    public List<OrderApi.OrderResponse> listOrders(String playerId, String role) {
+    public List<OrderApi.OrderResponse> listOrders(String buyerId, String role) {
         return call("orderService", false,
                 () -> post(properties.orderServiceUrl() + OrderApi.ORDER_LIST,
-                        new OrderApi.ListOrdersRequest(playerId, role),
+                        new OrderApi.ListOrdersRequest(buyerId, role),
                         new ParameterizedTypeReference<ApiResponse<List<OrderApi.OrderResponse>>>() {}),
                 "Order service is temporarily unavailable");
     }
@@ -573,7 +573,7 @@ public class BuyerAggregationService {
     // ── Checkout Orchestration ──
 
     public BuyerApi.CheckoutResponse checkout(BuyerApi.CheckoutRequest request) {
-        String buyerId = request.playerId();
+        String buyerId = request.buyerId();
         String paymentMethod = request.paymentMethod() != null ? request.paymentMethod() : "WALLET";
 
         // 1. Fetch cart
@@ -848,13 +848,13 @@ public class BuyerAggregationService {
         }
     }
 
-    private <T> T getWithHeader(String url, String playerId,
+    private <T> T getWithHeader(String url, String buyerId,
                                   ParameterizedTypeReference<ApiResponse<T>> typeReference) {
         try {
             ApiResponse<T> response = restClient.get()
                     .uri(url)
                     .header(TrustedHeaderNames.INTERNAL_TOKEN, properties.internalToken())
-                    .header(TrustedHeaderNames.PLAYER_ID, playerId)
+                    .header(TrustedHeaderNames.BUYER_ID, buyerId)
                     .retrieve()
                     .body(typeReference);
             if (response == null || response.data() == null) {
@@ -866,13 +866,13 @@ public class BuyerAggregationService {
         }
     }
 
-    private <T> T postWithHeader(String url, Object request, String playerId,
+    private <T> T postWithHeader(String url, Object request, String buyerId,
                                    ParameterizedTypeReference<ApiResponse<T>> typeReference) {
         try {
             ApiResponse<T> response = restClient.post()
                     .uri(url)
                     .header(TrustedHeaderNames.INTERNAL_TOKEN, properties.internalToken())
-                    .header(TrustedHeaderNames.PLAYER_ID, playerId)
+                    .header(TrustedHeaderNames.BUYER_ID, buyerId)
                     .body(request)
                     .retrieve()
                     .body(typeReference);

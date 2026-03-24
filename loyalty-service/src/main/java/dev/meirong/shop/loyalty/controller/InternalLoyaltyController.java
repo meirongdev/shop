@@ -21,7 +21,7 @@ public class InternalLoyaltyController {
     public ApiResponse<LoyaltyApi.TransactionResponse> earnPoints(
             @Valid @RequestBody LoyaltyApi.EarnPointsRequest request) {
         LoyaltyTransactionEntity txn = accountService.earnPoints(
-                request.playerId(), request.source(), request.points(),
+                request.buyerId(), request.source(), request.points(),
                 request.referenceId(), request.remark());
         return ApiResponse.success(toResponse(txn));
     }
@@ -30,16 +30,16 @@ public class InternalLoyaltyController {
     public ApiResponse<LoyaltyApi.TransactionResponse> deductPoints(
             @Valid @RequestBody LoyaltyApi.DeductPointsRequest request) {
         LoyaltyTransactionEntity txn = accountService.deductPoints(
-                request.playerId(), request.source(), request.points(),
+                request.buyerId(), request.source(), request.points(),
                 request.referenceId(), request.remark());
         return ApiResponse.success(toResponse(txn));
     }
 
-    @GetMapping(LoyaltyApi.INTERNAL_BALANCE + "/{playerId}")
-    public ApiResponse<LoyaltyApi.AccountResponse> getBalance(@PathVariable String playerId) {
-        LoyaltyAccountEntity account = accountService.getOrCreateAccount(playerId);
+    @GetMapping(LoyaltyApi.INTERNAL_BALANCE + "/{buyerId}")
+    public ApiResponse<LoyaltyApi.AccountResponse> getBalance(@PathVariable String buyerId) {
+        LoyaltyAccountEntity account = accountService.getOrCreateAccount(buyerId);
         return ApiResponse.success(new LoyaltyApi.AccountResponse(
-                account.getPlayerId(), account.getTotalPoints(), account.getUsedPoints(),
+                account.getBuyerId(), account.getTotalPoints(), account.getUsedPoints(),
                 account.getBalance(), account.getTier(), account.getTierPoints()));
     }
 

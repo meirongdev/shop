@@ -174,8 +174,8 @@ CREATE TABLE compensation_task (
 |------|-----------|---------------------|
 | promotion-service | `COUPON_REDEEM` | `COUPON_REDEEM:{orderId}:{couponInstanceId}` |
 | marketplace-service | `INVENTORY_DEDUCT` | `INVENTORY_DEDUCT:{orderId}:{skuId}` |
-| loyalty-service | `POINTS_EARN` | `POINTS_EARN:{orderId}:{playerId}` |
-| loyalty-service | `POINTS_REFUND` | `POINTS_REFUND:{orderId}:{playerId}` |
+| loyalty-service | `POINTS_EARN` | `POINTS_EARN:{orderId}:{buyerId}` |
+| loyalty-service | `POINTS_REFUND` | `POINTS_REFUND:{orderId}:{buyerId}` |
 
 ---
 

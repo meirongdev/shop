@@ -17,7 +17,7 @@ public class OnboardingTaskProgressEntity {
     private String id;
 
     @Column(name = "player_id", nullable = false, length = 64)
-    private String playerId;
+    private String buyerId;
 
     @Column(name = "task_key", nullable = false, length = 64)
     private String taskKey;
@@ -40,10 +40,10 @@ public class OnboardingTaskProgressEntity {
     protected OnboardingTaskProgressEntity() {
     }
 
-    public static OnboardingTaskProgressEntity init(String playerId, String taskKey, Instant expireAt) {
+    public static OnboardingTaskProgressEntity init(String buyerId, String taskKey, Instant expireAt) {
         OnboardingTaskProgressEntity entity = new OnboardingTaskProgressEntity();
         entity.id = UUID.randomUUID().toString();
-        entity.playerId = playerId;
+        entity.buyerId = buyerId;
         entity.taskKey = taskKey;
         entity.status = "PENDING";
         entity.pointsIssued = 0;
@@ -71,7 +71,7 @@ public class OnboardingTaskProgressEntity {
     }
 
     public String getId() { return id; }
-    public String getPlayerId() { return playerId; }
+    public String getBuyerId() { return buyerId; }
     public String getTaskKey() { return taskKey; }
     public String getStatus() { return status; }
     public long getPointsIssued() { return pointsIssued; }

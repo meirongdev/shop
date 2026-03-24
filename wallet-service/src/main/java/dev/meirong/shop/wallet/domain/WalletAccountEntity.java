@@ -15,7 +15,7 @@ public class WalletAccountEntity {
 
     @Id
     @Column(name = "player_id", nullable = false, length = 64)
-    private String playerId;
+    private String buyerId;
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal balance;
@@ -26,8 +26,8 @@ public class WalletAccountEntity {
     protected WalletAccountEntity() {
     }
 
-    public WalletAccountEntity(String playerId, BigDecimal balance) {
-        this.playerId = playerId;
+    public WalletAccountEntity(String buyerId, BigDecimal balance) {
+        this.buyerId = buyerId;
         this.balance = balance;
     }
 
@@ -45,8 +45,8 @@ public class WalletAccountEntity {
         this.balance = this.balance.subtract(amount);
     }
 
-    public String getPlayerId() {
-        return playerId;
+    public String getBuyerId() {
+        return buyerId;
     }
 
     public BigDecimal getBalance() {

@@ -203,8 +203,8 @@ public class OrderApplicationService {
     @Transactional(readOnly = true)
     public List<OrderApi.OrderResponse> listOrders(OrderApi.ListOrdersRequest request) {
         List<ShopOrderEntity> orders = "seller".equals(request.role())
-                ? orderRepository.findBySellerIdOrderByCreatedAtDesc(request.playerId())
-                : orderRepository.findByBuyerIdOrderByCreatedAtDesc(request.playerId());
+                ? orderRepository.findBySellerIdOrderByCreatedAtDesc(request.buyerId())
+                : orderRepository.findByBuyerIdOrderByCreatedAtDesc(request.buyerId());
         if (orders.isEmpty()) return List.of();
         List<String> orderIds = orders.stream().map(ShopOrderEntity::getId).toList();
         Map<String, List<OrderItemEntity>> itemsByOrder = itemRepository.findByOrderIdIn(orderIds)

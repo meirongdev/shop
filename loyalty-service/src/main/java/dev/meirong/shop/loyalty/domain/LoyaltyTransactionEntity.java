@@ -18,7 +18,7 @@ public class LoyaltyTransactionEntity {
     private String id;
 
     @Column(name = "player_id", nullable = false, length = 64)
-    private String playerId;
+    private String buyerId;
 
     @Column(nullable = false, length = 32)
     private String type;
@@ -50,10 +50,10 @@ public class LoyaltyTransactionEntity {
     protected LoyaltyTransactionEntity() {
     }
 
-    public LoyaltyTransactionEntity(String playerId, String type, String source,
+    public LoyaltyTransactionEntity(String buyerId, String type, String source,
                                     long amount, long balanceAfter, String referenceId, String remark) {
         this.id = UUID.randomUUID().toString();
-        this.playerId = playerId;
+        this.buyerId = buyerId;
         this.type = type;
         this.source = source;
         this.amount = amount;
@@ -72,7 +72,7 @@ public class LoyaltyTransactionEntity {
     }
 
     public String getId() { return id; }
-    public String getPlayerId() { return playerId; }
+    public String getBuyerId() { return buyerId; }
     public String getType() { return type; }
     public String getSource() { return source; }
     public long getAmount() { return amount; }

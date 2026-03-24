@@ -54,7 +54,7 @@ public final class LoyaltyApi {
     ) {}
 
     public record EarnPointsRequest(
-            @NotBlank String playerId,
+            @NotBlank String buyerId,
             @NotBlank String source,
             long points,
             String referenceId,
@@ -62,7 +62,7 @@ public final class LoyaltyApi {
     ) {}
 
     public record DeductPointsRequest(
-            @NotBlank String playerId,
+            @NotBlank String buyerId,
             @NotBlank String source,
             long points,
             String referenceId,
@@ -72,7 +72,7 @@ public final class LoyaltyApi {
     // --- Responses ---
 
     public record AccountResponse(
-            String playerId,
+            String buyerId,
             long totalPoints,
             long usedPoints,
             long balance,

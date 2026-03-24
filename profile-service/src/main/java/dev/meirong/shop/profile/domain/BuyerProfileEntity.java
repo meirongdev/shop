@@ -13,8 +13,8 @@ import java.time.Instant;
 public class BuyerProfileEntity {
 
     @Id
-    @Column(name = "player_id", nullable = false, length = 64)
-    private String playerId;
+    @Column(name = "buyer_id", nullable = false, length = 64)
+    private String buyerId;
 
     @Column(nullable = false, unique = true, length = 128)
     private String username;
@@ -49,15 +49,15 @@ public class BuyerProfileEntity {
     protected BuyerProfileEntity() {
     }
 
-    public BuyerProfileEntity(String playerId, String username, String displayName, String email, String tier) {
-        this.playerId = playerId;
+    public BuyerProfileEntity(String buyerId, String username, String displayName, String email, String tier) {
+        this.buyerId = buyerId;
         this.username = username;
         this.displayName = displayName;
         this.email = email;
         this.tier = tier;
     }
 
-    public static BuyerProfileEntity register(String playerId,
+    public static BuyerProfileEntity register(String buyerId,
                                               String username,
                                               String displayName,
                                               String email,
@@ -65,7 +65,7 @@ public class BuyerProfileEntity {
                                               String inviteCode,
                                               Instant inviteCodeExpireAt,
                                               String referrerId) {
-        BuyerProfileEntity entity = new BuyerProfileEntity(playerId, username, displayName, email, tier);
+        BuyerProfileEntity entity = new BuyerProfileEntity(buyerId, username, displayName, email, tier);
         entity.inviteCode = inviteCode;
         entity.inviteCodeExpireAt = inviteCodeExpireAt;
         entity.referrerId = referrerId;
@@ -91,8 +91,8 @@ public class BuyerProfileEntity {
         this.tier = tier;
     }
 
-    public String getPlayerId() {
-        return playerId;
+    public String getBuyerId() {
+        return buyerId;
     }
 
     public String getUsername() {

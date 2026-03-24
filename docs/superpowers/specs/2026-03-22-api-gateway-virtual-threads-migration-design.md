@@ -71,10 +71,10 @@ Client
 │  └─────────────────────────────────────┘ │
 │  ┌─────────────────────────────────────┐ │
 │  │   TrustedHeadersFilter  @Order(-90) │ │  ← 在 Security 之后，可读取已解析的 JWT
-│  │   注入 X-Player-Id / X-Roles 等     │ │
+│  │   注入 X-Buyer-Id / X-Roles 等     │ │
 │  └─────────────────────────────────────┘ │
 │  ┌─────────────────────────────────────┐ │
-│  │   RateLimitingFilter    @Order(-80) │ │  ← 在 TrustedHeaders 之后，读取 X-Player-Id
+│  │   RateLimitingFilter    @Order(-80) │ │  ← 在 TrustedHeaders 之后，读取 X-Buyer-Id
 │  │   (Redis Lua, 100 req/min/key)      │ │
 │  └─────────────────────────────────────┘ │
 │  ┌─────────────────────────────────────┐ │
@@ -90,7 +90,7 @@ upstream-v1          upstream-v2 (canary endpoint)
 **Filter 执行顺序原则：**
 1. `SecurityFilterChain`（-100）：解析 JWT，填充 `SecurityContext`
 2. `TrustedHeadersFilter`（-90）：从 `SecurityContext` 读取 JWT，注入可信 header
-3. `RateLimitingFilter`（-80）：读取 `X-Player-Id`（已由上一步注入）限流
+3. `RateLimitingFilter`（-80）：读取 `X-Buyer-Id`（已由上一步注入）限流
 
 ---
 
@@ -391,7 +391,7 @@ public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
         super(request);
         this.injected = Map.of(
             "X-Request-Id",     requestId,
-            "X-Player-Id",      nullToEmpty(jwt.getClaimAsString("principalId")),
+            "X-Buyer-Id",      nullToEmpty(jwt.getClaimAsString("principalId")),
             "X-Username",       nullToEmpty(jwt.getClaimAsString("username")),
             "X-Roles",          String.join(",", roles),
             "X-Portal",         nullToEmpty(jwt.getClaimAsString("portal")),
@@ -418,7 +418,7 @@ public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
 
 ### 6.4 RateLimitingFilter
 
-**顺序：`@Order(-80)`**（在 `TrustedHeadersFilter` 之后，`X-Player-Id` 已注入）。
+**顺序：`@Order(-80)`**（在 `TrustedHeadersFilter` 之后，`X-Buyer-Id` 已注入）。
 
 使用 **原子 Lua 脚本**解决 INCR + EXPIRE 的竞态问题：
 
@@ -452,9 +452,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             return;
         }
         try {
-            String playerId = request.getHeader("X-Player-Id");
+            String buyerId = request.getHeader("X-Buyer-Id");
             String key = KEY_PREFIX
-                + (playerId != null && !playerId.isBlank() ? playerId : request.getRemoteAddr())
+                + (buyerId != null && !buyerId.isBlank() ? buyerId : request.getRemoteAddr())
                 + ":" + currentMinuteBucket();
             Long count = redis.execute(RATE_LIMIT_SCRIPT, List.of(key), "120");
             if (count != null && count > properties.rateLimit().requestsPerMinute()) {
@@ -475,7 +475,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 }
 ```
 
-限流策略：按 `X-Player-Id`（已登录）或 IP（匿名）区分，默认 100 req/min，通过 `GATEWAY_RATE_LIMIT_RPM` 调整。Redis 不可用时 fail-open 放行。
+限流策略：按 `X-Buyer-Id`（已登录）或 IP（匿名）区分，默认 100 req/min，通过 `GATEWAY_RATE_LIMIT_RPM` 调整。Redis 不可用时 fail-open 放行。
 
 ---
 
@@ -501,16 +501,16 @@ public class CanaryRequestPredicates implements PredicateSupplier {
 
     public static RequestPredicate canary(String routeId) {
         return request -> {
-            String playerId = request.servletRequest().getHeader("X-Player-Id");
-            if (playerId == null || playerId.isBlank() || redisTemplate == null) {
+            String buyerId = request.servletRequest().getHeader("X-Buyer-Id");
+            if (buyerId == null || buyerId.isBlank() || redisTemplate == null) {
                 return false;
             }
             try {
                 return Boolean.TRUE.equals(
-                    redisTemplate.opsForSet().isMember("gateway:canary:" + routeId, playerId));
+                    redisTemplate.opsForSet().isMember("gateway:canary:" + routeId, buyerId));
             } catch (Exception ex) {
                 log.warn("Canary lookup failed for route {} and player {}, routing to stable: {}",
-                    routeId, playerId, ex.getMessage());
+                    routeId, buyerId, ex.getMessage());
                 return false;
             }
         };
@@ -554,7 +554,7 @@ DEL gateway:canary:seller-api
 | `GatewayContextTest` | Spring 上下文冒烟测试，验证所有 Bean 正常加载 |
 | `TrustedHeadersFilterTest` | JWT 存在时注入正确 header；`/auth/**` 路径跳过注入；缺少 JWT 时 chain 直通；`TrustedHeadersRequestWrapper` 剥离不可信 header |
 | `RateLimitingFilterTest` | 正常请求通过；超过阈值返回 429 + `Retry-After`；非 `/api/` 路径跳过；Redis 不可用时 fail-open |
-| `CanaryRequestPredicatesTest` | Redis 白名单命中返回 `true`；未命中返回 `false`；`X-Player-Id` 缺失返回 `false`；Redis 异常时降级到稳定路由 |
+| `CanaryRequestPredicatesTest` | Redis 白名单命中返回 `true`；未命中返回 `false`；`X-Buyer-Id` 缺失返回 `false`；Redis 异常时降级到稳定路由 |
 | `GatewayRoutingIntegrationTest` | JDK `HttpServer` 模拟上游，验证路由转发、`StripPrefix`、`PreserveHost`、Canary 路由优先级 |
 
 ---

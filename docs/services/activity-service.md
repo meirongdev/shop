@@ -110,7 +110,7 @@ public interface GamePlugin {
 public record ParticipateContext(
     String   gameId,
     GameType gameType,
-    String   playerId,
+    String   buyerId,
     String   sessionId,
     String   gameConfig,   // activity_game.config 原始 JSON
     String   payload,      // 玩家请求体原始 JSON
@@ -345,7 +345,7 @@ public class RedEnvelopePlugin implements GamePlugin {
     public ParticipateResult participate(ParticipateContext ctx) {
         List<Object> result = redisTemplate.execute(grabPacketLua,
             List.of(packetsKey(ctx.gameId()), claimsKey(ctx.gameId())),
-            ctx.playerId());
+            ctx.buyerId());
 
         int code = toInt(result.get(0));
         return switch (code) {
@@ -405,12 +405,12 @@ public class CollectCardPlugin implements GamePlugin {
         List<ActivityCollectCardDefinition> definitions = definitionRepository.findByGameIdOrderByCardNameAsc(ctx.gameId());
         ActivityCollectCardDefinition drawn = weightedRandom(definitions);
 
-        long uniqueBefore = playerCardRepository.countDistinctCardIdByGameIdAndPlayerId(ctx.gameId(), ctx.playerId());
+        long uniqueBefore = playerCardRepository.countDistinctCardIdByGameIdAndPlayerId(ctx.gameId(), ctx.buyerId());
         boolean duplicate = playerCardRepository.countByGameIdAndPlayerIdAndCardId(
-            ctx.gameId(), ctx.playerId(), drawn.getId()) > 0;
+            ctx.gameId(), ctx.buyerId(), drawn.getId()) > 0;
 
         playerCardRepository.save(new ActivityPlayerCard(
-            UUID.randomUUID().toString(), ctx.gameId(), ctx.playerId(), drawn.getId(), "DROP"));
+            UUID.randomUUID().toString(), ctx.gameId(), ctx.buyerId(), drawn.getId(), "DROP"));
 
         long uniqueAfter = duplicate ? uniqueBefore : uniqueBefore + 1;
         boolean fullSet = uniqueAfter >= definitions.size();
@@ -473,9 +473,9 @@ public class VirtualFarmPlugin implements GamePlugin {
     public ParticipateResult participate(ParticipateContext ctx) {
         FarmConfig config = parseConfig(ctx.gameConfig());
         FarmAction action = parseAction(ctx.payload());
-        ActivityVirtualFarm farm = farmRepository.findByGameIdAndPlayerId(ctx.gameId(), ctx.playerId())
+        ActivityVirtualFarm farm = farmRepository.findByGameIdAndPlayerId(ctx.gameId(), ctx.buyerId())
             .orElseGet(() -> new ActivityVirtualFarm(
-                UUID.randomUUID().toString(), ctx.gameId(), ctx.playerId(),
+                UUID.randomUUID().toString(), ctx.gameId(), ctx.buyerId(),
                 config.maxStage(), config.stageProgress()));
 
         if (action == FarmAction.HARVEST) {
@@ -669,7 +669,7 @@ CREATE TABLE activity_participation (
     id                   VARCHAR(36)    NOT NULL PRIMARY KEY,
     game_id              VARCHAR(36)    NOT NULL,
     game_type            VARCHAR(32)    NOT NULL,
-    player_id            VARCHAR(64),
+    buyer_id            VARCHAR(64),
     session_id           VARCHAR(128),
     ip_address           VARCHAR(64),
     device_fingerprint   VARCHAR(256),
@@ -682,7 +682,7 @@ CREATE TABLE activity_participation (
     -- PENDING / DISPATCHED / FAILED / SKIPPED(NOTHING/CARD/PROGRESS)
     reward_ref           VARCHAR(128),  -- 发放凭据
     extra_data           JSON,          -- Plugin 特有字段（卡片 ID、养成进度等）
-    INDEX idx_game_player (game_id, player_id),
+    INDEX idx_game_player (game_id, buyer_id),
     INDEX idx_reward_status (reward_status),  -- 补偿 Job 用
     INDEX idx_participated_at (participated_at)
 );
@@ -727,18 +727,18 @@ CREATE TABLE activity_collect_card_def (
 CREATE TABLE activity_player_card (
     id          VARCHAR(36)    NOT NULL PRIMARY KEY,
     game_id     VARCHAR(36)    NOT NULL,
-    player_id   VARCHAR(64)    NOT NULL,
+    buyer_id   VARCHAR(64)    NOT NULL,
     card_id     VARCHAR(36)    NOT NULL,
     source      VARCHAR(32)    NOT NULL,  -- DROP/GIFT
     created_at  TIMESTAMP(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    INDEX idx_player_game (player_id, game_id)
+    INDEX idx_player_game (buyer_id, game_id)
 );
 
 -- VirtualFarmPlugin 扩展：玩家农场状态
 CREATE TABLE activity_virtual_farm (
     id           VARCHAR(36)   NOT NULL PRIMARY KEY,
     game_id      VARCHAR(36)   NOT NULL,
-    player_id    VARCHAR(64)   NOT NULL,
+    buyer_id    VARCHAR(64)   NOT NULL,
     stage        INT           NOT NULL DEFAULT 1,
     progress     INT           NOT NULL DEFAULT 0,
     max_stage    INT           NOT NULL,
@@ -746,14 +746,14 @@ CREATE TABLE activity_virtual_farm (
     last_water_at TIMESTAMP(6),
     harvested_at  TIMESTAMP(6),
     created_at   TIMESTAMP(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    UNIQUE KEY uk_activity_virtual_farm_game_player (game_id, player_id)
+    UNIQUE KEY uk_activity_virtual_farm_game_player (game_id, buyer_id)
 );
 
 -- SlashPricePlugin 扩展：砍价会话
 CREATE TABLE activity_slash_session (
     id           VARCHAR(36)    NOT NULL PRIMARY KEY,
     game_id      VARCHAR(36)    NOT NULL,
-    player_id    VARCHAR(64)    NOT NULL,
+    buyer_id    VARCHAR(64)    NOT NULL,
     product_id   VARCHAR(36)    NOT NULL,
     original_price DECIMAL(19,2) NOT NULL,
     current_price  DECIMAL(19,2) NOT NULL,
@@ -917,14 +917,14 @@ public void compensatePendingRewards() {
 @Component
 public class AntiCheatGuard {
 
-    public void check(ActivityGame game, String playerId, String ipAddress, String deviceFingerprint) {
-        checkPlayerRateLimit(game.getId(), playerId);
+    public void check(ActivityGame game, String buyerId, String ipAddress, String deviceFingerprint) {
+        checkPlayerRateLimit(game.getId(), buyerId);
         checkIpRateLimit(game.getId(), ipAddress);
-        checkDeviceReuse(game.getId(), playerId, deviceFingerprint);
+        checkDeviceReuse(game.getId(), buyerId, deviceFingerprint);
     }
 
-    private void checkPlayerRateLimit(String gameId, String playerId) {
-        long count = incrementWithinWindow("activity:ac:player:%s:%s".formatted(gameId, playerId));
+    private void checkPlayerRateLimit(String gameId, String buyerId) {
+        long count = incrementWithinWindow("activity:ac:player:%s:%s".formatted(gameId, buyerId));
         if (count > properties.antiCheat().playerRequestsPerWindow()) {
             meterRegistry.counter("activity_anti_cheat_blocked_total", "reason", "player_rate_limit").increment();
             throw new BusinessException(CommonErrorCode.TOO_MANY_REQUESTS,
@@ -943,15 +943,15 @@ public class AntiCheatGuard {
         }
     }
 
-    private void checkDeviceReuse(String gameId, String playerId, String deviceFingerprint) {
+    private void checkDeviceReuse(String gameId, String buyerId, String deviceFingerprint) {
         if (!properties.antiCheat().deviceFingerprintEnabled() || isBlank(deviceFingerprint)) return;
         String key = "activity:ac:device:%s:%s".formatted(gameId, deviceFingerprint);
         String existingPlayer = redis.opsForValue().get(key);
         if (existingPlayer == null) {
-            redis.opsForValue().set(key, playerId, Duration.ofHours(properties.antiCheat().deviceFingerprintTtlHours()));
+            redis.opsForValue().set(key, buyerId, Duration.ofHours(properties.antiCheat().deviceFingerprintTtlHours()));
             return;
         }
-        if (!existingPlayer.equals(playerId)) {
+        if (!existingPlayer.equals(buyerId)) {
             meterRegistry.counter("activity_anti_cheat_blocked_total", "reason", "device_reuse").increment();
             throw new BusinessException(CommonErrorCode.FORBIDDEN,
                 "Device fingerprint is already bound to another participant");

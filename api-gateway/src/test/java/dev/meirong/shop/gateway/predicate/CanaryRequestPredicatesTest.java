@@ -49,9 +49,9 @@ class CanaryRequestPredicatesTest {
         assertThat(predicate.test(requestWithPlayer("buyer-100"))).isFalse();
     }
 
-    private ServerRequest requestWithPlayer(String playerId) {
+    private ServerRequest requestWithPlayer(String buyerId) {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/buyer/orders");
-        request.addHeader("X-Player-Id", playerId);
+        request.addHeader("X-Buyer-Id", buyerId);
         return ServerRequest.create(request, List.of());
     }
 }

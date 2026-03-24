@@ -29,7 +29,7 @@ CREATE TABLE `order` (
     id                VARCHAR(36)    NOT NULL PRIMARY KEY,
     order_no          VARCHAR(32)    NOT NULL UNIQUE,        -- 业务单号 ORD-2026-00123456
     type              VARCHAR(32)    NOT NULL DEFAULT 'STANDARD',  -- STANDARD/GUEST/POINTS_REDEMPTION
-    player_id         VARCHAR(64),                            -- 注册用户 ID（GUEST 为 NULL）
+    buyer_id         VARCHAR(64),                            -- 注册用户 ID（GUEST 为 NULL）
     guest_email       VARCHAR(256),                           -- GUEST 类型专用
     order_token       VARCHAR(64),                            -- GUEST 追踪 token
     status            VARCHAR(32)    NOT NULL DEFAULT 'PENDING_PAYMENT',
@@ -55,7 +55,7 @@ CREATE TABLE `order` (
     cancel_reason     VARCHAR(256),
     created_at        TIMESTAMP(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at        TIMESTAMP(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-    INDEX idx_player_created (player_id, created_at DESC),
+    INDEX idx_player_created (buyer_id, created_at DESC),
     INDEX idx_order_token (order_token),
     INDEX idx_status (status),
     INDEX idx_seller (seller_id)
@@ -108,7 +108,7 @@ CREATE TABLE order_refund (
     reason          VARCHAR(512)  NOT NULL,
     amount          DECIMAL(19,2) NOT NULL,
     status          VARCHAR(32)   NOT NULL DEFAULT 'PENDING',  -- PENDING/APPROVED/REJECTED/COMPLETED
-    requester       VARCHAR(64),   -- player_id 或 'SYSTEM'
+    requester       VARCHAR(64),   -- buyer_id 或 'SYSTEM'
     reviewer        VARCHAR(64),   -- 审核人（卖家/平台）
     review_remark   VARCHAR(512),
     refund_method   VARCHAR(32),   -- WALLET / ORIGINAL_PAYMENT
@@ -197,18 +197,18 @@ public CreateOrderResponse createOrder(CreateOrderRequest req) {
     inventoryClient.lockInventory(req.items());
 
     // 2. 计算促销（调用 promotion-service）
-    PromotionResult promo = promotionClient.calculate(req.playerId(), req.items(), req.couponCode());
+    PromotionResult promo = promotionClient.calculate(req.buyerId(), req.items(), req.couponCode());
 
     // 3. 积分抵扣（如有，调用 loyalty-service 预锁定）
     long pointsToDeduct = req.pointsToUse();
     if (pointsToDeduct > 0) {
-        loyaltyClient.lockPoints(req.playerId(), pointsToDeduct, "ORDER_PENDING");
+        loyaltyClient.lockPoints(req.buyerId(), pointsToDeduct, "ORDER_PENDING");
     }
 
     // 4. 创建订单（DB 事务内）
     OrderEntity order = new OrderEntity(
         type = STANDARD,
-        playerId = req.playerId(),
+        buyerId = req.buyerId(),
         items = req.items(),
         subtotal = promo.originalTotal(),
         discountAmount = promo.discountAmount(),
@@ -234,7 +234,7 @@ public CreateOrderResponse createOrder(CreateOrderRequest req) {
 public CreateOrderResponse createGuestOrder(CreateGuestOrderRequest req) {
     // 与标准下单基本相同，差异点：
     //   - type = GUEST
-    //   - player_id = NULL
+    //   - buyer_id = NULL
     //   - guest_email = req.email()
     //   - order_token = UUID.randomUUID().toString()  ← 游客追踪 token
     //   - 不支持积分抵扣（游客无积分账户）

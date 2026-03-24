@@ -1,3 +1,5 @@
+dev.meirong.shop.common.json.JacksonCompatibilityAutoConfiguration
+dev.meirong.shop.common.web.ApiCompatibilityAutoConfiguration
 dev.meirong.shop.common.feature.FeatureToggleAutoConfiguration
 dev.meirong.shop.common.idempotency.IdempotencyAutoConfiguration
 dev.meirong.shop.common.observability.ObservabilityAutoConfiguration

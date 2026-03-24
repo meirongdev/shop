@@ -8,7 +8,7 @@
 - `buyer-bff` 已提供 Loyalty Hub 聚合接口，把账户、任务、奖励、流水、兑换记录统一暴露给 buyer 侧。
 - `buyer-portal` 已提供 `/buyer/loyalty` 页面，支持签到、积分商城兑换、查看最近流水与兑换记录。
 - 购物车结账链路已支持 `pointsToUse`，由 buyer-bff 在下单时调用 loyalty-service 完成积分抵扣。
-- `UserRegisteredListener` 与 `OrderEventListener` 现在通过 `@RetryableTopic` 区分异常语义：poison pill/契约错误直接进入 DLT，数据库与 `profile-service` 的瞬时失败才触发 Kafka 有限重试。
+- `BuyerRegisteredListener` 与 `OrderEventListener` 现在通过 `@RetryableTopic` 区分异常语义：poison pill/契约错误直接进入 DLT，数据库与 `profile-service` 的瞬时失败才触发 Kafka 有限重试。
 
 ---
 
@@ -47,7 +47,7 @@ loyalty-service（:8088）
   4. 积分兑换目录     — 积分商品管理（实物/虚拟/优惠券）
   5. 积分兑换订单     — 创建兑换、库存占用、履约触发
   6. 积分到期清零     — 按年度批量清零过期积分
-  7. 新用户引导任务   — 监听 user.registered.v1，管理 7 项新人任务进度
+  7. 新用户引导任务   — 监听 buyer.registered.v1，管理 7 项新人任务进度
 ```
 
 ---
@@ -58,7 +58,7 @@ loyalty-service（:8088）
 
 ```sql
 CREATE TABLE loyalty_account (
-    player_id     VARCHAR(64)  NOT NULL PRIMARY KEY,
+    buyer_id     VARCHAR(64)  NOT NULL PRIMARY KEY,
     total_points  BIGINT       NOT NULL DEFAULT 0,   -- 累计获得积分（统计用）
     used_points   BIGINT       NOT NULL DEFAULT 0,   -- 累计消耗积分
     balance       BIGINT       NOT NULL DEFAULT 0,   -- 当前可用积分（= 未过期 earned - used）
@@ -74,7 +74,7 @@ CREATE TABLE loyalty_account (
 ```sql
 CREATE TABLE loyalty_transaction (
     id            VARCHAR(36)  NOT NULL PRIMARY KEY,
-    player_id     VARCHAR(64)  NOT NULL,
+    buyer_id     VARCHAR(64)  NOT NULL,
     type          VARCHAR(32)  NOT NULL,   -- EARN / DEDUCT / EXPIRE / ADJUST
     source        VARCHAR(32)  NOT NULL,   -- PURCHASE / CHECKIN / REVIEW / SHARE / REDEEM / ADMIN
     amount        BIGINT       NOT NULL,   -- 正数 = 赚取，负数 = 消耗
@@ -83,7 +83,7 @@ CREATE TABLE loyalty_transaction (
     remark        VARCHAR(256),
     expire_at     DATE,                    -- 积分过期日（NULL = 永不过期）
     created_at    TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    INDEX idx_player_created (player_id, created_at DESC)
+    INDEX idx_player_created (buyer_id, created_at DESC)
 );
 ```
 
@@ -92,14 +92,14 @@ CREATE TABLE loyalty_transaction (
 ```sql
 CREATE TABLE loyalty_checkin (
     id             VARCHAR(36)  NOT NULL PRIMARY KEY,
-    player_id      VARCHAR(64)  NOT NULL,
+    buyer_id      VARCHAR(64)  NOT NULL,
     checkin_date   DATE         NOT NULL,
     streak_day     INT          NOT NULL DEFAULT 1,   -- 连续签到天数
     points_earned  BIGINT       NOT NULL,             -- 本次获得积分
     is_makeup      TINYINT(1)   NOT NULL DEFAULT 0,   -- 是否补签
     makeup_cost    BIGINT       NOT NULL DEFAULT 0,   -- 补签消耗积分
     created_at     TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    UNIQUE KEY uq_player_date (player_id, checkin_date)
+    UNIQUE KEY uq_player_date (buyer_id, checkin_date)
 );
 ```
 
@@ -130,7 +130,7 @@ CREATE TABLE loyalty_reward_item (
 ```sql
 CREATE TABLE loyalty_redemption (
     id              VARCHAR(36)   NOT NULL PRIMARY KEY,
-    player_id       VARCHAR(64)   NOT NULL,
+    buyer_id       VARCHAR(64)   NOT NULL,
     reward_item_id  VARCHAR(36)   NOT NULL,
     reward_name     VARCHAR(128)  NOT NULL,   -- 快照（防商品修改）
     points_spent    BIGINT        NOT NULL,
@@ -143,7 +143,7 @@ CREATE TABLE loyalty_redemption (
     remark          VARCHAR(256),
     created_at      TIMESTAMP(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at      TIMESTAMP(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-    INDEX idx_player (player_id, created_at DESC)
+    INDEX idx_player (buyer_id, created_at DESC)
 );
 ```
 
@@ -176,7 +176,7 @@ INSERT INTO loyalty_earn_rule VALUES
 
 ### 4.0 模块归属说明
 
-`user.registered.v1` 由 **profile-service** 在用户注册成功后发布。loyalty-service 和 promotion-service 独立消费此事件，各自处理积分/任务 和 优惠券 的发放，无需相互调用。
+`buyer.registered.v1` 由 **profile-service** 在用户注册成功后发布。loyalty-service 和 promotion-service 独立消费此事件，各自处理积分/任务 和 优惠券 的发放，无需相互调用。
 
 ### 4.1 数据库表设计
 
@@ -197,15 +197,15 @@ CREATE TABLE onboarding_task_template (
 -- 每个新用户的任务进度
 CREATE TABLE onboarding_task_progress (
     id            VARCHAR(36)   NOT NULL PRIMARY KEY,
-    player_id     VARCHAR(64)   NOT NULL,
+    buyer_id     VARCHAR(64)   NOT NULL,
     task_key      VARCHAR(64)   NOT NULL,
     status        VARCHAR(16)   NOT NULL DEFAULT 'PENDING',  -- PENDING / COMPLETED
     points_issued BIGINT        NOT NULL DEFAULT 0,
     completed_at  TIMESTAMP(6),
     expire_at     TIMESTAMP(6)  NOT NULL,                    -- 注册日 + 14 天
     created_at    TIMESTAMP(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    UNIQUE KEY uq_player_task (player_id, task_key),
-    INDEX idx_player_expire (player_id, expire_at)
+    UNIQUE KEY uq_player_task (buyer_id, task_key),
+    INDEX idx_player_expire (buyer_id, expire_at)
 );
 ```
 
@@ -214,18 +214,18 @@ CREATE TABLE onboarding_task_progress (
 ```java
 // LoyaltyOnboardingListener.java
 
-@KafkaListener(topics = "user.registered.v1")
-public void onUserRegistered(EventEnvelope<UserRegisteredEventData> event) {
-    String playerId = event.data().playerId();
+@KafkaListener(topics = "buyer.registered.v1")
+public void onUserRegistered(EventEnvelope<BuyerRegisteredEventData> event) {
+    String buyerId = event.data().buyerId();
     Instant expireAt = Instant.now().plus(14, ChronoUnit.DAYS);
 
     // 1. 发放注册积分（100 pts）
-    accountService.earnPoints(playerId, 100, "REGISTER", event.eventId());
+    accountService.earnPoints(buyerId, 100, "REGISTER", event.eventId());
 
     // 2. 初始化 7 项新人任务进度
     List<OnboardingTaskTemplate> templates = templateRepository.findAllActive();
     List<OnboardingTaskProgress> progresses = templates.stream()
-        .map(t -> OnboardingTaskProgress.init(playerId, t.getTaskKey(), expireAt))
+        .map(t -> OnboardingTaskProgress.init(buyerId, t.getTaskKey(), expireAt))
         .toList();
     progressRepository.saveAll(progresses);
 }
@@ -236,10 +236,10 @@ public void onUserRegistered(EventEnvelope<UserRegisteredEventData> event) {
 ```java
 // OnboardingTaskService.java
 
-public void completeTask(String playerId, String taskKey) {
+public void completeTask(String buyerId, String taskKey) {
     // 幂等：已完成则直接返回
     OnboardingTaskProgress progress = progressRepository
-        .findByPlayerIdAndTaskKey(playerId, taskKey)
+        .findByPlayerIdAndTaskKey(buyerId, taskKey)
         .orElse(null);
     if (progress == null || progress.isCompleted() || progress.isExpired()) return;
 
@@ -248,12 +248,12 @@ public void completeTask(String playerId, String taskKey) {
     progressRepository.save(progress);
 
     OnboardingTaskTemplate template = templateRepository.findByTaskKey(taskKey);
-    accountService.earnPoints(playerId, template.getPointsReward(), "ONBOARDING_TASK", taskKey);
+    accountService.earnPoints(buyerId, template.getPointsReward(), "ONBOARDING_TASK", taskKey);
 
     // 检查是否完成所有 7 项 → 额外奖励 100 pts
-    long completedCount = progressRepository.countCompleted(playerId);
+    long completedCount = progressRepository.countCompleted(buyerId);
     if (completedCount == templateRepository.countActive()) {
-        accountService.earnPoints(playerId, 100, "ONBOARDING_COMPLETE", playerId);
+        accountService.earnPoints(buyerId, 100, "ONBOARDING_COMPLETE", buyerId);
     }
 }
 ```
@@ -268,7 +268,7 @@ public void completeTask(String playerId, String taskKey) {
 | `FIRST_ADD_CART` | buyer-bff 加购时调用 `POST /internal/loyalty/onboarding/task` |
 | `FIRST_ORDER` | 消费 `order.completed.v1`，判断是否为首单 |
 | `FIRST_REVIEW` | 消费 `review.events.v1 (SUBMITTED)`，判断是否为首评 |
-| `FIRST_REFERRAL` | 消费 `user.registered.v1`，referrer_id 非空时为被邀请人触发邀请人任务 |
+| `FIRST_REFERRAL` | 消费 `buyer.registered.v1`，referrer_id 非空时为被邀请人触发邀请人任务 |
 
 ### 4.5 任务过期清理
 
@@ -301,7 +301,7 @@ Day 8+: 重置为 Day 1，进入新的 7 天周期
 
 ```
 POST /loyalty/v1/checkin
-Header: X-Player-Id: player-1001
+Header: X-Buyer-Id: buyer-1001
 
 Response:
 {
@@ -378,7 +378,7 @@ Response:
 
 ```
 POST /loyalty/v1/redemptions
-Header: X-Player-Id: player-1001
+Header: X-Buyer-Id: buyer-1001
 Body:
 {
   "reward_item_id": "reward-001",
@@ -410,7 +410,7 @@ Body:
 // loyalty-service 调用 order-service 内部 API
 POST /internal/orders/redemption
 {
-  "player_id": "player-1001",
+  "buyer_id": "buyer-1001",
   "type": "POINTS_REDEMPTION",
   "items": [
     { "sku": "CANVAS-BAG-001", "quantity": 1, "points_price": 2000 }
@@ -449,11 +449,11 @@ public void onOrderCompleted(EventEnvelope<OrderEventData> event) {
     if (!"ORDER_COMPLETED".equals(event.type())) return;
 
     OrderEventData data = event.data();
-    LoyaltyAccount account = accountService.getOrCreate(data.playerId());
+    LoyaltyAccount account = accountService.getOrCreate(data.buyerId());
     EarnRule rule = earnRuleRepository.findBySource("PURCHASE");
 
     long points = rule.calculate(data.totalAmount(), account.getTier());
-    accountService.earnPoints(data.playerId(), points, "PURCHASE", data.orderId());
+    accountService.earnPoints(data.buyerId(), points, "PURCHASE", data.orderId());
 }
 ```
 
@@ -493,7 +493,7 @@ GET  /loyalty/v1/onboarding/tasks             # 新人任务进度列表
 
 # 内部接口（X-Internal-Token）
 POST /internal/loyalty/earn                   # 服务间调用赚取积分
-GET  /internal/loyalty/account/{playerId}     # 查询积分（BFF 聚合）
+GET  /internal/loyalty/account/{buyerId}     # 查询积分（BFF 聚合）
 POST /internal/loyalty/onboarding/task        # 触发新人任务完成（profile-service / buyer-bff 调用）
 ```
 
@@ -506,10 +506,10 @@ buyer-bff Dashboard 聚合时同时查询 loyalty-service：
 ```java
 // BuyerDashboardService.java 并发调用
 try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-    var walletFuture   = scope.fork(() -> walletClient.getWallet(playerId));
-    var loyaltyFuture  = scope.fork(() -> loyaltyClient.getAccount(playerId));    // 新增
-    var profileFuture  = scope.fork(() -> profileClient.getProfile(playerId));
-    var couponsFuture  = scope.fork(() -> promotionClient.getCoupons(playerId));
+    var walletFuture   = scope.fork(() -> walletClient.getWallet(buyerId));
+    var loyaltyFuture  = scope.fork(() -> loyaltyClient.getAccount(buyerId));    // 新增
+    var profileFuture  = scope.fork(() -> profileClient.getProfile(buyerId));
+    var couponsFuture  = scope.fork(() -> promotionClient.getCoupons(buyerId));
     scope.join();
 
     return DashboardResponse.builder()
@@ -538,7 +538,7 @@ try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
 
 ```
 loyalty-service
-  消费：user.registered.v1    (profile-service 发布) → 新用户注册积分 + 初始化任务
+  消费：buyer.registered.v1    (profile-service 发布) → 新用户注册积分 + 初始化任务
   消费：order.events.v1       (order-service 发布)   → 购物积分 + 首单任务完成
   消费：review.events.v1      (future review-service 发布) → 评价积分 + 首评任务完成
   调用：promotion-service      (COUPON 兑换时生成优惠券)

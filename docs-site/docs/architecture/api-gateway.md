@@ -37,7 +37,7 @@ Gateway 对 `/api/**` 路径的已认证请求注入以下头：
 | Header | 来源 |
 |--------|------|
 | `X-Request-Id` | 请求头或自动生成 UUID |
-| `X-Player-Id` | JWT claim: principalId |
+| `X-Buyer-Id` | JWT claim: principalId |
 | `X-Username` | JWT claim: username |
 | `X-Roles` | JWT claim: roles |
 | `X-Portal` | JWT claim: portal |
@@ -66,7 +66,7 @@ Gateway 对 `/api/**` 路径的已认证请求注入以下头：
 ## 流量治理
 
 - **Virtual Threads**：Gateway 默认启用 `spring.threads.virtual.enabled=true`
-- **Rate Limiting**：`RateLimitingFilter` 使用 Redis Lua 脚本按 `X-Player-Id` / IP 做基础限流；Redis 故障时 fail-open
+- **Rate Limiting**：`RateLimitingFilter` 使用 Redis Lua 脚本按 `X-Buyer-Id` / IP 做基础限流；Redis 故障时 fail-open
 - **Canary**：buyer / seller API 支持 Redis Set 白名单灰度，命中后优先走 `*_V2_URI`
 - **YAML 路由治理**：所有 northbound 路由在 `application.yml` 中维护
 

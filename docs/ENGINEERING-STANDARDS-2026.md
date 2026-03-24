@@ -72,6 +72,8 @@
 - **仍属演进方向**：OpenRewrite、ArchUnit、契约测试、镜像构建 + Kind smoke CI、mTLS / JWKS / workload identity、Grafana / Tempo / Loki 等完整观测平台
 
 > 技术栈适配性、复用建议与演进方向的权威文档：`docs/TECH-STACK-BEST-PRACTICES-2026.md`
+>
+> 本仓库的 CI / Makefile / hooks / archetype 开发流程统一说明，见：`docs/DEVELOPER-EXPERIENCE-STANDARD-2026.md`
 
 ---
 
@@ -160,6 +162,8 @@
 可迁移来源：
 - `04-specifications/meirong-service-api-specification-2026.md`
 - `05-best-practices/java-spring-boot-3.5-guideline.md`
+
+> 兼容性开发规范与本仓库当前支持/缺口/已实现改造，见：`docs/COMPATIBILITY-DEVELOPMENT-STANDARD-2026.md`
 
 ### 5.4 可观测性从“采集”升级到“运营”（已补充）
 

@@ -46,12 +46,12 @@ class SellerControllerProfileTest {
         when(service.getProfile("seller-2001")).thenReturn(response);
 
         mockMvc.perform(post(SellerApi.PROFILE_GET)
-                        .header("X-Player-Id", "seller-2001")
+                        .header("X-Buyer-Id", "seller-2001")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SellerApi.SellerContextRequest("seller-body"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SC_OK"))
-                .andExpect(jsonPath("$.data.playerId").value("seller-2001"))
+                .andExpect(jsonPath("$.data.buyerId").value("seller-2001"))
                 .andExpect(jsonPath("$.data.username").value("seller.demo"));
     }
 
@@ -80,12 +80,12 @@ class SellerControllerProfileTest {
         ))).thenReturn(response);
 
         mockMvc.perform(post(SellerApi.PROFILE_UPDATE)
-                        .header("X-Player-Id", "seller-2001")
+                        .header("X-Buyer-Id", "seller-2001")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SC_OK"))
-                .andExpect(jsonPath("$.data.playerId").value("seller-2001"))
+                .andExpect(jsonPath("$.data.buyerId").value("seller-2001"))
                 .andExpect(jsonPath("$.data.displayName").value("Seller Studio"));
     }
 }

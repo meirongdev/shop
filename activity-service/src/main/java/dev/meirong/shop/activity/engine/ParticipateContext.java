@@ -7,7 +7,7 @@ import java.time.Instant;
 public record ParticipateContext(
     String gameId,
     GameType gameType,
-    String playerId,
+    String buyerId,
     String sessionId,
     String gameConfig,
     String payload,

@@ -125,7 +125,7 @@ public final class AuthApi {
             String username,
             @Schema(description = "展示名", example = "Alice")
             String displayName,
-            @Schema(description = "平台主体 ID", example = "player-01HXABCD1234")
+            @Schema(description = "平台主体 ID", example = "buyer-01HXABCD1234")
             String principalId,
             @Schema(description = "角色列表", example = "[\"ROLE_BUYER\"]")
             List<String> roles,
@@ -140,7 +140,7 @@ public final class AuthApi {
             String username,
             @Schema(description = "展示名", example = "Buyer Demo")
             String displayName,
-            @Schema(description = "主体 ID", example = "player-1001")
+            @Schema(description = "主体 ID", example = "buyer-1001")
             String principalId,
             @Schema(description = "角色列表", example = "[\"ROLE_BUYER\"]")
             List<String> roles,

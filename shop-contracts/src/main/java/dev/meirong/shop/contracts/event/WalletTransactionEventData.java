@@ -1,10 +1,12 @@
 package dev.meirong.shop.contracts.event;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record WalletTransactionEventData(String transactionId,
-                                         String playerId,
+                                         String buyerId,
                                          String email,
                                          String type,
                                          BigDecimal amount,

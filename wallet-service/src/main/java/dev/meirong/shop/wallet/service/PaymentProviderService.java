@@ -90,7 +90,7 @@ public class PaymentProviderService {
         }
 
         StripeGateway.PaymentReference ref = stripeGateway.createDeposit(
-                request.playerId(), request.amount(), request.currency());
+                request.buyerId(), request.amount(), request.currency());
         log.info("Created Stripe PaymentIntent: {} for {} {}", ref.providerReference(), request.amount(), request.currency());
         return new WalletApi.PaymentIntentResponse(ref.providerReference(), null, "STRIPE", "requires_confirmation", null);
     }
@@ -114,7 +114,7 @@ public class PaymentProviderService {
                     .body(java.util.Map.of(
                             "intent", "CAPTURE",
                             "purchase_units", List.of(java.util.Map.of(
-                                    "reference_id", request.playerId(),
+                                    "reference_id", request.buyerId(),
                                     "amount", java.util.Map.of(
                                             "currency_code", request.currency().toUpperCase(),
                                             "value", request.amount().toPlainString())))))

@@ -18,7 +18,7 @@ public class ActivityPlayerCard {
     private String gameId;
 
     @Column(name = "player_id", nullable = false, length = 64)
-    private String playerId;
+    private String buyerId;
 
     @Column(name = "card_id", nullable = false, length = 36)
     private String cardId;
@@ -31,10 +31,10 @@ public class ActivityPlayerCard {
 
     protected ActivityPlayerCard() {}
 
-    public ActivityPlayerCard(String id, String gameId, String playerId, String cardId, String source) {
+    public ActivityPlayerCard(String id, String gameId, String buyerId, String cardId, String source) {
         this.id = id;
         this.gameId = gameId;
-        this.playerId = playerId;
+        this.buyerId = buyerId;
         this.cardId = cardId;
         this.source = source;
         this.createdAt = Instant.now();
@@ -42,7 +42,7 @@ public class ActivityPlayerCard {
 
     public String getId() { return id; }
     public String getGameId() { return gameId; }
-    public String getPlayerId() { return playerId; }
+    public String getBuyerId() { return buyerId; }
     public String getCardId() { return cardId; }
     public String getSource() { return source; }
     public Instant getCreatedAt() { return createdAt; }

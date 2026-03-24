@@ -8,13 +8,13 @@ import java.util.List;
 
 public interface ActivityParticipationRepository extends JpaRepository<ActivityParticipation, String> {
 
-    List<ActivityParticipation> findByGameIdAndPlayerId(String gameId, String playerId);
+    List<ActivityParticipation> findByGameIdAndPlayerId(String gameId, String buyerId);
 
-    @Query("SELECT COUNT(p) FROM ActivityParticipation p WHERE p.gameId = :gameId AND p.playerId = :playerId")
-    long countByGameIdAndPlayerId(String gameId, String playerId);
+    @Query("SELECT COUNT(p) FROM ActivityParticipation p WHERE p.gameId = :gameId AND p.buyerId = :buyerId")
+    long countByGameIdAndPlayerId(String gameId, String buyerId);
 
-    @Query("SELECT COUNT(p) FROM ActivityParticipation p WHERE p.gameId = :gameId AND p.playerId = :playerId AND p.participatedAt >= :since")
-    long countByGameIdAndPlayerIdSince(String gameId, String playerId, Instant since);
+    @Query("SELECT COUNT(p) FROM ActivityParticipation p WHERE p.gameId = :gameId AND p.buyerId = :buyerId AND p.participatedAt >= :since")
+    long countByGameIdAndPlayerIdSince(String gameId, String buyerId, Instant since);
 
     @Query("SELECT p FROM ActivityParticipation p WHERE p.rewardStatus = 'PENDING' AND p.result = 'WIN' AND p.participatedAt < :threshold")
     List<ActivityParticipation> findPendingRewards(Instant threshold);
@@ -22,5 +22,5 @@ public interface ActivityParticipationRepository extends JpaRepository<ActivityP
     @Query("SELECT COUNT(p) FROM ActivityParticipation p WHERE p.gameId = :gameId AND p.result = 'WIN'")
     long countWinningParticipationsByGameId(String gameId);
 
-    List<ActivityParticipation> findByGameIdAndPlayerIdOrderByParticipatedAtDesc(String gameId, String playerId);
+    List<ActivityParticipation> findByGameIdAndPlayerIdOrderByParticipatedAtDesc(String gameId, String buyerId);
 }

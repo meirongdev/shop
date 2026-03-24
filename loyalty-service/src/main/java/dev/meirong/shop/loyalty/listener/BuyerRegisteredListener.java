@@ -7,7 +7,7 @@ import dev.meirong.shop.common.idempotency.IdempotencyGuard;
 import dev.meirong.shop.common.kafka.NonRetryableKafkaConsumerException;
 import dev.meirong.shop.common.kafka.RetryableKafkaConsumerException;
 import dev.meirong.shop.contracts.event.EventEnvelope;
-import dev.meirong.shop.contracts.event.UserRegisteredEventData;
+import dev.meirong.shop.contracts.event.BuyerRegisteredEventData;
 import dev.meirong.shop.loyalty.domain.LoyaltyIdempotencyKeyEntity;
 import dev.meirong.shop.loyalty.domain.LoyaltyIdempotencyKeyRepository;
 import dev.meirong.shop.loyalty.config.LoyaltyProperties;
@@ -27,9 +27,9 @@ import org.springframework.util.StringUtils;
 
 @Component
 @EnableConfigurationProperties(LoyaltyProperties.class)
-public class UserRegisteredListener {
+public class BuyerRegisteredListener {
 
-    private static final Logger log = LoggerFactory.getLogger(UserRegisteredListener.class);
+    private static final Logger log = LoggerFactory.getLogger(BuyerRegisteredListener.class);
 
     private final ObjectMapper objectMapper;
     private final LoyaltyAccountService accountService;
@@ -37,7 +37,7 @@ public class UserRegisteredListener {
     private final IdempotencyGuard idempotencyGuard;
     private final LoyaltyIdempotencyKeyRepository idempotencyKeyRepository;
 
-    public UserRegisteredListener(ObjectMapper objectMapper,
+    public BuyerRegisteredListener(ObjectMapper objectMapper,
                                   LoyaltyAccountService accountService,
                                   OnboardingTaskService onboardingTaskService,
                                   IdempotencyGuard idempotencyGuard,
@@ -56,35 +56,35 @@ public class UserRegisteredListener {
             autoCreateTopics = "true",
             exclude = NonRetryableKafkaConsumerException.class
     )
-    @KafkaListener(topics = "${shop.loyalty.user-registered-topic}", groupId = "${spring.application.name}")
+    @KafkaListener(topics = "${shop.loyalty.buyer-registered-topic}", groupId = "${spring.application.name}")
     @Transactional
-    public void onUserRegistered(String payload) {
+    public void onBuyerRegistered(String payload) {
         try {
-            EventEnvelope<UserRegisteredEventData> envelope = objectMapper.readValue(
+            EventEnvelope<BuyerRegisteredEventData> envelope = objectMapper.readValue(
                     payload, new TypeReference<>() {});
             validateEnvelope(envelope);
-            UserRegisteredEventData data = envelope.data();
-            String playerId = data.playerId();
-            String idempotencyKey = "LOYALTY_USER_REGISTERED:" + playerId;
+            BuyerRegisteredEventData data = envelope.data();
+            String buyerId = data.buyerId();
+            String idempotencyKey = "LOYALTY_BUYER_REGISTERED:" + buyerId;
 
             idempotencyGuard.executeOnce(
                     idempotencyKey,
                     () -> {
-                        accountService.earnByRule(playerId, "REGISTER", 1,
-                                "register-" + playerId, "Welcome bonus for registration");
-                        onboardingTaskService.initForNewUser(playerId);
+                        accountService.earnByRule(buyerId, "REGISTER", 1,
+                                "register-" + buyerId, "Welcome bonus for registration");
+                        onboardingTaskService.initForNewUser(buyerId);
                         idempotencyKeyRepository.save(new LoyaltyIdempotencyKeyEntity(idempotencyKey));
-                        log.info("Processed USER_REGISTERED for player={}", playerId);
+                        log.info("Processed USER_REGISTERED for buyer={}", buyerId);
                         return null;
                     },
                     () -> {
-                        log.info("Loyalty registration bonus already processed for player={}, skipping", playerId);
+                        log.info("Loyalty registration bonus already processed for buyer={}, skipping", buyerId);
                         return null;
                     });
         } catch (JsonProcessingException exception) {
-            throw new NonRetryableKafkaConsumerException("Malformed loyalty user registered event", exception);
+            throw new NonRetryableKafkaConsumerException("Malformed loyalty buyer registered event", exception);
         } catch (IllegalArgumentException | IllegalStateException exception) {
-            throw new NonRetryableKafkaConsumerException("Invalid loyalty user registered event", exception);
+            throw new NonRetryableKafkaConsumerException("Invalid loyalty buyer registered event", exception);
         } catch (DataAccessException exception) {
             throw new RetryableKafkaConsumerException("Temporary loyalty registration processing failure", exception);
         }
@@ -92,15 +92,16 @@ public class UserRegisteredListener {
 
     @DltHandler
     public void handleDlt(String payload) {
-        log.error("Loyalty user registered event sent to DLT: {}", payload);
+        log.error("Loyalty buyer registered event sent to DLT: {}", payload);
     }
 
-    private void validateEnvelope(EventEnvelope<UserRegisteredEventData> envelope) {
+    private void validateEnvelope(EventEnvelope<BuyerRegisteredEventData> envelope) {
         if (envelope == null || envelope.data() == null) {
             throw new IllegalArgumentException("Loyalty registration event data is required");
         }
-        if (!StringUtils.hasText(envelope.data().playerId())) {
-            throw new IllegalArgumentException("Loyalty registration playerId is required");
+        envelope.assertSupportedSchema(EventEnvelope.CURRENT_SCHEMA_VERSION);
+        if (!StringUtils.hasText(envelope.data().buyerId())) {
+            throw new IllegalArgumentException("Loyalty registration buyerId is required");
         }
     }
 }

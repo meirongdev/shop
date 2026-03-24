@@ -15,7 +15,7 @@ import org.springframework.web.servlet.function.RequestPredicate;
 public class CanaryRequestPredicates implements PredicateSupplier {
 
     private static final Logger log = LoggerFactory.getLogger(CanaryRequestPredicates.class);
-    private static final String PLAYER_ID = "X-Player-Id";
+    private static final String BUYER_ID = "X-Buyer-Id";
     private static final String KEY_PREFIX = "gateway:canary:";
     private static volatile StringRedisTemplate redisTemplate;
 
@@ -26,15 +26,15 @@ public class CanaryRequestPredicates implements PredicateSupplier {
     // SCG MVC property-based routes invoke predicate operations as static methods.
     public static RequestPredicate canary(String routeId) {
         return request -> {
-            String playerId = request.servletRequest().getHeader(PLAYER_ID);
-            if (playerId == null || playerId.isBlank() || redisTemplate == null) {
+            String buyerId = request.servletRequest().getHeader(BUYER_ID);
+            if (buyerId == null || buyerId.isBlank() || redisTemplate == null) {
                 return false;
             }
             try {
-                return Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(KEY_PREFIX + routeId, playerId));
+                return Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(KEY_PREFIX + routeId, buyerId));
             } catch (DataAccessException exception) {
                 log.warn("Canary lookup failed for route {} and player {}, routing to stable: {}",
-                        routeId, playerId, exception.getMessage());
+                        routeId, buyerId, exception.getMessage());
                 return false;
             }
         };

@@ -38,7 +38,7 @@ public class RewardDispatcher {
                 dispatch(p);
                 p.markDispatched(p.getId());
                 participationRepository.save(p);
-                log.info("Dispatched reward: participation={}, player={}", p.getId(), p.getPlayerId());
+                log.info("Dispatched reward: participation={}, player={}", p.getId(), p.getBuyerId());
             } catch (RuntimeException exception) {
                 p.markFailed();
                 participationRepository.save(p);

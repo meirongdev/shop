@@ -9,7 +9,7 @@
 新用户优惠不是一个功能，而是多个系统协作的**编排结果**。核心原则：**用事件驱动解耦，奖励由各自的权威服务发放**。
 
 ```
-user.registered.v1（profile-service 发布）
+buyer.registered.v1（profile-service 发布）
         │
         ├──→ loyalty-service    发放欢迎积分 + 创建新人任务进度
         └──→ promotion-service  发放欢迎券包（$5 无门槛 + 首单免邮 + 首单折扣）
@@ -30,7 +30,7 @@ user.registered.v1（profile-service 发布）
 
 ---
 
-## 二、触发机制：user.registered.v1
+## 二、触发机制：buyer.registered.v1
 
 ```java
 // profile-service: BuyerProfileApplicationService.java
@@ -44,7 +44,7 @@ public CreateProfileResponse createBuyerProfile(CreateProfileRequest req) {
     outboxRepository.save(new ProfileOutboxEvent(
         profile.getPlayerId(),
         "profile.events.v1",
-        "user.registered.v1",
+        "buyer.registered.v1",
         buildRegisteredPayload(profile)
     ));
 
@@ -58,15 +58,15 @@ public CreateProfileResponse createBuyerProfile(CreateProfileRequest req) {
 {
   "id": "evt-uuid",
   "source": "profile-service",
-  "type": "user.registered.v1",
+  "type": "buyer.registered.v1",
   "timestamp": "2026-03-20T10:00:00Z",
   "data": {
-    "player_id":      "player-new-001",
+    "buyer_id":      "player-new-001",
     "username":       "new_user",
     "email":          "user@example.com",
     "register_source": "ORGANIC",
     // ORGANIC / REFERRAL / GAME_REWARD / SOCIAL_LOGIN
-    "referrer_id":    "player-1001",   // REFERRAL 时有值
+    "referrer_id":    "buyer-1001",   // REFERRAL 时有值
     "registered_at":  "2026-03-20T10:00:00Z"
   }
 }
@@ -89,60 +89,60 @@ public CreateProfileResponse createBuyerProfile(CreateProfileRequest req) {
 
 ### 3.2 当前消费异常策略补充（2026-03-23）
 
-- `promotion-service` 与 `loyalty-service` 现已把 `user.registered.v1` 监听器改成“坏消息直送 DLT、瞬时依赖失败有限重试”的模式。
+- `promotion-service` 与 `loyalty-service` 现已把 `buyer.registered.v1` 监听器改成“坏消息直送 DLT、瞬时依赖失败有限重试”的模式。
 - 也就是说：JSON/契约错误不会再被简单 `catch + log` 吞掉；数据库瞬时故障则允许 Kafka retry topic 做补偿。
 - 这让“注册事件已发布但欢迎券/欢迎积分静默丢失”的问题更容易被发现、回放与修复。
 
 ### 3.2 新人礼包发放实现
 
-**loyalty-service 消费 user.registered.v1：**
+**loyalty-service 消费 buyer.registered.v1：**
 
 ```java
 // LoyaltyOnboardingListener.java
 @KafkaListener(topics = "profile.events.v1",
                groupId = "loyalty-service-onboarding")
 public void onUserRegistered(EventEnvelope<UserRegisteredData> event) {
-    if (!"user.registered.v1".equals(event.type())) return;
+    if (!"buyer.registered.v1".equals(event.type())) return;
 
-    String playerId = event.data().playerId();
+    String buyerId = event.data().buyerId();
 
     // 防重（幂等）
-    if (loyaltyAccountRepo.existsById(playerId)) return;
+    if (loyaltyAccountRepo.existsById(buyerId)) return;
 
     // 1. 创建积分账户（balance=0，tier=SILVER）
-    loyaltyAccountRepo.save(new LoyaltyAccount(playerId));
+    loyaltyAccountRepo.save(new LoyaltyAccount(buyerId));
 
     // 2. 发放欢迎积分（走标准 earnPoints 流程，写流水）
-    earnPoints(playerId, 100L, "REGISTER", event.id());
+    earnPoints(buyerId, 100L, "REGISTER", event.id());
 
     // 3. 创建新人任务进度（7 个任务，14 天到期）
-    onboardingTaskService.createTasksForPlayer(playerId,
+    onboardingTaskService.createTasksForPlayer(buyerId,
         event.data().registeredAt().plus(14, DAYS));
 }
 ```
 
-**promotion-service 消费 user.registered.v1：**
+**promotion-service 消费 buyer.registered.v1：**
 
 ```java
 // PromotionOnboardingListener.java
 @KafkaListener(topics = "profile.events.v1",
                groupId = "promotion-service-onboarding")
 public void onUserRegistered(EventEnvelope<UserRegisteredData> event) {
-    if (!"user.registered.v1".equals(event.type())) return;
+    if (!"buyer.registered.v1".equals(event.type())) return;
 
-    String playerId = event.data().playerId();
+    String buyerId = event.data().buyerId();
 
     // 防重（检查该用户是否已收到新人礼包）
-    if (couponInstanceRepo.existsByPlayerAndSource(playerId, "NEW_USER_WELCOME")) return;
+    if (couponInstanceRepo.existsByPlayerAndSource(buyerId, "NEW_USER_WELCOME")) return;
 
     // 批量发放三张券
-    issueCoupon(playerId, "TMPL-WELCOME-5OFF",    "NEW_USER_WELCOME", 14);
-    issueCoupon(playerId, "TMPL-WELCOME-FREESHIP", "NEW_USER_WELCOME", 30);
-    issueCoupon(playerId, "TMPL-WELCOME-90PCT",    "NEW_USER_WELCOME", 14);
+    issueCoupon(buyerId, "TMPL-WELCOME-5OFF",    "NEW_USER_WELCOME", 14);
+    issueCoupon(buyerId, "TMPL-WELCOME-FREESHIP", "NEW_USER_WELCOME", 30);
+    issueCoupon(buyerId, "TMPL-WELCOME-90PCT",    "NEW_USER_WELCOME", 14);
 
     // 被邀请用户额外礼包
     if ("REFERRAL".equals(event.data().registerSource())) {
-        issueCoupon(playerId, "TMPL-REFERRAL-3OFF", "REFERRAL_REWARD", 30);
+        issueCoupon(buyerId, "TMPL-REFERRAL-3OFF", "REFERRAL_REWARD", 30);
         // 同时奖励邀请人
         loyaltyClient.earnPoints(event.data().referrerId(), 50L, "REFERRAL_REWARD",
                                  event.id() + "-referrer");
@@ -193,7 +193,7 @@ CREATE TABLE onboarding_task_template (
 -- 玩家任务进度
 CREATE TABLE onboarding_task_progress (
     id              VARCHAR(36)   NOT NULL PRIMARY KEY,
-    player_id       VARCHAR(64)   NOT NULL,
+    buyer_id       VARCHAR(64)   NOT NULL,
     task_code       VARCHAR(64)   NOT NULL,
     status          VARCHAR(20)   NOT NULL DEFAULT 'PENDING',
     -- PENDING / COMPLETED / REWARDED / EXPIRED
@@ -201,8 +201,8 @@ CREATE TABLE onboarding_task_progress (
     rewarded_at     TIMESTAMP(6),
     expire_at       TIMESTAMP(6)  NOT NULL,           -- 注册 + 14 天
     created_at      TIMESTAMP(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    UNIQUE KEY uq_player_task (player_id, task_code),
-    INDEX idx_player (player_id),
+    UNIQUE KEY uq_player_task (buyer_id, task_code),
+    INDEX idx_player (buyer_id),
     INDEX idx_expire (expire_at)
 );
 ```
@@ -214,18 +214,18 @@ CREATE TABLE onboarding_task_progress (
 @KafkaListener(topics = {"order.events.v1", "profile.events.v1", "review.events.v1"})
 public void onBusinessEvent(EventEnvelope<?> event) {
     switch (event.type()) {
-        case "order.completed.v1"      -> completeTask(event.data().playerId(), "FIRST_PURCHASE");
-        case "review.submitted.v1"     -> completeTask(event.data().playerId(), "FIRST_REVIEW");
-        case "profile.phone_bound.v1"  -> completeTask(event.data().playerId(), "BIND_PHONE");
+        case "order.completed.v1"      -> completeTask(event.data().buyerId(), "FIRST_PURCHASE");
+        case "review.submitted.v1"     -> completeTask(event.data().buyerId(), "FIRST_REVIEW");
+        case "profile.phone_bound.v1"  -> completeTask(event.data().buyerId(), "BIND_PHONE");
         case "profile.updated.v1"      -> checkProfileCompletion(event);
         // 签到、收藏、地址添加由对应接口直接调用 completeTask()
     }
 }
 
 @Transactional
-public void completeTask(String playerId, String taskCode) {
+public void completeTask(String buyerId, String taskCode) {
     OnboardingTaskProgress task = taskProgressRepo
-        .findByPlayerIdAndTaskCode(playerId, taskCode).orElse(null);
+        .findByPlayerIdAndTaskCode(buyerId, taskCode).orElse(null);
 
     // 任务不存在（非新用户或已过期）、已完成、已过期，均跳过
     if (task == null || task.isCompleted() || task.isExpired()) return;
@@ -235,17 +235,17 @@ public void completeTask(String playerId, String taskCode) {
 
     // 发放积分（走标准 earnPoints，写 loyalty_transaction）
     long points = templateRepo.findByCode(taskCode).getPointsReward();
-    earnPoints(playerId, points, "ONBOARDING_TASK", task.getId());
+    earnPoints(buyerId, points, "ONBOARDING_TASK", task.getId());
 
     // 检查是否全部完成，触发成就奖励
-    checkAllTasksCompleted(playerId);
+    checkAllTasksCompleted(buyerId);
 }
 
-private void checkAllTasksCompleted(String playerId) {
-    long total    = taskProgressRepo.countByPlayerId(playerId);
-    long completed = taskProgressRepo.countCompletedByPlayerId(playerId);
+private void checkAllTasksCompleted(String buyerId) {
+    long total    = taskProgressRepo.countByPlayerId(buyerId);
+    long completed = taskProgressRepo.countCompletedByPlayerId(buyerId);
     if (total > 0 && total == completed) {
-        earnPoints(playerId, 100L, "ONBOARDING_COMPLETE", playerId + "-all");
+        earnPoints(buyerId, 100L, "ONBOARDING_COMPLETE", buyerId + "-all");
     }
 }
 ```
@@ -283,9 +283,9 @@ public class NewUserConditionEvaluator implements ConditionEvaluator {
 
     @Override
     public boolean evaluate(ConditionRule rule, PromotionContext ctx) {
-        if (ctx.playerId() == null) return false;   // 游客不享受首单折扣
+        if (ctx.buyerId() == null) return false;   // 游客不享受首单折扣
         // 调用 order-service 内部接口查询历史订单数
-        long orderCount = orderClient.countCompletedOrders(ctx.playerId());
+        long orderCount = orderClient.countCompletedOrders(ctx.buyerId());
         return orderCount == 0;
     }
 }
@@ -429,7 +429,7 @@ public BigDecimal getEffectivePrice(ProductSku sku, boolean isNewUser) {
 
 | Topic 发布 | 发布方 | 消费方 |
 |-----------|--------|--------|
-| `profile.events.v1` (user.registered.v1) | profile-service | loyalty-service、promotion-service、notification-service |
+| `profile.events.v1` (buyer.registered.v1) | profile-service | loyalty-service、promotion-service、notification-service |
 | `profile.events.v1` (user.phone_bound.v1) | profile-service | loyalty-service（任务完成检测） |
 | `loyalty.onboarding.task_completed.v1` | loyalty-service | notification-service（可选推送） |
 | `loyalty.onboarding.all_completed.v1` | loyalty-service | notification-service（恭喜完成所有任务） |

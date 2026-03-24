@@ -16,16 +16,16 @@ public class BuyerAccountProvisioningService {
     private final UserAccountRepository userAccountRepository;
     private final PasswordEncoder passwordEncoder;
     private final ProfileRegistrationClient profileRegistrationClient;
-    private final UserRegisteredEventPublisher userRegisteredEventPublisher;
+    private final BuyerRegisteredEventPublisher buyerRegisteredEventPublisher;
 
     public BuyerAccountProvisioningService(UserAccountRepository userAccountRepository,
                                            PasswordEncoder passwordEncoder,
                                            ProfileRegistrationClient profileRegistrationClient,
-                                           UserRegisteredEventPublisher userRegisteredEventPublisher) {
+                                           BuyerRegisteredEventPublisher buyerRegisteredEventPublisher) {
         this.userAccountRepository = userAccountRepository;
         this.passwordEncoder = passwordEncoder;
         this.profileRegistrationClient = profileRegistrationClient;
-        this.userRegisteredEventPublisher = userRegisteredEventPublisher;
+        this.buyerRegisteredEventPublisher = buyerRegisteredEventPublisher;
     }
 
     @Transactional
@@ -51,7 +51,7 @@ public class BuyerAccountProvisioningService {
                     account.getDisplayName(),
                     account.getEmail(),
                     request.inviteCode()));
-            userRegisteredEventPublisher.publish(account);
+            buyerRegisteredEventPublisher.publish(account);
             return account;
         } catch (RuntimeException exception) {
             userAccountRepository.delete(account);
@@ -69,7 +69,7 @@ public class BuyerAccountProvisioningService {
                     account.getDisplayName(),
                     account.getEmail(),
                     null));
-            userRegisteredEventPublisher.publish(account);
+            buyerRegisteredEventPublisher.publish(account);
             return account;
         } catch (RuntimeException exception) {
             userAccountRepository.delete(account);
@@ -90,7 +90,7 @@ public class BuyerAccountProvisioningService {
                     account.getDisplayName(),
                     account.getEmail(),
                     null));
-            userRegisteredEventPublisher.publish(account);
+            buyerRegisteredEventPublisher.publish(account);
             return account;
         } catch (RuntimeException exception) {
             userAccountRepository.delete(account);

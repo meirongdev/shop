@@ -18,7 +18,7 @@ public class WalletTransactionEntity {
     private String id;
 
     @Column(name = "player_id", nullable = false, length = 64)
-    private String playerId;
+    private String buyerId;
 
     @Column(nullable = false, length = 32)
     private String type;
@@ -47,14 +47,14 @@ public class WalletTransactionEntity {
     protected WalletTransactionEntity() {
     }
 
-    public WalletTransactionEntity(String playerId,
+    public WalletTransactionEntity(String buyerId,
                                    String type,
                                    BigDecimal amount,
                                    String currency,
                                    String status,
                                    String providerReference) {
         this.id = UUID.randomUUID().toString();
-        this.playerId = playerId;
+        this.buyerId = buyerId;
         this.type = type;
         this.amount = amount;
         this.currency = currency;
@@ -62,7 +62,7 @@ public class WalletTransactionEntity {
         this.providerReference = providerReference;
     }
 
-    public WalletTransactionEntity(String playerId,
+    public WalletTransactionEntity(String buyerId,
                                    String type,
                                    BigDecimal amount,
                                    String currency,
@@ -70,7 +70,7 @@ public class WalletTransactionEntity {
                                    String providerReference,
                                    String referenceId,
                                    String referenceType) {
-        this(playerId, type, amount, currency, status, providerReference);
+        this(buyerId, type, amount, currency, status, providerReference);
         this.referenceId = referenceId;
         this.referenceType = referenceType;
     }
@@ -81,7 +81,7 @@ public class WalletTransactionEntity {
     }
 
     public String getId() { return id; }
-    public String getPlayerId() { return playerId; }
+    public String getBuyerId() { return buyerId; }
     public String getType() { return type; }
     public BigDecimal getAmount() { return amount; }
     public String getCurrency() { return currency; }

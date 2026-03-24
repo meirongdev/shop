@@ -194,7 +194,7 @@ CREATE TABLE coupon_template (
 CREATE TABLE coupon_instance (
     id              VARCHAR(36)   NOT NULL PRIMARY KEY,
     template_id     VARCHAR(36)   NOT NULL,
-    player_id       VARCHAR(64)   NOT NULL,
+    buyer_id       VARCHAR(64)   NOT NULL,
     code            VARCHAR(64)   NOT NULL UNIQUE,       -- 唯一券码
     status          VARCHAR(20)   NOT NULL DEFAULT 'AVAILABLE',  -- AVAILABLE/USED/EXPIRED
     source          VARCHAR(32)   NOT NULL,              -- CHECKIN_REWARD / REDEMPTION / CAMPAIGN / ADMIN
@@ -202,7 +202,7 @@ CREATE TABLE coupon_instance (
     used_at         TIMESTAMP(6),
     order_id        VARCHAR(36),                         -- 使用的订单 ID
     created_at      TIMESTAMP(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    INDEX idx_player_status (player_id, status),
+    INDEX idx_player_status (buyer_id, status),
     INDEX idx_code (code)
 );
 ```
@@ -228,7 +228,7 @@ public interface BenefitCalculator {
 
 // PromotionContext.java — 携带所有判断所需的上下文
 public record PromotionContext(
-    String playerId,
+    String buyerId,
     String userTier,         // SILVER / GOLD / PLATINUM
     boolean isFirstOrder,
     boolean isBirthdayMonth,
@@ -360,7 +360,7 @@ public class PercentageBenefitCalculator implements BenefitCalculator {
 POST /promotion/v1/calculate
 Body:
 {
-  "player_id": "player-1001",
+  "buyer_id": "buyer-1001",
   "coupon_code": "SAVE10",        // 可选，用户输入的优惠码
   "items": [
     { "product_id": "prod-001", "category": "electronics", "price": 89.90, "quantity": 2 }
@@ -422,20 +422,20 @@ GET  /promotion/v1/offers/{id}                # 活动详情
 
 ### 6.1 PromotionOnboardingListener
 
-promotion-service 独立消费 `user.registered.v1`，无需 loyalty-service 调用：
+promotion-service 独立消费 `buyer.registered.v1`，无需 loyalty-service 调用：
 
 ```java
 // PromotionOnboardingListener.java
 
-@KafkaListener(topics = "user.registered.v1")
-public void onUserRegistered(EventEnvelope<UserRegisteredEventData> event) {
-    String playerId = event.data().playerId();
+@KafkaListener(topics = "buyer.registered.v1")
+public void onUserRegistered(EventEnvelope<BuyerRegisteredEventData> event) {
+    String buyerId = event.data().buyerId();
     String referrerId = event.data().referrerId();
 
     // 发放新人礼包：3 张优惠券
-    couponService.issueToPlayer(playerId, "WELCOME-5-NODOOR");   // $5 无门槛 14 天
-    couponService.issueToPlayer(playerId, "WELCOME-FREESHIP");   // 免邮 30 天
-    couponService.issueToPlayer(playerId, "WELCOME-90PCT");      // 9折 max$20 14天
+    couponService.issueToPlayer(buyerId, "WELCOME-5-NODOOR");   // $5 无门槛 14 天
+    couponService.issueToPlayer(buyerId, "WELCOME-FREESHIP");   // 免邮 30 天
+    couponService.issueToPlayer(buyerId, "WELCOME-90PCT");      // 9折 max$20 14天
 
     // 邀请人奖励（好友注册即发 $2 额外券；首单完成后再发积分，由 loyalty-service 处理）
     if (referrerId != null && referralGuard.isEligible(referrerId)) {
@@ -471,7 +471,7 @@ public class NewUserConditionEvaluator implements ConditionEvaluator {
 
     @Override
     public boolean evaluate(ConditionRule rule, PromotionContext ctx) {
-        if (ctx.playerId() == null) return false;  // 游客不享受首单优惠
+        if (ctx.buyerId() == null) return false;  // 游客不享受首单优惠
         return ctx.isFirstOrder();                 // PromotionContext 由 buyer-bff 注入
     }
 }
@@ -495,7 +495,7 @@ public void onWalletTransaction(EventEnvelope<WalletTransactionEventData> event)
     // 沿用现有逻辑：创建 WALLET_REWARD 类型的 promotion_offer
     // 同时通过新的 coupon_template 给用户发 coupon_instance
     promotionApplicationService.createWalletRewardOffer(code, "充值奖励", "...", rewardAmount);
-    couponService.issueToPlayer(event.data().playerId(), code);  // 新增发券逻辑
+    couponService.issueToPlayer(event.data().buyerId(), code);  // 新增发券逻辑
 }
 ```
 
@@ -515,7 +515,7 @@ public class UserReferralEvaluator implements ConditionEvaluator {
 
     @Override
     public boolean evaluate(ConditionRule rule, PromotionContext ctx) {
-        return profileClient.isReferredUser(ctx.playerId());
+        return profileClient.isReferredUser(ctx.buyerId());
     }
 }
 ```
@@ -551,7 +551,7 @@ public class CashbackBenefitCalculator implements BenefitCalculator {
 
 | Topic 消费 | 来源 | 处理 |
 |-----------|------|------|
-| `user.registered.v1` | profile-service | 发放新人礼包优惠券（3 张）+ 邀请人奖励券 |
+| `buyer.registered.v1` | profile-service | 发放新人礼包优惠券（3 张）+ 邀请人奖励券 |
 | `wallet.transactions.v1` | wallet-service | 自动发放充值奖励（现有） |
 | `order.events.v1 (COMPLETED)` | order-service | 满足购买条件后发券 |
 | `loyalty.redemption.v1` | loyalty-service | COUPON 类型兑换时生成优惠券实例 |

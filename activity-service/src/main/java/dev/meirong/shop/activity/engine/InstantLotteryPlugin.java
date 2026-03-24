@@ -53,7 +53,7 @@ public class InstantLotteryPlugin implements GamePlugin {
                 if (prize.decrementStock()) {
                     prizeRepository.save(prize);
                     String animationHint = buildAnimationHint(prizes, prize);
-                    log.info("Lottery win: game={}, prize={}, player={}", ctx.gameId(), prize.getName(), ctx.playerId());
+                    log.info("Lottery win: game={}, prize={}, player={}", ctx.gameId(), prize.getName(), ctx.buyerId());
                     return ParticipateResult.win(
                             prize.getId(), prize.getName(), prize.getType(),
                             prize.getValue(), animationHint);

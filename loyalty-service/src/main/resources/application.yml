@@ -81,7 +81,7 @@ shop:
         - /swagger-ui
   loyalty:
     order-events-topic: ${ORDER_EVENTS_TOPIC:order.events.v1}
-    user-registered-topic: ${USER_REGISTERED_TOPIC:user.registered.v1}
+    buyer-registered-topic: ${BUYER_REGISTERED_TOPIC:buyer.registered.v1}
     profile-service-url: ${PROFILE_SERVICE_URL:http://profile-service:8080}
     checkin-base-points: ${CHECKIN_BASE_POINTS:5}
     makeup-cost: ${CHECKIN_MAKEUP_COST:20}

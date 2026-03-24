@@ -44,7 +44,7 @@ public class ActivityQueryService {
         return prizeRepository.findByGameIdOrderByDisplayOrderAsc(gameId);
     }
 
-    public List<ActivityParticipation> getParticipationHistory(String gameId, String playerId) {
-        return participationRepository.findByGameIdAndPlayerIdOrderByParticipatedAtDesc(gameId, playerId);
+    public List<ActivityParticipation> getParticipationHistory(String gameId, String buyerId) {
+        return participationRepository.findByGameIdAndPlayerIdOrderByParticipatedAtDesc(gameId, buyerId);
     }
 }

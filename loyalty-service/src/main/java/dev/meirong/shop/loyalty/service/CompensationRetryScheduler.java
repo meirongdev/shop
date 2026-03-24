@@ -59,7 +59,7 @@ public class CompensationRetryScheduler {
     private void executeTask(CompensationTaskEntity task) {
         switch (task.getTaskType()) {
             case "ROLLBACK_POINTS" -> {
-                // aggregateId = playerId, payload = "points:referenceId"
+                // aggregateId = buyerId, payload = "points:referenceId"
                 String[] parts = task.getPayload().split(":", 2);
                 long points = Long.parseLong(parts[0]);
                 String referenceId = parts.length > 1 ? parts[1] : task.getId();

@@ -39,7 +39,7 @@ class RateLimitingFilterTest {
     void allowsRequestWhenWithinLimit() throws Exception {
         when(redis.execute(anyScript(), anyList(), eq("120"))).thenReturn(1L);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/buyer/orders");
-        request.addHeader("X-Player-Id", "buyer-100");
+        request.addHeader("X-Buyer-Id", "buyer-100");
         MockHttpServletResponse response = new MockHttpServletResponse();
         CapturingFilterChain chain = new CapturingFilterChain();
 
@@ -55,7 +55,7 @@ class RateLimitingFilterTest {
     void rejectsRequestWhenThresholdIsExceeded() throws Exception {
         when(redis.execute(anyScript(), anyList(), eq("120"))).thenReturn(101L);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/buyer/orders");
-        request.addHeader("X-Player-Id", "buyer-100");
+        request.addHeader("X-Buyer-Id", "buyer-100");
         MockHttpServletResponse response = new MockHttpServletResponse();
         CapturingFilterChain chain = new CapturingFilterChain();
 
@@ -99,7 +99,7 @@ class RateLimitingFilterTest {
         when(redis.execute(anyScript(), anyList(), eq("120")))
                 .thenThrow(new DataAccessResourceFailureException("redis down"));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/buyer/orders");
-        request.addHeader("X-Player-Id", "buyer-100");
+        request.addHeader("X-Buyer-Id", "buyer-100");
         MockHttpServletResponse response = new MockHttpServletResponse();
         CapturingFilterChain chain = new CapturingFilterChain();
 

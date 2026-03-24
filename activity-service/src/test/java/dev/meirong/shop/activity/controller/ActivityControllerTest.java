@@ -46,7 +46,7 @@ class ActivityControllerTest {
     @Test
     void participate_withSellerRole_returnsForbidden() throws Exception {
         mockMvc.perform(post(ActivityApi.PARTICIPATE.replace("{gameId}", "game-1"))
-                        .header(TrustedHeaderNames.PLAYER_ID, "seller-2001")
+                        .header(TrustedHeaderNames.BUYER_ID, "seller-2001")
                         .header(TrustedHeaderNames.ROLES, "ROLE_SELLER")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new ActivityApi.ParticipateRequest(null))))
@@ -64,7 +64,7 @@ class ActivityControllerTest {
                         BigDecimal.valueOf(3.25), "{\"amount\":\"3.25\"}", "You claimed 3.25 points"));
 
         mockMvc.perform(post(ActivityApi.PARTICIPATE.replace("{gameId}", "game-1"))
-                        .header(TrustedHeaderNames.PLAYER_ID, "player-1001")
+                        .header(TrustedHeaderNames.BUYER_ID, "player-1001")
                         .header(TrustedHeaderNames.ROLES, "ROLE_BUYER")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new ActivityApi.ParticipateRequest("{\"tap\":true}"))))
@@ -79,7 +79,7 @@ class ActivityControllerTest {
     @Test
     void myHistory_withGuestRole_returnsForbidden() throws Exception {
         mockMvc.perform(get(ActivityApi.MY_HISTORY.replace("{gameId}", "game-1"))
-                        .header(TrustedHeaderNames.PLAYER_ID, "guest-buyer-123")
+                        .header(TrustedHeaderNames.BUYER_ID, "guest-buyer-123")
                         .header(TrustedHeaderNames.ROLES, "ROLE_BUYER_GUEST"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("SC_FORBIDDEN"))
@@ -96,7 +96,7 @@ class ActivityControllerTest {
                 .thenReturn(List.of(participation));
 
         mockMvc.perform(get(ActivityApi.MY_HISTORY.replace("{gameId}", "game-1"))
-                        .header(TrustedHeaderNames.PLAYER_ID, "player-1001")
+                        .header(TrustedHeaderNames.BUYER_ID, "player-1001")
                         .header(TrustedHeaderNames.ROLES, "ROLE_BUYER"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SC_OK"))

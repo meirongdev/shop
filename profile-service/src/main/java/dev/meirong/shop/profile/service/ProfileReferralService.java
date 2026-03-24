@@ -30,8 +30,8 @@ public class ProfileReferralService {
 
     @Transactional
     public void registerBuyer(ProfileInternalApi.RegisterBuyerRequest request) {
-        if (buyerProfileRepository.existsById(request.playerId())) {
-            throw new BusinessException(CommonErrorCode.VALIDATION_ERROR, "Buyer profile already exists: " + request.playerId());
+        if (buyerProfileRepository.existsById(request.buyerId())) {
+            throw new BusinessException(CommonErrorCode.VALIDATION_ERROR, "Buyer profile already exists: " + request.buyerId());
         }
 
         BuyerProfileEntity referrer = request.inviteCode() == null || request.inviteCode().isBlank()
@@ -40,36 +40,36 @@ public class ProfileReferralService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.VALIDATION_ERROR, "Invalid invite code"));
 
         BuyerProfileEntity entity = BuyerProfileEntity.register(
-                request.playerId(),
+                request.buyerId(),
                 request.username(),
                 request.displayName(),
                 request.email(),
                 "SILVER",
                 generateInviteCode(),
                 Instant.now().plusSeconds(30L * 24 * 60 * 60),
-                referrer != null ? referrer.getPlayerId() : null);
+                referrer != null ? referrer.getBuyerId() : null);
         buyerProfileRepository.save(entity);
 
         if (referrer != null) {
             referralRecordRepository.save(ReferralRecordEntity.registered(
                     UUID.randomUUID().toString(),
                     referrer.getInviteCode(),
-                    referrer.getPlayerId(),
-                    request.playerId(),
+                    referrer.getBuyerId(),
+                    request.buyerId(),
                     request.username()));
         }
     }
 
     @Transactional(readOnly = true)
-    public ProfileInternalApi.InviteStatsResponse getInviteStats(String playerId) {
-        BuyerProfileEntity profile = buyerProfileRepository.findById(playerId)
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Profile not found: " + playerId));
-        int totalInvited = Math.toIntExact(referralRecordRepository.countByReferrerId(playerId));
-        int totalRewarded = Math.toIntExact(referralRecordRepository.countByReferrerIdAndStatus(playerId, "REWARDED"));
+    public ProfileInternalApi.InviteStatsResponse getInviteStats(String buyerId) {
+        BuyerProfileEntity profile = buyerProfileRepository.findById(buyerId)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Profile not found: " + buyerId));
+        int totalInvited = Math.toIntExact(referralRecordRepository.countByReferrerId(buyerId));
+        int totalRewarded = Math.toIntExact(referralRecordRepository.countByReferrerIdAndStatus(buyerId, "REWARDED"));
         ZonedDateTime monthStart = ZonedDateTime.now(ZoneOffset.UTC).withDayOfMonth(1).toLocalDate().atStartOfDay(ZoneOffset.UTC);
         ZonedDateTime nextMonthStart = monthStart.plusMonths(1);
         int monthlyRewardCount = Math.toIntExact(referralRecordRepository.countByReferrerIdAndStatusAndRewardIssuedAtBetween(
-                playerId, "REWARDED", monthStart.toInstant(), nextMonthStart.toInstant()));
+                buyerId, "REWARDED", monthStart.toInstant(), nextMonthStart.toInstant()));
 
         return new ProfileInternalApi.InviteStatsResponse(
                 profile.getInviteCode(),
@@ -78,7 +78,7 @@ public class ProfileReferralService {
                 totalRewarded,
                 monthlyRewardCount,
                 MONTHLY_REWARD_LIMIT,
-                referralRecordRepository.findTop20ByReferrerIdOrderByCreatedAtDesc(playerId)
+                referralRecordRepository.findTop20ByReferrerIdOrderByCreatedAtDesc(buyerId)
                         .stream()
                         .map(record -> new ProfileInternalApi.InviteRecord(
                                 maskUsername(record.getInviteeUsername()),

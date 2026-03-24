@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.common.kafka.NonRetryableKafkaConsumerException;
 import dev.meirong.shop.common.kafka.RetryableKafkaConsumerException;
 import dev.meirong.shop.contracts.event.EventEnvelope;
-import dev.meirong.shop.contracts.event.UserRegisteredEventData;
+import dev.meirong.shop.contracts.event.BuyerRegisteredEventData;
 import dev.meirong.shop.notification.service.NotificationApplicationService;
 import java.io.IOException;
 import java.time.Instant;
@@ -23,32 +23,32 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
 
 @ExtendWith(MockitoExtension.class)
-class UserRegisteredListenerTest {
+class BuyerRegisteredListenerTest {
 
     @Mock
     private NotificationApplicationService notificationService;
 
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
-    private UserRegisteredListener listener;
+    private BuyerRegisteredListener listener;
 
     @BeforeEach
     void setUp() {
-        listener = new UserRegisteredListener(objectMapper, notificationService);
+        listener = new BuyerRegisteredListener(objectMapper, notificationService);
     }
 
     @Test
     void onUserRegistered_validEventDelegatesToNotificationService() throws IOException {
-        UserRegisteredEventData data = new UserRegisteredEventData("player-1", "testuser", "test@example.com");
-        EventEnvelope<UserRegisteredEventData> event = new EventEnvelope<>(
-                UUID.randomUUID().toString(), "auth-server", "USER_REGISTERED", Instant.now(), data
+        BuyerRegisteredEventData data = new BuyerRegisteredEventData("player-1", "testuser", "test@example.com");
+        EventEnvelope<BuyerRegisteredEventData> event = new EventEnvelope<>(
+                UUID.randomUUID().toString(), "auth-server", "BUYER_REGISTERED", Instant.now(), data
         );
 
-        listener.onUserRegistered(objectMapper.writeValueAsString(event));
+        listener.onBuyerRegistered(objectMapper.writeValueAsString(event));
 
         verify(notificationService).processEvent(
                 eq(event.eventId()),
-                eq("USER_REGISTERED"),
+                eq("BUYER_REGISTERED"),
                 eq("player-1"),
                 eq("test@example.com"),
                 anyMap()
@@ -57,22 +57,22 @@ class UserRegisteredListenerTest {
 
     @Test
     void onUserRegistered_persistenceFailureThrowsRetryableKafkaException() throws IOException {
-        UserRegisteredEventData data = new UserRegisteredEventData("player-1", "testuser", "test@example.com");
-        EventEnvelope<UserRegisteredEventData> event = new EventEnvelope<>(
-                UUID.randomUUID().toString(), "auth-server", "USER_REGISTERED", Instant.now(), data
+        BuyerRegisteredEventData data = new BuyerRegisteredEventData("player-1", "testuser", "test@example.com");
+        EventEnvelope<BuyerRegisteredEventData> event = new EventEnvelope<>(
+                UUID.randomUUID().toString(), "auth-server", "BUYER_REGISTERED", Instant.now(), data
         );
         doThrow(new DataAccessResourceFailureException("db unavailable"))
                 .when(notificationService)
-                .processEvent(eq(event.eventId()), eq("USER_REGISTERED"), eq("player-1"), eq("test@example.com"), anyMap());
+                .processEvent(eq(event.eventId()), eq("BUYER_REGISTERED"), eq("player-1"), eq("test@example.com"), anyMap());
 
         assertThrows(
                 RetryableKafkaConsumerException.class,
-                () -> listener.onUserRegistered(objectMapper.writeValueAsString(event))
+                () -> listener.onBuyerRegistered(objectMapper.writeValueAsString(event))
         );
     }
 
     @Test
     void onUserRegistered_invalidPayloadThrowsNonRetryableKafkaException() {
-        assertThrows(NonRetryableKafkaConsumerException.class, () -> listener.onUserRegistered("not-json"));
+        assertThrows(NonRetryableKafkaConsumerException.class, () -> listener.onBuyerRegistered("not-json"));
     }
 }

@@ -1,10 +1,12 @@
 package dev.meirong.shop.webhook.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.common.idempotency.IdempotencyExempt;
 import dev.meirong.shop.common.kafka.NonRetryableKafkaConsumerException;
 import dev.meirong.shop.common.kafka.RetryableKafkaConsumerException;
+import dev.meirong.shop.contracts.event.EventEnvelope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -71,9 +73,10 @@ public class WebhookEventListener {
 
     private void dispatchFromEnvelope(String message, String defaultSource) {
         try {
-            JsonNode node = objectMapper.readTree(message);
-            String eventId = requireText(node, "eventId", defaultSource + " eventId");
-            String eventType = requireText(node, "type", defaultSource + " event type");
+            EventEnvelope<JsonNode> envelope = objectMapper.readValue(message, new TypeReference<>() {});
+            envelope.assertSupportedSchema(EventEnvelope.CURRENT_SCHEMA_VERSION);
+            String eventId = requireText(envelope.eventId(), defaultSource + " eventId");
+            String eventType = requireText(envelope.type(), defaultSource + " event type");
             deliveryService.dispatchEvent(eventType, eventId, message);
         } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
             throw new NonRetryableKafkaConsumerException("Malformed webhook event", exception);
@@ -84,11 +87,7 @@ public class WebhookEventListener {
         }
     }
 
-    private String requireText(JsonNode node, String fieldName, String description) {
-        if (node == null || !node.has(fieldName)) {
-            throw new IllegalArgumentException(description + " is required");
-        }
-        String value = node.get(fieldName).asText();
+    private String requireText(String value, String description) {
         if (!StringUtils.hasText(value)) {
             throw new IllegalArgumentException(description + " is required");
         }

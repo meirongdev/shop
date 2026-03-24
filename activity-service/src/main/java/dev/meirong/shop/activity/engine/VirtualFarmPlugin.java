@@ -45,15 +45,15 @@ public class VirtualFarmPlugin implements GamePlugin {
 
     @Override
     public ParticipateResult participate(ParticipateContext ctx) {
-        if (ctx.playerId() == null || ctx.playerId().isBlank()) {
-            throw new BusinessException(CommonErrorCode.VALIDATION_ERROR, "Virtual farm requires a playerId");
+        if (ctx.buyerId() == null || ctx.buyerId().isBlank()) {
+            throw new BusinessException(CommonErrorCode.VALIDATION_ERROR, "Virtual farm requires a buyerId");
         }
 
         FarmConfig config = parseConfig(ctx.gameConfig());
         FarmAction action = parseAction(ctx.payload());
-        ActivityVirtualFarm farm = farmRepository.findByGameIdAndPlayerId(ctx.gameId(), ctx.playerId())
+        ActivityVirtualFarm farm = farmRepository.findByGameIdAndPlayerId(ctx.gameId(), ctx.buyerId())
                 .orElseGet(() -> new ActivityVirtualFarm(
-                        UUID.randomUUID().toString(), ctx.gameId(), ctx.playerId(),
+                        UUID.randomUUID().toString(), ctx.gameId(), ctx.buyerId(),
                         config.maxStage(), config.stageProgress()));
 
         if (action == FarmAction.HARVEST) {

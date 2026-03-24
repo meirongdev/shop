@@ -17,7 +17,7 @@ title: 事件驱动架构
 - `order.events.v1`
 - `wallet.transactions.v1`
 - `marketplace.product.events.v1`
-- `user.registered.v1`
+- `buyer.registered.v1`
 
 ## 适用边界
 

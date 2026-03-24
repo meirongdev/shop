@@ -11,5 +11,5 @@ public record AuthProperties(String issuer,
                              String appleClientId,
                              String profileServiceUrl,
                              String internalToken,
-                             String userRegisteredTopic) {
+                             String buyerRegisteredTopic) {
 }

@@ -32,27 +32,27 @@ public final class WalletApi {
         KLARNA
     }
 
-    public record GetWalletRequest(@NotBlank String playerId) {
+    public record GetWalletRequest(@NotBlank String buyerId) {
     }
 
-    public record DepositRequest(@NotBlank String playerId,
+    public record DepositRequest(@NotBlank String buyerId,
                                  @NotNull BigDecimal amount,
                                  @NotBlank String currency) {
     }
 
-    public record WithdrawRequest(@NotBlank String playerId,
+    public record WithdrawRequest(@NotBlank String buyerId,
                                   @NotNull BigDecimal amount,
                                   @NotBlank String currency) {
     }
 
-    public record CreatePaymentRequest(@NotBlank String playerId,
+    public record CreatePaymentRequest(@NotBlank String buyerId,
                                        @NotNull BigDecimal amount,
                                        @NotBlank String currency,
                                        @NotBlank String referenceId,
                                        @NotBlank String referenceType) {
     }
 
-    public record CreateRefundRequest(@NotBlank String playerId,
+    public record CreateRefundRequest(@NotBlank String buyerId,
                                       @NotNull BigDecimal amount,
                                       @NotBlank String currency,
                                       @NotBlank String referenceId,
@@ -61,8 +61,8 @@ public final class WalletApi {
 
     /** Request to create a Stripe PaymentIntent for card/Apple Pay/Google Pay checkout */
     public record CreatePaymentIntentRequest(
-            @Schema(description = "买家 ID", example = "player-01HXABCD1234")
-            @NotBlank String playerId,
+            @Schema(description = "买家 ID", example = "buyer-01HXABCD1234")
+            @NotBlank String buyerId,
             @Schema(description = "支付金额", example = "99.90")
             @NotNull BigDecimal amount,
             @Schema(description = "币种", example = "usd")
@@ -93,7 +93,7 @@ public final class WalletApi {
     }
 
     public record TransactionResponse(String transactionId,
-                                      String playerId,
+                                      String buyerId,
                                       String type,
                                       BigDecimal amount,
                                       String currency,
@@ -102,7 +102,7 @@ public final class WalletApi {
                                       Instant createdAt) {
     }
 
-    public record WalletAccountResponse(String playerId,
+    public record WalletAccountResponse(String buyerId,
                                         BigDecimal balance,
                                         Instant updatedAt,
                                         List<TransactionResponse> recentTransactions) {

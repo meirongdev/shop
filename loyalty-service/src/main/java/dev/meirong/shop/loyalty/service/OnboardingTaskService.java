@@ -33,26 +33,26 @@ public class OnboardingTaskService {
     }
 
     @Transactional
-    public void initForNewUser(String playerId) {
+    public void initForNewUser(String buyerId) {
         List<OnboardingTaskTemplateEntity> templates = templateRepository.findByActiveTrueOrderBySortOrderAsc();
         Instant expireAt = Instant.now().plus(ONBOARDING_EXPIRE_DAYS, ChronoUnit.DAYS);
 
         for (OnboardingTaskTemplateEntity template : templates) {
             Optional<OnboardingTaskProgressEntity> existing =
-                    progressRepository.findByPlayerIdAndTaskKey(playerId, template.getTaskKey());
+                    progressRepository.findByPlayerIdAndTaskKey(buyerId, template.getTaskKey());
             if (existing.isEmpty()) {
                 OnboardingTaskProgressEntity progress =
-                        OnboardingTaskProgressEntity.init(playerId, template.getTaskKey(), expireAt);
+                        OnboardingTaskProgressEntity.init(buyerId, template.getTaskKey(), expireAt);
                 progressRepository.save(progress);
             }
         }
-        log.info("Initialized {} onboarding tasks for player {}", templates.size(), playerId);
+        log.info("Initialized {} onboarding tasks for player {}", templates.size(), buyerId);
     }
 
     @Transactional
-    public OnboardingTaskProgressEntity completeTask(String playerId, String taskKey) {
+    public OnboardingTaskProgressEntity completeTask(String buyerId, String taskKey) {
         OnboardingTaskProgressEntity progress = progressRepository
-                .findByPlayerIdAndTaskKey(playerId, taskKey)
+                .findByPlayerIdAndTaskKey(buyerId, taskKey)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskKey));
 
         if (progress.isCompleted()) {
@@ -71,14 +71,14 @@ public class OnboardingTaskService {
         progress.complete(points);
         progressRepository.save(progress);
 
-        accountService.earnPoints(playerId, "ONBOARDING", points,
-                "onboard-" + playerId + "-" + taskKey, "Completed: " + template.getTitle());
+        accountService.earnPoints(buyerId, "ONBOARDING", points,
+                "onboard-" + buyerId + "-" + taskKey, "Completed: " + template.getTitle());
 
-        log.info("Player {} completed onboarding task: {} (+{} pts)", playerId, taskKey, points);
+        log.info("Player {} completed onboarding task: {} (+{} pts)", buyerId, taskKey, points);
         return progress;
     }
 
-    public List<OnboardingTaskProgressEntity> getProgress(String playerId) {
-        return progressRepository.findByPlayerId(playerId);
+    public List<OnboardingTaskProgressEntity> getProgress(String buyerId) {
+        return progressRepository.findByPlayerId(buyerId);
     }
 }

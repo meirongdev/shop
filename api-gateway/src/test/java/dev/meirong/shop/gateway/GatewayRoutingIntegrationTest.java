@@ -94,8 +94,7 @@ class GatewayRoutingIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("\"server\":\"stable\"")))
                 .andExpect(content().string(containsString("\"path\":\"/buyer/orders\"")))
-                .andExpect(content().string(containsString("\"playerId\":\"buyer-100\"")))
-                .andExpect(content().string(containsString("\"userId\":\"buyer-100\"")))
+                .andExpect(content().string(containsString("\"buyerId\":\"buyer-100\"")))
                 .andExpect(content().string(containsString("\"internalToken\":\"local-dev-internal-token-change-me\"")))
                 .andExpect(content().string(containsString("\"requestId\":")))
                 .andExpect(header().exists("X-Request-Id"))
@@ -173,7 +172,7 @@ class GatewayRoutingIntegrationTest {
                             "\"server\":\"" + name + "\"," +
                             "\"path\":\"" + exchange.getRequestURI().getPath() + "\"," +
                             "\"host\":\"" + value(exchange.getRequestHeaders().getFirst("Host")) + "\"," +
-                            "\"playerId\":\"" + value(exchange.getRequestHeaders().getFirst("X-Player-Id")) + "\"," +
+                            "\"buyerId\":\"" + value(exchange.getRequestHeaders().getFirst("X-Buyer-Id")) + "\"," +
                             "\"userId\":\"" + value(exchange.getRequestHeaders().getFirst("X-User-Id")) + "\"," +
                             "\"internalToken\":\"" + value(exchange.getRequestHeaders().getFirst("X-Internal-Token")) + "\"," +
                             "\"requestId\":\"" + value(exchange.getRequestHeaders().getFirst("X-Request-Id")) + "\"}";

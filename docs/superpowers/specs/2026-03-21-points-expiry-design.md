@@ -47,7 +47,7 @@
 ```sql
 CREATE TABLE points_ledger (
     id                CHAR(26)     NOT NULL PRIMARY KEY,  -- ULID
-    player_id         VARCHAR(64)  NOT NULL,
+    buyer_id         VARCHAR(64)  NOT NULL,
     transaction_id    VARCHAR(36)  NOT NULL,              -- 关联 loyalty_transaction.id
                                                           -- 注：loyalty_transaction.id 当前为 VARCHAR(36)，
                                                           -- 若未来迁移为 ULID CHAR(26) 则同步调整此列
@@ -60,9 +60,9 @@ CREATE TABLE points_ledger (
     notified_7d       TINYINT(1)   NOT NULL DEFAULT 0,    -- 已发 7 天预警
     extended_count    TINYINT      NOT NULL DEFAULT 0,    -- 活跃延期次数（上限 2 次）
     created_at        TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    INDEX idx_player_expire    (player_id, expire_at),
+    INDEX idx_player_expire    (buyer_id, expire_at),
     INDEX idx_expire_status    (expire_at, status),       -- 批量到期扫描
-    INDEX idx_player_fifo      (player_id, status, expire_at ASC)  -- FIFO 消耗查询
+    INDEX idx_player_fifo      (buyer_id, status, expire_at ASC)  -- FIFO 消耗查询
 );
 ```
 
@@ -98,7 +98,7 @@ CREATE TABLE expiry_job_log (
 -- loyalty_account 追加 email 字段，用于事件发布时直接携带收件地址，
 -- 避免 loyalty-service 在批量任务中运行时依赖 profile-service
 ALTER TABLE loyalty_account
-  ADD COLUMN email VARCHAR(255) AFTER player_id;
+  ADD COLUMN email VARCHAR(255) AFTER buyer_id;
 ```
 
 `loyalty_transaction` 无需修改，`expire_at DATE` 字段继续使用：
@@ -113,9 +113,9 @@ ALTER TABLE loyalty_account
 
 ```java
 @Transactional
-public void deductPoints(String playerId, long amount, String source, String referenceId) {
+public void deductPoints(String buyerId, long amount, String source, String referenceId) {
     // 1. 账户行锁（所有积分变更必须经过账户行锁，保证同一用户操作串行化）
-    LoyaltyAccount account = accountRepository.findByPlayerIdForUpdate(playerId);
+    LoyaltyAccount account = accountRepository.findByPlayerIdForUpdate(buyerId);
     if (account.getBalance() < amount) {
         throw new BusinessException(INSUFFICIENT_POINTS,
             "Need %d, available %d".formatted(amount, account.getBalance()));
@@ -124,7 +124,7 @@ public void deductPoints(String playerId, long amount, String source, String ref
     // 2. FIFO：按 expire_at ASC 获取 ACTIVE 台账并加行锁，逐条消耗
     //    使用 SELECT FOR UPDATE 确保与并发的到期任务互斥
     List<PointsLedger> ledgers = ledgerRepository
-        .findActiveByPlayerIdOrderByExpireAtAscForUpdate(playerId);
+        .findActiveByPlayerIdOrderByExpireAtAscForUpdate(buyerId);
 
     long remaining = amount;
     List<PointsLedger> toUpdate = new ArrayList<>();
@@ -140,7 +140,7 @@ public void deductPoints(String playerId, long amount, String source, String ref
     // 3. 写 loyalty_transaction（DEDUCT）
     long balanceAfter = account.getBalance() - amount;
     loyaltyTransactionRepository.save(new LoyaltyTransaction(
-        playerId, "DEDUCT", source, -amount, balanceAfter, referenceId
+        buyerId, "DEDUCT", source, -amount, balanceAfter, referenceId
     ));
 
     // 4. 更新账户余额
@@ -150,29 +150,29 @@ public void deductPoints(String playerId, long amount, String source, String ref
 }
 ```
 
-**并发安全说明**：`findByPlayerIdForUpdate`（账户行锁）是同一用户所有积分写操作的入口，保证同一 `player_id` 的 deductPoints 与 expireSingleLedger 不会并发执行。台账的 `FOR UPDATE` 提供额外的行级互斥，防止极端情况下的 over-consume。
+**并发安全说明**：`findByPlayerIdForUpdate`（账户行锁）是同一用户所有积分写操作的入口，保证同一 `buyer_id` 的 deductPoints 与 expireSingleLedger 不会并发执行。台账的 `FOR UPDATE` 提供额外的行级互斥，防止极端情况下的 over-consume。
 
 ### 3.2 积分赚取时创建台账
 
 ```java
 @Transactional
-public void earnPoints(String playerId, long amount, String source, String referenceId) {
+public void earnPoints(String buyerId, long amount, String source, String referenceId) {
     // 幂等：referenceId 已处理则跳过
     if (loyaltyTransactionRepository.existsByReferenceId(referenceId)) return;
 
-    LoyaltyAccount account = accountRepository.findByPlayerIdForUpdate(playerId);
+    LoyaltyAccount account = accountRepository.findByPlayerIdForUpdate(buyerId);
 
     LocalDate expireAt = calculateExpireAt(source);
 
     // 写流水
     long balanceAfter = account.getBalance() + amount;
     LoyaltyTransaction tx = loyaltyTransactionRepository.save(new LoyaltyTransaction(
-        playerId, "EARN", source, amount, balanceAfter, referenceId, expireAt
+        buyerId, "EARN", source, amount, balanceAfter, referenceId, expireAt
     ));
 
     // 创建台账记录
     ledgerRepository.save(PointsLedger.create(
-        playerId, tx.getId(), amount, expireAt
+        buyerId, tx.getId(), amount, expireAt
     ));
 
     // 更新账户
@@ -184,7 +184,7 @@ public void earnPoints(String playerId, long amount, String source, String refer
     // 发 Kafka 事件（EventEnvelope 包装）
     eventPublisher.publish("loyalty.points.earned.v1",
         EventEnvelope.of("loyalty-service", "POINTS_EARNED",
-            new PointsEarnedEventData(playerId, account.getEmail(), amount, source, balanceAfter, expireAt)));
+            new PointsEarnedEventData(buyerId, account.getEmail(), amount, source, balanceAfter, expireAt)));
 }
 
 private LocalDate calculateExpireAt(String source) {
@@ -194,7 +194,7 @@ private LocalDate calculateExpireAt(String source) {
 }
 ```
 
-**说明**：`account.getEmail()` 从 `loyalty_account.email` 字段读取，该字段在用户注册时由 `user.registered.v1` 事件写入（见 §八 3）。
+**说明**：`account.getEmail()` 从 `loyalty_account.email` 字段读取，该字段在用户注册时由 `buyer.registered.v1` 事件写入（见 §八 3）。
 
 ---
 
@@ -271,10 +271,10 @@ public class ExpiryJobProcessor {
     @Transactional
     public void expireSingleLedger(PointsLedger ledger) {
         long expiredAmount = ledger.getRemainingAmount();
-        String playerId = ledger.getPlayerId();
+        String buyerId = ledger.getPlayerId();
 
         // 1. 账户行锁（与 deductPoints 互斥，保证余额正确）
-        LoyaltyAccount account = accountRepository.findByPlayerIdForUpdate(playerId);
+        LoyaltyAccount account = accountRepository.findByPlayerIdForUpdate(buyerId);
 
         // 2. 台账标记 EXPIRED（互斥由上方账户行锁保证；saveAndFlush 确保写入在事务提交前可见）
         ledger.expire();
@@ -287,14 +287,14 @@ public class ExpiryJobProcessor {
 
         // 4. 写 EXPIRE 流水
         loyaltyTransactionRepository.save(new LoyaltyTransaction(
-            playerId, "EXPIRE", "EXPIRY_JOB", -expiredAmount, balanceAfter, ledger.getId()
+            buyerId, "EXPIRE", "EXPIRY_JOB", -expiredAmount, balanceAfter, ledger.getId()
         ));
 
         // 5. 发 Kafka 事件（EventEnvelope 包装）
         eventPublisher.publish("loyalty.points.expired.v1",
             EventEnvelope.of("loyalty-service", "POINTS_EXPIRED",
                 new PointsExpiredEventData(
-                    playerId, account.getEmail(), account.getUsername(),
+                    buyerId, account.getEmail(), account.getUsername(),
                     expiredAmount, ledger.getExpireAt(), balanceAfter
                 )));
     }
@@ -325,25 +325,25 @@ private void runNotifyJob(int daysAhead, String jobType) {
 
     try {
         // 按用户聚合：同一用户当天只发一次通知（汇总多批积分）
-        // SELECT player_id, SUM(remaining_amount) AS total_expiring
+        // SELECT buyer_id, SUM(remaining_amount) AS total_expiring
         // FROM points_ledger
         // WHERE expire_at = :targetDate AND status = 'ACTIVE'
         //   AND (notified_30d = 0 OR notified_7d = 0)  -- 按 daysAhead 选字段
-        // GROUP BY player_id
+        // GROUP BY buyer_id
         List<ExpiryNotifySummary> summaries = ledgerRepository.sumExpiringByUser(targetDate, daysAhead);
 
         for (ExpiryNotifySummary summary : summaries) {
-            LoyaltyAccount account = accountRepository.findById(summary.playerId()).orElseThrow();
+            LoyaltyAccount account = accountRepository.findById(summary.buyerId()).orElseThrow();
 
             eventPublisher.publish("loyalty.points.expiring.v1",
                 EventEnvelope.of("loyalty-service", daysAhead == 30 ? "POINTS_EXPIRING_30D" : "POINTS_EXPIRING_7D",
                     new PointsExpiringEventData(
-                        summary.playerId(), account.getEmail(), account.getUsername(),
+                        summary.buyerId(), account.getEmail(), account.getUsername(),
                         summary.totalExpiring(), targetDate, daysAhead
                     )));
 
             // 标记已通知，防重
-            ledgerRepository.markNotified(summary.playerId(), targetDate, daysAhead);
+            ledgerRepository.markNotified(summary.buyerId(), targetDate, daysAhead);
         }
 
         log.complete(summaries.size(), 0, summaries.size());
@@ -373,12 +373,12 @@ public void onOrderCompleted(EventEnvelope<OrderEventData> event) {
     // ...
 
     // Phase 3 新增：活跃度延期
-    String playerId = event.data().buyerId();
+    String buyerId = event.data().buyerId();
     LocalDate today = LocalDate.now();
     LocalDate threshold = today.plusDays(30);
 
     List<PointsLedger> nearExpiry = ledgerRepository
-        .findNearExpiryEligible(playerId, today, threshold, 2);
+        .findNearExpiryEligible(buyerId, today, threshold, 2);
         // expire_at BETWEEN today AND threshold AND status='ACTIVE' AND extended_count < 2
 
     for (PointsLedger ledger : nearExpiry) {
@@ -425,7 +425,7 @@ public class LoyaltyEventListener {
         EventEnvelope<Map<String, Object>> event = objectMapper.readValue(payload,
             new TypeReference<>() {});
 
-        String recipientId    = (String) event.data().get("playerId");
+        String recipientId    = (String) event.data().get("buyerId");
         String recipientEmail = (String) event.data().get("email");
         Map<String, Object> variables = buildVariables(event.type(), event.data());
 
@@ -496,7 +496,7 @@ resources/templates/email/       (notification-service)
 ```java
 // 积分赚取（现有，补充 expireAt 字段）
 public record PointsEarnedEventData(
-    String    playerId,
+    String    buyerId,
     String    email,        // 收件邮箱（来自 loyalty_account.email）
     long      amount,
     String    source,
@@ -506,7 +506,7 @@ public record PointsEarnedEventData(
 
 // 积分即将到期
 public record PointsExpiringEventData(
-    String    playerId,
+    String    buyerId,
     String    email,          // 来自 loyalty_account.email
     String    username,       // 来自 loyalty_account.username
     long      expiringPoints,
@@ -516,7 +516,7 @@ public record PointsExpiringEventData(
 
 // 积分已过期
 public record PointsExpiredEventData(
-    String    playerId,
+    String    buyerId,
     String    email,          // 来自 loyalty_account.email
     String    username,       // 来自 loyalty_account.username
     long      expiredPoints,
@@ -525,7 +525,7 @@ public record PointsExpiredEventData(
 ) {}
 ```
 
-**说明**：`email` 和 `username` 从 `loyalty_account` 表读取，loyalty_account 在 `user.registered.v1` 消费时写入（见 §八）。这一设计避免了批量任务在运行时对 profile-service 的同步依赖。
+**说明**：`email` 和 `username` 从 `loyalty_account` 表读取，loyalty_account 在 `buyer.registered.v1` 消费时写入（见 §八）。这一设计避免了批量任务在运行时对 profile-service 的同步依赖。
 
 ---
 
@@ -536,19 +536,19 @@ public record PointsExpiredEventData(
 在 `LoyaltyOnboardingListener.onUserRegistered()` 中，已有账户初始化逻辑，追加 email/username 写入：
 
 ```java
-@KafkaListener(topics = "user.registered.v1")
-public void onUserRegistered(EventEnvelope<UserRegisteredEventData> event) {
-    UserRegisteredEventData data = event.data();
+@KafkaListener(topics = "buyer.registered.v1")
+public void onUserRegistered(EventEnvelope<BuyerRegisteredEventData> event) {
+    BuyerRegisteredEventData data = event.data();
 
     // 创建账户时写入 email 和 username（已有 getOrCreate 逻辑中补充）
-    LoyaltyAccount account = accountRepository.findById(data.playerId())
-        .orElse(new LoyaltyAccount(data.playerId()));
+    LoyaltyAccount account = accountRepository.findById(data.buyerId())
+        .orElse(new LoyaltyAccount(data.buyerId()));
     account.setEmail(data.email());
     account.setUsername(data.username());
     accountRepository.save(account);
 
     // 发放注册积分 & 初始化新人任务（现有逻辑不变）
-    accountService.earnPoints(data.playerId(), 100, "REGISTER", event.eventId());
+    accountService.earnPoints(data.buyerId(), 100, "REGISTER", event.eventId());
     // ...
 }
 ```
@@ -589,7 +589,7 @@ CREATE TABLE expiry_job_log ( ... );  -- 见 §2.2
 
 -- 3. loyalty_account 追加 email 和 username 字段
 ALTER TABLE loyalty_account
-  ADD COLUMN email    VARCHAR(255) AFTER player_id,
+  ADD COLUMN email    VARCHAR(255) AFTER buyer_id,
   ADD COLUMN username VARCHAR(64)  AFTER email;
 
 -- 4. 索引：loyalty_transaction 补充 expire_at 索引（历史数据回填查询用）
@@ -609,11 +609,11 @@ public class V2_1__BackfillPointsLedger extends BaseJavaMigration {
         // 查询所有 EARN 类型且 expire_at 不为 NULL 的流水
         // 为每条记录创建对应的 points_ledger 行（ULID 生成）
         // remaining_amount 初始 = original_amount（保守处理，见 §10.3）
-        String select = "SELECT id, player_id, amount, expire_at, created_at " +
+        String select = "SELECT id, buyer_id, amount, expire_at, created_at " +
                         "FROM loyalty_transaction WHERE type = 'EARN' AND expire_at IS NOT NULL";
 
         String insert = "INSERT INTO points_ledger " +
-                        "(id, player_id, transaction_id, original_amount, remaining_amount, expire_at, status) " +
+                        "(id, buyer_id, transaction_id, original_amount, remaining_amount, expire_at, status) " +
                         "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (var stmt = context.getConnection().prepareStatement(select);
@@ -624,7 +624,7 @@ public class V2_1__BackfillPointsLedger extends BaseJavaMigration {
                 String status = rs.getDate("expire_at").toLocalDate()
                     .isBefore(LocalDate.now()) ? "EXPIRED" : "ACTIVE";
                 ins.setString(1, UlidCreator.getUlid().toString());
-                ins.setString(2, rs.getString("player_id"));
+                ins.setString(2, rs.getString("buyer_id"));
                 ins.setString(3, rs.getString("id"));         // transaction_id
                 ins.setLong(4,   rs.getLong("amount"));       // original_amount
                 ins.setLong(5,   rs.getLong("amount"));       // remaining_amount（保守值）
@@ -644,13 +644,13 @@ public class V2_1__BackfillPointsLedger extends BaseJavaMigration {
 
 ```sql
 SELECT
-    la.player_id,
+    la.buyer_id,
     la.balance                                           AS account_balance,
     COALESCE(SUM(pl.remaining_amount), 0)               AS ledger_balance,
     la.balance - COALESCE(SUM(pl.remaining_amount), 0)  AS diff
 FROM loyalty_account la
-LEFT JOIN points_ledger pl ON pl.player_id = la.player_id AND pl.status = 'ACTIVE'
-GROUP BY la.player_id, la.balance
+LEFT JOIN points_ledger pl ON pl.buyer_id = la.buyer_id AND pl.status = 'ACTIVE'
+GROUP BY la.buyer_id, la.balance
 HAVING diff != 0;
 ```
 
@@ -670,7 +670,7 @@ HAVING diff != 0;
 ### 11.2 性能设计
 
 - 批量到期任务分页处理（500 条/页），每页独立事务，避免大事务锁表
-- `points_ledger` 索引：`(expire_at, status)` 覆盖批量扫描；`(player_id, status, expire_at ASC)` 覆盖 FIFO 查询
+- `points_ledger` 索引：`(expire_at, status)` 覆盖批量扫描；`(buyer_id, status, expire_at ASC)` 覆盖 FIFO 查询
 - 预警通知按用户聚合后发 Kafka，notification-service 异步处理，不阻塞批量任务
 
 ### 11.3 可观测性

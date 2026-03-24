@@ -35,13 +35,13 @@ public class LoyaltyAccountService {
         this.meterRegistry = meterRegistry;
     }
 
-    public LoyaltyAccountEntity getOrCreateAccount(String playerId) {
-        return accountRepository.findById(playerId)
-                .orElseGet(() -> accountRepository.save(new LoyaltyAccountEntity(playerId)));
+    public LoyaltyAccountEntity getOrCreateAccount(String buyerId) {
+        return accountRepository.findById(buyerId)
+                .orElseGet(() -> accountRepository.save(new LoyaltyAccountEntity(buyerId)));
     }
 
     @Transactional
-    public LoyaltyTransactionEntity earnPoints(String playerId, String source,
+    public LoyaltyTransactionEntity earnPoints(String buyerId, String source,
                                                long points, String referenceId, String remark) {
         if (points <= 0) throw new IllegalArgumentException("Points must be positive");
 
@@ -51,12 +51,12 @@ public class LoyaltyAccountService {
             return transactionRepository.findByReferenceId(referenceId).getFirst();
         }
 
-        LoyaltyAccountEntity account = getOrCreateAccount(playerId);
+        LoyaltyAccountEntity account = getOrCreateAccount(buyerId);
         account.earnPoints(points);
         accountRepository.save(account);
 
         LoyaltyTransactionEntity txn = new LoyaltyTransactionEntity(
-                playerId, "EARN", source, points, account.getBalance(), referenceId, remark);
+                buyerId, "EARN", source, points, account.getBalance(), referenceId, remark);
         transactionRepository.save(txn);
         Counter.builder("shop_loyalty_points_earned_total")
                 .description("Total loyalty points earned")
@@ -66,16 +66,16 @@ public class LoyaltyAccountService {
     }
 
     @Transactional
-    public LoyaltyTransactionEntity deductPoints(String playerId, String source,
+    public LoyaltyTransactionEntity deductPoints(String buyerId, String source,
                                                  long points, String referenceId, String remark) {
         if (points <= 0) throw new IllegalArgumentException("Points must be positive");
 
-        LoyaltyAccountEntity account = getOrCreateAccount(playerId);
+        LoyaltyAccountEntity account = getOrCreateAccount(buyerId);
         account.deductPoints(points);
         accountRepository.save(account);
 
         LoyaltyTransactionEntity txn = new LoyaltyTransactionEntity(
-                playerId, "DEDUCT", source, -points, account.getBalance(), referenceId, remark);
+                buyerId, "DEDUCT", source, -points, account.getBalance(), referenceId, remark);
         transactionRepository.save(txn);
         Counter.builder("shop_loyalty_points_redeemed_total")
                 .description("Total loyalty points redeemed/deducted")
@@ -85,16 +85,16 @@ public class LoyaltyAccountService {
     }
 
     @Transactional
-    public LoyaltyTransactionEntity earnByRule(String playerId, String ruleSource,
+    public LoyaltyTransactionEntity earnByRule(String buyerId, String ruleSource,
                                                double amount, String referenceId, String remark) {
         LoyaltyEarnRuleEntity rule = earnRuleRepository.findBySourceAndActiveTrue(ruleSource)
                 .orElseThrow(() -> new IllegalStateException("No active earn rule for source: " + ruleSource));
         long points = rule.calculate(amount);
         if (points <= 0) return null;
-        return earnPoints(playerId, ruleSource, points, referenceId, remark);
+        return earnPoints(buyerId, ruleSource, points, referenceId, remark);
     }
 
-    public Page<LoyaltyTransactionEntity> getTransactions(String playerId, Pageable pageable) {
-        return transactionRepository.findByPlayerIdOrderByCreatedAtDesc(playerId, pageable);
+    public Page<LoyaltyTransactionEntity> getTransactions(String buyerId, Pageable pageable) {
+        return transactionRepository.findByPlayerIdOrderByCreatedAtDesc(buyerId, pageable);
     }
 }

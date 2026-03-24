@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ActivityVirtualFarmRepository extends JpaRepository<ActivityVirtualFarm, String> {
 
-    Optional<ActivityVirtualFarm> findByGameIdAndPlayerId(String gameId, String playerId);
+    Optional<ActivityVirtualFarm> findByGameIdAndPlayerId(String gameId, String buyerId);
 }

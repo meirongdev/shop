@@ -25,7 +25,7 @@ public class ActivityVirtualFarm {
     private String gameId;
 
     @Column(name = "player_id", nullable = false, length = 64)
-    private String playerId;
+    private String buyerId;
 
     @Column(nullable = false)
     private int stage;
@@ -50,7 +50,7 @@ public class ActivityVirtualFarm {
 
     protected ActivityVirtualFarm() {}
 
-    public ActivityVirtualFarm(String id, String gameId, String playerId, int maxStage, int maxProgress) {
+    public ActivityVirtualFarm(String id, String gameId, String buyerId, int maxStage, int maxProgress) {
         if (maxStage <= 0) {
             throw new IllegalArgumentException("maxStage must be greater than zero");
         }
@@ -59,7 +59,7 @@ public class ActivityVirtualFarm {
         }
         this.id = id;
         this.gameId = gameId;
-        this.playerId = playerId;
+        this.buyerId = buyerId;
         this.stage = 1;
         this.progress = 0;
         this.maxStage = maxStage;
@@ -113,7 +113,7 @@ public class ActivityVirtualFarm {
 
     public String getId() { return id; }
     public String getGameId() { return gameId; }
-    public String getPlayerId() { return playerId; }
+    public String getBuyerId() { return buyerId; }
     public int getStage() { return stage; }
     public int getProgress() { return progress; }
     public int getMaxStage() { return maxStage; }

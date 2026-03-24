@@ -30,7 +30,7 @@ public class ProfileInternalController {
     @PostMapping("/invite/stats")
     public ApiResponse<ProfileInternalApi.InviteStatsResponse> inviteStats(
             @Valid @RequestBody ProfileInternalApi.InviteStatsRequest request) {
-        return ApiResponse.success(service.getInviteStats(request.playerId()));
+        return ApiResponse.success(service.getInviteStats(request.buyerId()));
     }
 
     @PostMapping("/referral/first-order")

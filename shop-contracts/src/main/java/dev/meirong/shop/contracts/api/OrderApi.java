@@ -86,7 +86,7 @@ public final class OrderApi {
                                          BigDecimal lineTotal) {
     }
 
-    public record ListOrdersRequest(@NotBlank String playerId,
+    public record ListOrdersRequest(@NotBlank String buyerId,
                                     String role) {
     }
 

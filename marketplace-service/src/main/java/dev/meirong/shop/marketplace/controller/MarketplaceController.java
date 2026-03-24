@@ -73,7 +73,7 @@ public class MarketplaceController {
     @PostMapping("/reviews")
     public ApiResponse<MarketplaceApi.ReviewResponse> createReview(
             @Valid @RequestBody MarketplaceApi.CreateReviewRequest request,
-            @RequestHeader(TrustedHeaderNames.PLAYER_ID) String buyerId) {
+            @RequestHeader(TrustedHeaderNames.BUYER_ID) String buyerId) {
         return ApiResponse.success(reviewService.createReview(buyerId, request));
     }
 

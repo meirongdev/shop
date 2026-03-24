@@ -104,7 +104,7 @@ class LoyaltyDomainTest {
                     OnboardingTaskProgressEntity.init("player-1", "FIRST_ORDER", expire);
 
             assertEquals("PENDING", progress.getStatus());
-            assertEquals("player-1", progress.getPlayerId());
+            assertEquals("player-1", progress.getBuyerId());
             assertEquals("FIRST_ORDER", progress.getTaskKey());
             assertFalse(progress.isCompleted());
         }
@@ -141,7 +141,7 @@ class LoyaltyDomainTest {
             LoyaltyCheckinEntity checkin = new LoyaltyCheckinEntity(
                     "player-1", LocalDate.of(2026, 1, 15), 3, 10, false, 0);
 
-            assertEquals("player-1", checkin.getPlayerId());
+            assertEquals("player-1", checkin.getBuyerId());
             assertEquals(LocalDate.of(2026, 1, 15), checkin.getCheckinDate());
             assertEquals(3, checkin.getStreakDay());
             assertEquals(10, checkin.getPointsEarned());

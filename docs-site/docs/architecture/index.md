@@ -48,7 +48,7 @@ Buyer BFF  Seller BFF
 
 ## 安全与可观测如何贯穿全链路
 
-- Gateway 对外统一做 JWT 校验，并注入 `X-Request-Id`、`X-Player-Id`、`X-User-Id`、`X-Internal-Token` 等可信头。
+- Gateway 对外统一做 JWT 校验，并注入 `X-Request-Id`、`X-Buyer-Id`、`X-Buyer-Id`、`X-Internal-Token` 等可信头。
 - Gateway 默认对客户端返回 `X-Request-Id` 与 `X-Trace-Id`，方便从一次请求直接关联到 Grafana / Loki / Tempo。
 - 服务统一暴露 `:8081/actuator/prometheus`，并通过 OTLP 把 traces / logs 送到 Collector。
 - K8s 观测清单已经包含 Prometheus、Tempo、Loki、Grafana、Pyroscope、Alert/SLO rules。

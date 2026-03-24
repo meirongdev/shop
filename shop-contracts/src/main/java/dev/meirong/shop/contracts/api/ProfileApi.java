@@ -19,13 +19,13 @@ public final class ProfileApi {
     }
 
     public record GetProfileRequest(
-            @Schema(description = "玩家 ID", example = "player-1001")
-            @NotBlank String playerId) {
+            @Schema(description = "买家 ID", example = "buyer-1001")
+            @NotBlank String buyerId) {
     }
 
     public record UpdateProfileRequest(
-            @Schema(description = "玩家 ID", example = "player-1001")
-            @NotBlank String playerId,
+            @Schema(description = "买家 ID", example = "buyer-1001")
+            @NotBlank String buyerId,
             @Schema(description = "展示名", example = "Buyer Demo")
             @NotBlank String displayName,
             @Schema(description = "联系邮箱", example = "buyer.demo@example.com")
@@ -43,8 +43,8 @@ public final class ProfileApi {
     }
 
     public record ProfileResponse(
-            @Schema(description = "玩家 ID", example = "player-1001")
-            String playerId,
+            @Schema(description = "买家 ID", example = "buyer-1001")
+            String buyerId,
             @Schema(description = "用户名", example = "buyer.demo")
             String username,
             @Schema(description = "展示名", example = "Buyer Demo")

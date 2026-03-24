@@ -5,19 +5,63 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      maven: ${{ steps.filter.outputs.maven }}
+      docs_site: ${{ steps.filter.outputs.docs_site }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      - name: Detect changed areas
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            maven:
+              - 'pom.xml'
+              - '**/pom.xml'
+              - '**/*.java'
+              - '**/*.kt'
+              - '**/*.kts'
+              - '**/*.xml'
+              - '**/*.yml'
+              - '**/*.yaml'
+              - '**/*.properties'
+              - '.mvn/**'
+              - 'mvnw'
+              - 'mvnw.cmd'
+              - 'scripts/**'
+              - 'Makefile'
+              - '.editorconfig'
+              - '.githooks/**'
+              - '.github/workflows/**'
+            docs_site:
+              - 'docs-site/**'
+              - 'Makefile'
+              - '.github/workflows/**'
+
+  maven-verify:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.maven == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
@@ -25,18 +69,22 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build & Test
-        run: ./mvnw -B verify
+      - name: Maven verify
+        run: ./mvnw -B -ntp verify
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: '**/target/surefire-reports/*.xml'
+          path: |
+            **/target/surefire-reports/*.xml
+            **/target/failsafe-reports/*.xml
           retention-days: 7
 
-  docs:
+  docs-site:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.docs_site == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -54,7 +102,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: docs-site/package-lock.json
 
-      - name: Install & Build
+      - name: Build docs-site
         run: |
           npm ci
           npm run build

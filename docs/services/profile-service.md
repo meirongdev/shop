@@ -43,7 +43,7 @@ ALTER TABLE buyer_profile
   ADD COLUMN updated_at    TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
                             ON UPDATE CURRENT_TIMESTAMP(6);
 
--- 现有字段：player_id, username, display_name, email, tier
+-- 现有字段：buyer_id, username, display_name, email, tier
 -- tier 字段逐步迁移到 loyalty-service 管理，profile-service 保留冗余副本（读取用）
 ```
 
@@ -75,7 +75,7 @@ CREATE TABLE seller_profile (
 ```sql
 CREATE TABLE buyer_address (
     id           VARCHAR(36)   NOT NULL PRIMARY KEY,
-    player_id    VARCHAR(64)   NOT NULL,
+    buyer_id    VARCHAR(64)   NOT NULL,
     label        VARCHAR(32)   NOT NULL DEFAULT 'home',   -- home/office/other
     name         VARCHAR(128)  NOT NULL,
     phone        VARCHAR(32)   NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE buyer_address (
     country      VARCHAR(2)    NOT NULL DEFAULT 'US',     -- ISO 3166-1 alpha-2
     is_default   TINYINT(1)    NOT NULL DEFAULT 0,
     created_at   TIMESTAMP(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    INDEX idx_player (player_id)
+    INDEX idx_player (buyer_id)
 );
 ```
 
@@ -96,10 +96,10 @@ CREATE TABLE buyer_address (
 ```sql
 CREATE TABLE buyer_favorite_product (
     id          VARCHAR(36)   NOT NULL PRIMARY KEY,
-    player_id   VARCHAR(64)   NOT NULL,
+    buyer_id   VARCHAR(64)   NOT NULL,
     product_id  VARCHAR(36)   NOT NULL,
     created_at  TIMESTAMP(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    UNIQUE KEY uq_player_product (player_id, product_id)
+    UNIQUE KEY uq_player_product (buyer_id, product_id)
 );
 ```
 
@@ -108,11 +108,11 @@ CREATE TABLE buyer_favorite_product (
 ```sql
 CREATE TABLE buyer_restock_notify (
     id          VARCHAR(36)   NOT NULL PRIMARY KEY,
-    player_id   VARCHAR(64)   NOT NULL,
+    buyer_id   VARCHAR(64)   NOT NULL,
     sku_id      VARCHAR(36)   NOT NULL,
     notified    TINYINT(1)    NOT NULL DEFAULT 0,
     created_at  TIMESTAMP(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    UNIQUE KEY uq_player_sku (player_id, sku_id)
+    UNIQUE KEY uq_player_sku (buyer_id, sku_id)
 );
 ```
 
@@ -142,10 +142,10 @@ PUT  /profile/v1/seller                       # 更新店铺信息
 GET  /public/sellers/{sellerId}               # 公开店铺主页
 
 # 内部接口（X-Internal-Token）
-GET  /internal/profile/buyer/{playerId}       # BFF 聚合查询
+GET  /internal/profile/buyer/{buyerId}       # BFF 聚合查询
 GET  /internal/profile/seller/{sellerId}      # BFF 聚合查询
-PUT  /internal/profile/buyer/{playerId}/tier  # loyalty-service 同步会员等级
-POST /internal/profile/buyer/{playerId}/notify-restock  # 到货后触发提醒
+PUT  /internal/profile/buyer/{buyerId}/tier  # loyalty-service 同步会员等级
+POST /internal/profile/buyer/{buyerId}/notify-restock  # 到货后触发提醒
 ```
 
 ---
@@ -154,7 +154,7 @@ POST /internal/profile/buyer/{playerId}/notify-restock  # 到货后触发提醒
 
 ```
 loyalty-service 维护权威 tier_points，当等级变化时：
-  Kafka: loyalty.tier.upgraded.v1 {playerId, newTier}
+  Kafka: loyalty.tier.upgraded.v1 {buyerId, newTier}
     → profile-service 消费 → 更新 buyer_profile.tier
 
 buyer-bff Dashboard 读取：
@@ -169,11 +169,11 @@ buyer-bff Dashboard 读取：
 ```
 promotion-service 中 BIRTHDAY 类型活动条件：
   评估时调用 profile-service：
-    GET /internal/profile/buyer/{playerId}
+    GET /internal/profile/buyer/{buyerId}
     → 判断 birthday 月份 = 当前月份
 
 或（推荐）：定时任务每天检查当日生日用户，主动发放生日券：
   PromotionScheduler.issueBirthdayGifts()
-    → SELECT player_id FROM buyer_profile WHERE MONTH(birthday) = ? AND DAY(birthday) = ?
+    → SELECT buyer_id FROM buyer_profile WHERE MONTH(birthday) = ? AND DAY(birthday) = ?
     → 批量调用 promotion-service 发放 BIRTHDAY 类型优惠券
 ```

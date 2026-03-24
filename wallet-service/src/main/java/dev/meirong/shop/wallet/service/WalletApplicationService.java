@@ -58,8 +58,8 @@ public class WalletApplicationService {
 
     @Transactional
     public WalletApi.WalletAccountResponse getWallet(WalletApi.GetWalletRequest request) {
-        WalletAccountEntity account = accountRepository.findById(request.playerId())
-                .orElseGet(() -> accountRepository.save(new WalletAccountEntity(request.playerId(), BigDecimal.ZERO)));
+        WalletAccountEntity account = accountRepository.findById(request.buyerId())
+                .orElseGet(() -> accountRepository.save(new WalletAccountEntity(request.buyerId(), BigDecimal.ZERO)));
         return toWalletResponse(account);
     }
 
@@ -82,13 +82,13 @@ public class WalletApplicationService {
     }
 
     private WalletApi.TransactionResponse createDeposit(WalletApi.DepositRequest request, String idempotencyKey) {
-        WalletAccountEntity account = accountRepository.findById(request.playerId())
-                .orElseGet(() -> accountRepository.save(new WalletAccountEntity(request.playerId(), BigDecimal.ZERO)));
-        StripeGateway.PaymentReference paymentReference = stripeGateway.createDeposit(request.playerId(), request.amount(), request.currency());
+        WalletAccountEntity account = accountRepository.findById(request.buyerId())
+                .orElseGet(() -> accountRepository.save(new WalletAccountEntity(request.buyerId(), BigDecimal.ZERO)));
+        StripeGateway.PaymentReference paymentReference = stripeGateway.createDeposit(request.buyerId(), request.amount(), request.currency());
         account.credit(request.amount());
         accountRepository.save(account);
         WalletTransactionEntity transaction = transactionRepository.save(
-                new WalletTransactionEntity(request.playerId(), "DEPOSIT", request.amount(), request.currency(), "COMPLETED", paymentReference.providerReference())
+                new WalletTransactionEntity(request.buyerId(), "DEPOSIT", request.amount(), request.currency(), "COMPLETED", paymentReference.providerReference())
         );
         if (idempotencyKey != null) {
             idempotencyKeyRepository.save(new WalletIdempotencyKeyEntity(idempotencyKey, transaction.getId()));
@@ -103,16 +103,16 @@ public class WalletApplicationService {
 
     @Transactional
     public WalletApi.TransactionResponse withdraw(WalletApi.WithdrawRequest request) {
-        WalletAccountEntity account = accountRepository.findById(request.playerId())
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Wallet account not found: " + request.playerId()));
+        WalletAccountEntity account = accountRepository.findById(request.buyerId())
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Wallet account not found: " + request.buyerId()));
         if (account.getBalance().compareTo(request.amount()) < 0) {
             throw new BusinessException(CommonErrorCode.INSUFFICIENT_BALANCE, "Insufficient balance");
         }
-        StripeGateway.PaymentReference paymentReference = stripeGateway.createWithdrawal(request.playerId(), request.amount(), request.currency());
+        StripeGateway.PaymentReference paymentReference = stripeGateway.createWithdrawal(request.buyerId(), request.amount(), request.currency());
         account.debit(request.amount());
         accountRepository.save(account);
         WalletTransactionEntity transaction = transactionRepository.save(
-                new WalletTransactionEntity(request.playerId(), "WITHDRAW", request.amount(), request.currency(), "COMPLETED", paymentReference.providerReference())
+                new WalletTransactionEntity(request.buyerId(), "WITHDRAW", request.amount(), request.currency(), "COMPLETED", paymentReference.providerReference())
         );
         publishableEvent(transaction);
         return toTransactionResponse(transaction);
@@ -120,8 +120,8 @@ public class WalletApplicationService {
 
     @Transactional
     public WalletApi.TransactionResponse payForOrder(WalletApi.CreatePaymentRequest request) {
-        WalletAccountEntity account = accountRepository.findById(request.playerId())
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Wallet account not found: " + request.playerId()));
+        WalletAccountEntity account = accountRepository.findById(request.buyerId())
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Wallet account not found: " + request.buyerId()));
         if (account.getBalance().compareTo(request.amount()) < 0) {
             throw new BusinessException(CommonErrorCode.INSUFFICIENT_BALANCE, "Insufficient balance for order payment");
         }
@@ -129,7 +129,7 @@ public class WalletApplicationService {
         account.debit(request.amount());
         accountRepository.save(account);
         WalletTransactionEntity transaction = transactionRepository.save(
-                new WalletTransactionEntity(request.playerId(), "ORDER_PAYMENT", request.amount(),
+                new WalletTransactionEntity(request.buyerId(), "ORDER_PAYMENT", request.amount(),
                         request.currency(), "COMPLETED", "WALLET",
                         request.referenceId(), request.referenceType())
         );
@@ -144,12 +144,12 @@ public class WalletApplicationService {
 
     @Transactional
     public WalletApi.TransactionResponse refundOrder(WalletApi.CreateRefundRequest request) {
-        WalletAccountEntity account = accountRepository.findById(request.playerId())
-                .orElseGet(() -> accountRepository.save(new WalletAccountEntity(request.playerId(), BigDecimal.ZERO)));
+        WalletAccountEntity account = accountRepository.findById(request.buyerId())
+                .orElseGet(() -> accountRepository.save(new WalletAccountEntity(request.buyerId(), BigDecimal.ZERO)));
         account.credit(request.amount());
         accountRepository.save(account);
         WalletTransactionEntity transaction = transactionRepository.save(
-                new WalletTransactionEntity(request.playerId(), "ORDER_REFUND", request.amount(),
+                new WalletTransactionEntity(request.buyerId(), "ORDER_REFUND", request.amount(),
                         request.currency(), "COMPLETED", "WALLET",
                         request.referenceId(), request.referenceType())
         );
@@ -158,17 +158,17 @@ public class WalletApplicationService {
 
     private WalletApi.WalletAccountResponse toWalletResponse(WalletAccountEntity account) {
         List<WalletApi.TransactionResponse> recentTransactions = transactionRepository
-                .findTop10ByPlayerIdOrderByCreatedAtDesc(account.getPlayerId())
+                .findTop10ByBuyerIdOrderByCreatedAtDesc(account.getBuyerId())
                 .stream()
                 .map(this::toTransactionResponse)
                 .toList();
-        return new WalletApi.WalletAccountResponse(account.getPlayerId(), account.getBalance(), account.getUpdatedAt(), recentTransactions);
+        return new WalletApi.WalletAccountResponse(account.getBuyerId(), account.getBalance(), account.getUpdatedAt(), recentTransactions);
     }
 
     private WalletApi.TransactionResponse toTransactionResponse(WalletTransactionEntity transaction) {
         return new WalletApi.TransactionResponse(
                 transaction.getId(),
-                transaction.getPlayerId(),
+                transaction.getBuyerId(),
                 transaction.getType(),
                 transaction.getAmount(),
                 transaction.getCurrency(),
@@ -179,7 +179,7 @@ public class WalletApplicationService {
     }
 
     private void publishableEvent(WalletTransactionEntity transaction) {
-        BigDecimal balance = accountRepository.findById(transaction.getPlayerId())
+        BigDecimal balance = accountRepository.findById(transaction.getBuyerId())
                 .map(WalletAccountEntity::getBalance).orElse(BigDecimal.ZERO);
         EventEnvelope<WalletTransactionEventData> event = new EventEnvelope<>(
                 UUID.randomUUID().toString(),
@@ -188,7 +188,7 @@ public class WalletApplicationService {
                 Instant.now(),
                 new WalletTransactionEventData(
                         transaction.getId(),
-                        transaction.getPlayerId(),
+                        transaction.getBuyerId(),
                         null,
                         transaction.getType(),
                         transaction.getAmount(),

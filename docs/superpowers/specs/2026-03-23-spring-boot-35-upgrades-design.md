@@ -206,7 +206,7 @@ Content-Type: application/problem+json
 
 ```java
 restClient.get()
-    .uri(properties.profileServiceUrl() + "/v1/profiles/{playerId}", playerId)
+    .uri(properties.profileServiceUrl() + "/v1/profiles/{buyerId}", buyerId)
     .header("X-Internal-Token", properties.internalToken())
     .retrieve()
     .onStatus(status -> status.is4xxClientError(), (req, res) -> { ... })
@@ -255,7 +255,7 @@ public interface OrderServiceClient {
 
     @GetExchange
     ApiResponse<PageResponse<OrderApi.OrderSummary>> listOrders(
-            @RequestParam String playerId,
+            @RequestParam String buyerId,
             @RequestParam int page,
             @RequestParam int size);
 }

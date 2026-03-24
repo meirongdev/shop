@@ -9,12 +9,12 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface LoyaltyTransactionRepository extends JpaRepository<LoyaltyTransactionEntity, String> {
 
-    Page<LoyaltyTransactionEntity> findByPlayerIdOrderByCreatedAtDesc(String playerId, Pageable pageable);
+    Page<LoyaltyTransactionEntity> findByPlayerIdOrderByCreatedAtDesc(String buyerId, Pageable pageable);
 
     List<LoyaltyTransactionEntity> findByReferenceId(String referenceId);
 
-    @Query("SELECT DISTINCT t.playerId FROM LoyaltyTransactionEntity t WHERE t.type = 'EARN' AND t.expired = false AND t.expireAt <= :today")
+    @Query("SELECT DISTINCT t.buyerId FROM LoyaltyTransactionEntity t WHERE t.type = 'EARN' AND t.expired = false AND t.expireAt <= :today")
     List<String> findPlayerIdsWithExpirablePoints(LocalDate today);
 
-    List<LoyaltyTransactionEntity> findByPlayerIdAndTypeAndExpiredFalseAndExpireAtLessThanEqual(String playerId, String type, LocalDate today);
+    List<LoyaltyTransactionEntity> findByPlayerIdAndTypeAndExpiredFalseAndExpireAtLessThanEqual(String buyerId, String type, LocalDate today);
 }

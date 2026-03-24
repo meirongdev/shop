@@ -5,7 +5,7 @@ import java.util.Map;
 public record NotificationRouteConfig(String templateCode, String channel, String subject) {
 
     private static final Map<String, NotificationRouteConfig> ROUTES = Map.of(
-            "USER_REGISTERED",      new NotificationRouteConfig("welcome-email",     "EMAIL", "Welcome to Shop!"),
+            "BUYER_REGISTERED",      new NotificationRouteConfig("welcome-email",     "EMAIL", "Welcome to Shop!"),
             "ORDER_CONFIRMED",      new NotificationRouteConfig("order-confirmed",   "EMAIL", "Order Confirmed"),
             "ORDER_SHIPPED",        new NotificationRouteConfig("order-shipped",     "EMAIL", "Your Order Has Shipped"),
             "ORDER_COMPLETED",      new NotificationRouteConfig("order-completed",   "EMAIL", "Order Completed"),

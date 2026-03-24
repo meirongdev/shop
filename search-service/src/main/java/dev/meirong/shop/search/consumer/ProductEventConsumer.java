@@ -1,8 +1,10 @@
 package dev.meirong.shop.search.consumer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.common.idempotency.IdempotencyExempt;
+import dev.meirong.shop.common.kafka.NonRetryableKafkaConsumerException;
 import dev.meirong.shop.contracts.event.EventEnvelope;
 import dev.meirong.shop.contracts.event.MarketplaceProductEventData;
 import dev.meirong.shop.search.index.ProductDocument;
@@ -33,30 +35,41 @@ public class ProductEventConsumer {
             attempts = "4",
             backoff = @Backoff(delay = 1000, multiplier = 2),
             dltTopicSuffix = ".dlq",
-            autoCreateTopics = "true"
+            autoCreateTopics = "true",
+            exclude = NonRetryableKafkaConsumerException.class
     )
     @KafkaListener(topics = "${shop.search.product-topic}", groupId = "search-service")
-    public void consume(String message) throws Exception {
-        var envelope = objectMapper.readValue(message,
-                new TypeReference<EventEnvelope<MarketplaceProductEventData>>() {});
-        var data = envelope.data();
-        var doc = ProductDocument.fromEventData(data);
+    public void consume(String message) {
+        try {
+            var envelope = objectMapper.readValue(message,
+                    new TypeReference<EventEnvelope<MarketplaceProductEventData>>() {});
+            envelope.assertSupportedSchema(EventEnvelope.CURRENT_SCHEMA_VERSION);
+            var data = envelope.data();
+            if (data == null) {
+                throw new IllegalArgumentException("Search product event data is required");
+            }
+            var doc = ProductDocument.fromEventData(data);
 
-        switch (envelope.type()) {
-            case "PRODUCT_CREATED", "PRODUCT_UPDATED", "PRODUCT_PUBLISHED" -> {
-                if (data.published()) {
-                    indexer.index(doc);
-                    log.info("Indexed product {} (event: {})", data.productId(), envelope.type());
-                } else {
-                    indexer.remove(data.productId());
-                    log.info("Skipped unpublished product {} (event: {})", data.productId(), envelope.type());
+            switch (envelope.type()) {
+                case "PRODUCT_CREATED", "PRODUCT_UPDATED", "PRODUCT_PUBLISHED" -> {
+                    if (data.published()) {
+                        indexer.index(doc);
+                        log.info("Indexed product {} (event: {})", data.productId(), envelope.type());
+                    } else {
+                        indexer.remove(data.productId());
+                        log.info("Skipped unpublished product {} (event: {})", data.productId(), envelope.type());
+                    }
                 }
+                case "PRODUCT_DELETED", "PRODUCT_UNPUBLISHED" -> {
+                    indexer.remove(data.productId());
+                    log.info("Removed product {} from index (event: {})", data.productId(), envelope.type());
+                }
+                default -> log.warn("Unknown event type: {}", envelope.type());
             }
-            case "PRODUCT_DELETED", "PRODUCT_UNPUBLISHED" -> {
-                indexer.remove(data.productId());
-                log.info("Removed product {} from index (event: {})", data.productId(), envelope.type());
-            }
-            default -> log.warn("Unknown event type: {}", envelope.type());
+        } catch (JsonProcessingException exception) {
+            throw new NonRetryableKafkaConsumerException("Malformed search product event", exception);
+        } catch (IllegalArgumentException exception) {
+            throw new NonRetryableKafkaConsumerException("Invalid search product event", exception);
         }
     }
 

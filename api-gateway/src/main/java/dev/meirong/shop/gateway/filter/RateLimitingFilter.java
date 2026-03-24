@@ -25,7 +25,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimitingFilter.class);
-    private static final String PLAYER_ID = "X-Player-Id";
+    private static final String BUYER_ID = "X-Buyer-Id";
     private static final String KEY_PREFIX = "rl:";
     private static final DefaultRedisScript<Long> RATE_LIMIT_SCRIPT = buildRateLimitScript();
 
@@ -69,9 +69,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     private String resolveRateLimitKey(HttpServletRequest request) {
-        String playerId = request.getHeader(PLAYER_ID);
-        String bucketKey = (playerId != null && !playerId.isBlank())
-                ? playerId
+        String buyerId = request.getHeader(BUYER_ID);
+        String bucketKey = (buyerId != null && !buyerId.isBlank())
+                ? buyerId
                 : (request.getRemoteAddr() == null || request.getRemoteAddr().isBlank() ? "unknown" : request.getRemoteAddr());
         return KEY_PREFIX + bucketKey + ':' + currentMinuteBucket();
     }

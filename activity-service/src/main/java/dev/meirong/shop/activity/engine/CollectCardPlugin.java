@@ -59,8 +59,8 @@ public class CollectCardPlugin implements GamePlugin {
 
     @Override
     public ParticipateResult participate(ParticipateContext ctx) {
-        if (ctx.playerId() == null || ctx.playerId().isBlank()) {
-            throw new BusinessException(CommonErrorCode.VALIDATION_ERROR, "Collect card requires a playerId");
+        if (ctx.buyerId() == null || ctx.buyerId().isBlank()) {
+            throw new BusinessException(CommonErrorCode.VALIDATION_ERROR, "Collect card requires a buyerId");
         }
 
         List<ActivityCollectCardDefinition> definitions = definitionRepository.findByGameIdOrderByCardNameAsc(ctx.gameId());
@@ -69,12 +69,12 @@ public class CollectCardPlugin implements GamePlugin {
         }
 
         ActivityCollectCardDefinition drawn = weightedRandom(definitions);
-        long uniqueBefore = playerCardRepository.countDistinctCardIdByGameIdAndPlayerId(ctx.gameId(), ctx.playerId());
+        long uniqueBefore = playerCardRepository.countDistinctCardIdByGameIdAndPlayerId(ctx.gameId(), ctx.buyerId());
         boolean duplicate = playerCardRepository.countByGameIdAndPlayerIdAndCardId(
-                ctx.gameId(), ctx.playerId(), drawn.getId()) > 0;
+                ctx.gameId(), ctx.buyerId(), drawn.getId()) > 0;
 
         playerCardRepository.save(new ActivityPlayerCard(
-                UUID.randomUUID().toString(), ctx.gameId(), ctx.playerId(), drawn.getId(), DROP_SOURCE));
+                UUID.randomUUID().toString(), ctx.gameId(), ctx.buyerId(), drawn.getId(), DROP_SOURCE));
 
         long uniqueAfter = duplicate ? uniqueBefore : uniqueBefore + 1;
         boolean fullSet = uniqueAfter >= definitions.size();

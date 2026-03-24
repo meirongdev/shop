@@ -18,7 +18,7 @@ public class LoyaltyCheckinEntity {
     private String id;
 
     @Column(name = "player_id", nullable = false, length = 64)
-    private String playerId;
+    private String buyerId;
 
     @Column(name = "checkin_date", nullable = false)
     private LocalDate checkinDate;
@@ -41,10 +41,10 @@ public class LoyaltyCheckinEntity {
     protected LoyaltyCheckinEntity() {
     }
 
-    public LoyaltyCheckinEntity(String playerId, LocalDate checkinDate, int streakDay,
+    public LoyaltyCheckinEntity(String buyerId, LocalDate checkinDate, int streakDay,
                                 long pointsEarned, boolean isMakeup, long makeupCost) {
         this.id = UUID.randomUUID().toString();
-        this.playerId = playerId;
+        this.buyerId = buyerId;
         this.checkinDate = checkinDate;
         this.streakDay = streakDay;
         this.pointsEarned = pointsEarned;
@@ -58,7 +58,7 @@ public class LoyaltyCheckinEntity {
     }
 
     public String getId() { return id; }
-    public String getPlayerId() { return playerId; }
+    public String getBuyerId() { return buyerId; }
     public LocalDate getCheckinDate() { return checkinDate; }
     public int getStreakDay() { return streakDay; }
     public long getPointsEarned() { return pointsEarned; }

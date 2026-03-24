@@ -4,9 +4,9 @@ import java.math.BigDecimal;
 
 public interface StripeGateway {
 
-    PaymentReference createDeposit(String playerId, BigDecimal amount, String currency);
+    PaymentReference createDeposit(String buyerId, BigDecimal amount, String currency);
 
-    PaymentReference createWithdrawal(String playerId, BigDecimal amount, String currency);
+    PaymentReference createWithdrawal(String buyerId, BigDecimal amount, String currency);
 
     record PaymentReference(String providerReference, String provider) {
     }

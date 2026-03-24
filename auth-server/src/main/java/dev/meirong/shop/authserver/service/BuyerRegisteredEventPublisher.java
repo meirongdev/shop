@@ -6,37 +6,37 @@ import dev.meirong.shop.authserver.config.AuthProperties;
 import dev.meirong.shop.authserver.domain.UserAccountEntity;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
+import dev.meirong.shop.contracts.event.BuyerRegisteredEventData;
 import dev.meirong.shop.contracts.event.EventEnvelope;
-import dev.meirong.shop.contracts.event.UserRegisteredEventData;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-public class UserRegisteredEventPublisher {
+public class BuyerRegisteredEventPublisher {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
     private final AuthProperties properties;
 
-    public UserRegisteredEventPublisher(KafkaTemplate<String, String> kafkaTemplate,
-                                        ObjectMapper objectMapper,
-                                        AuthProperties properties) {
+    public BuyerRegisteredEventPublisher(KafkaTemplate<String, String> kafkaTemplate,
+                                         ObjectMapper objectMapper,
+                                         AuthProperties properties) {
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = objectMapper;
         this.properties = properties;
     }
 
     public void publish(UserAccountEntity account) {
-        EventEnvelope<UserRegisteredEventData> envelope = new EventEnvelope<>(
+        EventEnvelope<BuyerRegisteredEventData> envelope = new EventEnvelope<>(
                 UUID.randomUUID().toString(),
                 "auth-server",
-                "USER_REGISTERED",
+                "BUYER_REGISTERED",
                 Instant.now(),
-                new UserRegisteredEventData(account.getPrincipalId(), account.getUsername(), account.getEmail()));
+                new BuyerRegisteredEventData(account.getPrincipalId(), account.getUsername(), account.getEmail()));
         try {
-            kafkaTemplate.send(properties.userRegisteredTopic(), objectMapper.writeValueAsString(envelope));
+            kafkaTemplate.send(properties.buyerRegisteredTopic(), objectMapper.writeValueAsString(envelope));
         } catch (JsonProcessingException exception) {
             throw new BusinessException(CommonErrorCode.INTERNAL_ERROR, "Failed to serialize registration event", exception);
         }

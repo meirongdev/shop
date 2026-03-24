@@ -32,13 +32,13 @@ public class SellerController {
     }
 
     @PostMapping("/dashboard/get")
-    public ApiResponse<SellerApi.DashboardResponse> dashboard(@RequestHeader(value = "X-Player-Id", required = false) String headerSellerId,
+    public ApiResponse<SellerApi.DashboardResponse> dashboard(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
                                                               @Valid @RequestBody SellerApi.SellerContextRequest request) {
         return ApiResponse.success(service.loadDashboard(resolveSellerId(headerSellerId, request.sellerId())));
     }
 
     @PostMapping("/product/create")
-    public ApiResponse<MarketplaceApi.ProductResponse> createProduct(@RequestHeader(value = "X-Player-Id", required = false) String headerSellerId,
+    public ApiResponse<MarketplaceApi.ProductResponse> createProduct(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
                                                                      @Valid @RequestBody MarketplaceApi.UpsertProductRequest request) {
         String sellerId = resolveSellerId(headerSellerId, request.sellerId());
         return ApiResponse.success(service.createProduct(new MarketplaceApi.UpsertProductRequest(
@@ -47,7 +47,7 @@ public class SellerController {
     }
 
     @PostMapping("/product/update")
-    public ApiResponse<MarketplaceApi.ProductResponse> updateProduct(@RequestHeader(value = "X-Player-Id", required = false) String headerSellerId,
+    public ApiResponse<MarketplaceApi.ProductResponse> updateProduct(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
                                                                      @Valid @RequestBody MarketplaceApi.UpsertProductRequest request) {
         String sellerId = resolveSellerId(headerSellerId, request.sellerId());
         return ApiResponse.success(service.updateProduct(new MarketplaceApi.UpsertProductRequest(
@@ -56,7 +56,7 @@ public class SellerController {
     }
 
     @PostMapping("/promotion/create")
-    public ApiResponse<PromotionApi.OfferResponse> createPromotion(@RequestHeader(value = "X-Player-Id", required = false) String headerSellerId,
+    public ApiResponse<PromotionApi.OfferResponse> createPromotion(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
                                                                    @Valid @RequestBody PromotionApi.CreateOfferRequest request) {
         String sellerId = resolveSellerId(headerSellerId, request.sellerId());
         return ApiResponse.success(service.createPromotion(new PromotionApi.CreateOfferRequest(
@@ -66,7 +66,7 @@ public class SellerController {
     // ── New e-commerce endpoints ──
 
     @PostMapping("/order/list")
-    public ApiResponse<List<OrderApi.OrderResponse>> listOrders(@RequestHeader(value = "X-Player-Id", required = false) String headerSellerId,
+    public ApiResponse<List<OrderApi.OrderResponse>> listOrders(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
                                                                  @Valid @RequestBody SellerApi.SellerContextRequest request) {
         return ApiResponse.success(service.listOrders(resolveSellerId(headerSellerId, request.sellerId())));
     }
@@ -87,21 +87,21 @@ public class SellerController {
     }
 
     @PostMapping("/wallet/get")
-    public ApiResponse<WalletApi.WalletAccountResponse> wallet(@RequestHeader(value = "X-Player-Id", required = false) String headerSellerId,
+    public ApiResponse<WalletApi.WalletAccountResponse> wallet(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
                                                                @Valid @RequestBody SellerApi.SellerContextRequest request) {
         return ApiResponse.success(service.getWallet(resolveSellerId(headerSellerId, request.sellerId())));
     }
 
     @PostMapping("/profile/get")
-    public ApiResponse<ProfileApi.ProfileResponse> profile(@RequestHeader(value = "X-Player-Id", required = false) String headerSellerId,
+    public ApiResponse<ProfileApi.ProfileResponse> profile(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
                                                            @Valid @RequestBody SellerApi.SellerContextRequest request) {
         return ApiResponse.success(service.getProfile(resolveSellerId(headerSellerId, request.sellerId())));
     }
 
     @PostMapping("/profile/update")
-    public ApiResponse<ProfileApi.ProfileResponse> updateProfile(@RequestHeader(value = "X-Player-Id", required = false) String headerSellerId,
+    public ApiResponse<ProfileApi.ProfileResponse> updateProfile(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
                                                                  @Valid @RequestBody ProfileApi.UpdateProfileRequest request) {
-        String sellerId = resolveSellerId(headerSellerId, request.playerId());
+        String sellerId = resolveSellerId(headerSellerId, request.buyerId());
         return ApiResponse.success(service.updateProfile(new ProfileApi.UpdateProfileRequest(
                 sellerId,
                 request.displayName(),
@@ -111,7 +111,7 @@ public class SellerController {
     }
 
     @PostMapping("/coupon/create")
-    public ApiResponse<PromotionApi.CouponResponse> createCoupon(@RequestHeader(value = "X-Player-Id", required = false) String headerSellerId,
+    public ApiResponse<PromotionApi.CouponResponse> createCoupon(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
                                                                    @Valid @RequestBody PromotionApi.CreateCouponRequest request) {
         String sellerId = resolveSellerId(headerSellerId, request.sellerId());
         return ApiResponse.success(service.createCoupon(new PromotionApi.CreateCouponRequest(
@@ -120,7 +120,7 @@ public class SellerController {
     }
 
     @PostMapping("/coupon/list")
-    public ApiResponse<List<PromotionApi.CouponResponse>> listCoupons(@RequestHeader(value = "X-Player-Id", required = false) String headerSellerId,
+    public ApiResponse<List<PromotionApi.CouponResponse>> listCoupons(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
                                                                        @Valid @RequestBody SellerApi.SellerContextRequest request) {
         return ApiResponse.success(service.listCoupons(resolveSellerId(headerSellerId, request.sellerId())));
     }
@@ -133,13 +133,13 @@ public class SellerController {
     // ── Shop Management ──
 
     @PostMapping("/shop/get")
-    public ApiResponse<ProfileApi.SellerStorefrontResponse> getShop(@RequestHeader(value = "X-Player-Id", required = false) String headerSellerId,
+    public ApiResponse<ProfileApi.SellerStorefrontResponse> getShop(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
                                                                      @Valid @RequestBody SellerApi.SellerContextRequest request) {
         return ApiResponse.success(service.getShop(resolveSellerId(headerSellerId, request.sellerId())));
     }
 
     @PostMapping("/shop/update")
-    public ApiResponse<ProfileApi.SellerStorefrontResponse> updateShop(@RequestHeader(value = "X-Player-Id", required = false) String headerSellerId,
+    public ApiResponse<ProfileApi.SellerStorefrontResponse> updateShop(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
                                                                         @Valid @RequestBody ProfileApi.UpdateShopRequest request) {
         String sellerId = resolveSellerId(headerSellerId, request.sellerId());
         return ApiResponse.success(service.updateShop(new ProfileApi.UpdateShopRequest(

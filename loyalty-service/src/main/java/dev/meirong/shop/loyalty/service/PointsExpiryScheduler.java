@@ -35,23 +35,23 @@ public class PointsExpiryScheduler {
         }
         log.info("Points expiry: processing {} players", playerIds.size());
         int totalExpired = 0;
-        for (String playerId : playerIds) {
-            totalExpired += expireForPlayer(playerId, today);
+        for (String buyerId : playerIds) {
+            totalExpired += expireForPlayer(buyerId, today);
         }
         log.info("Points expiry completed: {} transactions expired", totalExpired);
     }
 
     @Transactional
-    public int expireForPlayer(String playerId, LocalDate today) {
+    public int expireForPlayer(String buyerId, LocalDate today) {
         List<LoyaltyTransactionEntity> expirable = transactionRepository
-                .findByPlayerIdAndTypeAndExpiredFalseAndExpireAtLessThanEqual(playerId, "EARN", today);
+                .findByPlayerIdAndTypeAndExpiredFalseAndExpireAtLessThanEqual(buyerId, "EARN", today);
         if (expirable.isEmpty()) {
             return 0;
         }
 
         long totalExpiring = expirable.stream().mapToLong(LoyaltyTransactionEntity::getAmount).sum();
 
-        LoyaltyAccountEntity account = accountRepository.findById(playerId).orElse(null);
+        LoyaltyAccountEntity account = accountRepository.findById(buyerId).orElse(null);
         if (account == null) {
             return 0;
         }
@@ -70,14 +70,14 @@ public class PointsExpiryScheduler {
 
         // Record expiry transaction
         LoyaltyTransactionEntity expiryTxn = new LoyaltyTransactionEntity(
-                playerId, "EXPIRE", "SYSTEM", -actualExpire, account.getBalance(),
-                "expiry-" + playerId + "-" + today, "Points expired on " + today);
+                buyerId, "EXPIRE", "SYSTEM", -actualExpire, account.getBalance(),
+                "expiry-" + buyerId + "-" + today, "Points expired on " + today);
         transactionRepository.save(expiryTxn);
 
         expirable.forEach(LoyaltyTransactionEntity::markExpired);
         transactionRepository.saveAll(expirable);
 
-        log.info("Player {} expired {} points ({} transactions)", playerId, actualExpire, expirable.size());
+        log.info("Player {} expired {} points ({} transactions)", buyerId, actualExpire, expirable.size());
         return expirable.size();
     }
 }

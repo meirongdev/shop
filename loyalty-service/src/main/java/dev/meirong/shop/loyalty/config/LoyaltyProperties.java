@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "shop.loyalty")
 public record LoyaltyProperties(
         String orderEventsTopic,
-        String userRegisteredTopic,
+        String buyerRegisteredTopic,
         String profileServiceUrl,
         int checkinBasePoints,
         int makeupCost,

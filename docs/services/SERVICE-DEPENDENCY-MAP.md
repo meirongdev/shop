@@ -118,7 +118,7 @@ buyer-bff           →  loyalty-service     POST /internal/loyalty/onboarding/t
 ```
 Topic                           Publisher           Consumers
 ──────────────────────────────────────────────────────────────────────────
-user.registered.v1              profile-service     loyalty-service（100pts + 任务初始化）[NEW]
+buyer.registered.v1              profile-service     loyalty-service（100pts + 任务初始化）[NEW]
                                                     promotion-service（新人礼包优惠券）[NEW]
                                                     notification-service（欢迎邮件）[NEW]
 
@@ -205,7 +205,7 @@ promotion.coupon.used.v1        promotion-service   数据分析
 ## 七、新增服务对现有系统的影响
 
 ### 对 buyer-bff 的影响
-- Dashboard 聚合新增 `loyaltyClient.getAccount(playerId)` 并发调用
+- Dashboard 聚合新增 `loyaltyClient.getAccount(buyerId)` 并发调用
 - 结账流程新增积分抵扣参数 `points_to_use`
 
 ### 对 order-service 的影响
@@ -228,7 +228,7 @@ promotion.coupon.used.v1        promotion-service   数据分析
 
 ---
 
-## 八、新用户注册事件流（user.registered.v1）
+## 八、新用户注册事件流（buyer.registered.v1）
 
 ```
 用户完成注册
@@ -236,7 +236,7 @@ promotion.coupon.used.v1        promotion-service   数据分析
     ▼
 profile-service
     ├── 写 buyer_profile（referrer_id 记入来源）
-    └── 发布 user.registered.v1
+    └── 发布 buyer.registered.v1
             │
             ├── loyalty-service
             │       ├── earnPoints(+100, REGISTER)
@@ -263,7 +263,7 @@ FIRST_CHECKIN      loyalty-service 自身         completeTask → +10 pts
 FIRST_ADD_CART     buyer-bff 内部调用           completeTask → +20 pts
 FIRST_ORDER        order.completed.v1 消费      completeTask → +100 pts + $3 券
 FIRST_REVIEW       review.events.v1 消费        completeTask → +30 pts
-FIRST_REFERRAL     user.registered.v1 消费      completeTask（邀请人）→ +50 pts
+FIRST_REFERRAL     buyer.registered.v1 消费      completeTask（邀请人）→ +50 pts
 
 全部完成 → 额外 +100 pts 成就奖励
 ```

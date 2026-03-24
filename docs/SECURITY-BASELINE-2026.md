@@ -37,7 +37,7 @@
 以下头由 Gateway 生成/覆盖，下游服务不得信任客户端原始值：
 
 - `X-Request-Id`
-- `X-Player-Id`
+- `X-Buyer-Id`
 - `X-Username`
 - `X-Roles`
 - `X-Portal`
@@ -64,7 +64,7 @@
 ### 3.2 Header 传播规则
 
 - Gateway → BFF / Domain：传播可信身份头 + `X-Internal-Token`
-- BFF → Domain / Worker：传播 `X-Internal-Token`，按需要传递 `X-Player-Id`
+- BFF → Domain / Worker：传播 `X-Internal-Token`，按需要传递 `X-Buyer-Id`
 - Worker / Internal Controller：只接受内部 token，不面向公网暴露
 
 ### 3.3 例外路径

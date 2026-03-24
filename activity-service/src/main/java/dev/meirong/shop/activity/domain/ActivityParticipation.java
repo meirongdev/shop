@@ -19,7 +19,7 @@ public class ActivityParticipation {
     private GameType gameType;
 
     @Column(name = "player_id", length = 64)
-    private String playerId;
+    private String buyerId;
 
     @Column(name = "session_id", length = 128)
     private String sessionId;
@@ -53,11 +53,11 @@ public class ActivityParticipation {
 
     protected ActivityParticipation() {}
 
-    public ActivityParticipation(String id, String gameId, GameType gameType, String playerId) {
+    public ActivityParticipation(String id, String gameId, GameType gameType, String buyerId) {
         this.id = id;
         this.gameId = gameId;
         this.gameType = gameType;
-        this.playerId = playerId;
+        this.buyerId = buyerId;
         this.participatedAt = Instant.now();
     }
 
@@ -89,7 +89,7 @@ public class ActivityParticipation {
     public String getId() { return id; }
     public String getGameId() { return gameId; }
     public GameType getGameType() { return gameType; }
-    public String getPlayerId() { return playerId; }
+    public String getBuyerId() { return buyerId; }
     public String getSessionId() { return sessionId; }
     public void setSessionId(String sessionId) { this.sessionId = sessionId; }
     public String getIpAddress() { return ipAddress; }

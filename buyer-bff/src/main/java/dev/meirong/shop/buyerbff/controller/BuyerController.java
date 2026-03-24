@@ -42,15 +42,15 @@ public class BuyerController {
         this.meterRegistry = meterRegistry;
     }
 
-    private String resolvePlayerId(String headerPlayerId, String bodyPlayerId) {
-        return (headerPlayerId == null || headerPlayerId.isBlank()) ? bodyPlayerId : headerPlayerId;
+    private String resolveBuyerId(String headerBuyerId, String bodyPlayerId) {
+        return (headerBuyerId == null || headerBuyerId.isBlank()) ? bodyPlayerId : headerBuyerId;
     }
 
-    private String requireAuthenticatedPlayerId(String headerPlayerId, String capability) {
-        if (headerPlayerId == null || headerPlayerId.isBlank()) {
+    private String requireAuthenticatedBuyerId(String headerBuyerId, String capability) {
+        if (headerBuyerId == null || headerBuyerId.isBlank()) {
             throw new BusinessException(CommonErrorCode.FORBIDDEN, capability + " requires authenticated buyer context");
         }
-        return headerPlayerId;
+        return headerBuyerId;
     }
 
     private void requireSignedInBuyer(String headerRoles, String capability) {
@@ -66,19 +66,19 @@ public class BuyerController {
     }
 
     @PostMapping("/dashboard/get")
-    public ApiResponse<BuyerApi.DashboardResponse> dashboard(@RequestHeader(value = "X-Player-Id", required = false) String headerPlayerId,
+    public ApiResponse<BuyerApi.DashboardResponse> dashboard(@RequestHeader(value = "X-Buyer-Id", required = false) String headerBuyerId,
                                                              @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
                                                              @Valid @RequestBody BuyerApi.BuyerContextRequest request) {
         requireSignedInBuyer(headerRoles, "Buyer dashboard");
-        return ApiResponse.success(service.loadDashboard(resolvePlayerId(headerPlayerId, request.playerId())));
+        return ApiResponse.success(service.loadDashboard(resolveBuyerId(headerBuyerId, request.buyerId())));
     }
 
     @PostMapping("/profile/get")
-    public ApiResponse<ProfileApi.ProfileResponse> profile(@RequestHeader(value = "X-Player-Id", required = false) String headerPlayerId,
+    public ApiResponse<ProfileApi.ProfileResponse> profile(@RequestHeader(value = "X-Buyer-Id", required = false) String headerBuyerId,
                                                            @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
                                                            @Valid @RequestBody BuyerApi.BuyerContextRequest request) {
         requireSignedInBuyer(headerRoles, "Buyer profile");
-        return ApiResponse.success(service.getProfile(resolvePlayerId(headerPlayerId, request.playerId())));
+        return ApiResponse.success(service.getProfile(resolveBuyerId(headerBuyerId, request.buyerId())));
     }
 
     @PostMapping("/profile/update")
@@ -89,29 +89,29 @@ public class BuyerController {
     }
 
     @PostMapping("/wallet/get")
-    public ApiResponse<WalletApi.WalletAccountResponse> wallet(@RequestHeader(value = "X-Player-Id", required = false) String headerPlayerId,
+    public ApiResponse<WalletApi.WalletAccountResponse> wallet(@RequestHeader(value = "X-Buyer-Id", required = false) String headerBuyerId,
                                                                @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
                                                                @Valid @RequestBody BuyerApi.BuyerContextRequest request) {
         requireSignedInBuyer(headerRoles, "Buyer wallet");
-        return ApiResponse.success(service.getWallet(resolvePlayerId(headerPlayerId, request.playerId())));
+        return ApiResponse.success(service.getWallet(resolveBuyerId(headerBuyerId, request.buyerId())));
     }
 
     @PostMapping("/wallet/deposit")
-    public ApiResponse<WalletApi.TransactionResponse> deposit(@RequestHeader(value = "X-Player-Id", required = false) String headerPlayerId,
+    public ApiResponse<WalletApi.TransactionResponse> deposit(@RequestHeader(value = "X-Buyer-Id", required = false) String headerBuyerId,
                                                               @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
                                                               @Valid @RequestBody WalletApi.DepositRequest request) {
         requireSignedInBuyer(headerRoles, "Buyer wallet deposits");
-        String playerId = resolvePlayerId(headerPlayerId, request.playerId());
-        return ApiResponse.success(service.deposit(new WalletApi.DepositRequest(playerId, request.amount(), request.currency())));
+        String buyerId = resolveBuyerId(headerBuyerId, request.buyerId());
+        return ApiResponse.success(service.deposit(new WalletApi.DepositRequest(buyerId, request.amount(), request.currency())));
     }
 
     @PostMapping("/wallet/withdraw")
-    public ApiResponse<WalletApi.TransactionResponse> withdraw(@RequestHeader(value = "X-Player-Id", required = false) String headerPlayerId,
+    public ApiResponse<WalletApi.TransactionResponse> withdraw(@RequestHeader(value = "X-Buyer-Id", required = false) String headerBuyerId,
                                                                @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
                                                                @Valid @RequestBody WalletApi.WithdrawRequest request) {
         requireSignedInBuyer(headerRoles, "Buyer wallet withdrawals");
-        String playerId = resolvePlayerId(headerPlayerId, request.playerId());
-        return ApiResponse.success(service.withdraw(new WalletApi.WithdrawRequest(playerId, request.amount(), request.currency())));
+        String buyerId = resolveBuyerId(headerBuyerId, request.buyerId());
+        return ApiResponse.success(service.withdraw(new WalletApi.WithdrawRequest(buyerId, request.amount(), request.currency())));
     }
 
     @PostMapping("/promotion/list")
@@ -150,20 +150,20 @@ public class BuyerController {
 
     @PostMapping("/shop/get")
     public ApiResponse<ProfileApi.SellerStorefrontResponse> getSellerShop(@Valid @RequestBody ProfileApi.GetProfileRequest request) {
-        return ApiResponse.success(service.getSellerStorefront(request.playerId()));
+        return ApiResponse.success(service.getSellerStorefront(request.buyerId()));
     }
 
     @PostMapping("/cart/list")
-    public ApiResponse<OrderApi.CartView> listCart(@RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+    public ApiResponse<OrderApi.CartView> listCart(@RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
                                                    @Valid @RequestBody BuyerApi.BuyerContextRequest request) {
-        return ApiResponse.success(service.listCart(resolvePlayerId(headerPlayerId, request.playerId())));
+        return ApiResponse.success(service.listCart(resolveBuyerId(headerBuyerId, request.buyerId())));
     }
 
     @PostMapping("/cart/add")
     public ApiResponse<OrderApi.CartItemResponse> addToCart(
-            @RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+            @RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
             @Valid @RequestBody OrderApi.AddToCartRequest request) {
-        String buyerId = resolvePlayerId(headerPlayerId, request.buyerId());
+        String buyerId = resolveBuyerId(headerBuyerId, request.buyerId());
         return ApiResponse.success(service.addToCart(new OrderApi.AddToCartRequest(
                 buyerId,
                 request.productId(),
@@ -175,9 +175,9 @@ public class BuyerController {
 
     @PostMapping("/cart/update")
     public ApiResponse<OrderApi.CartItemResponse> updateCart(
-            @RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+            @RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
             @Valid @RequestBody OrderApi.UpdateCartRequest request) {
-        String buyerId = resolvePlayerId(headerPlayerId, request.buyerId());
+        String buyerId = resolveBuyerId(headerBuyerId, request.buyerId());
         return ApiResponse.success(service.updateCart(new OrderApi.UpdateCartRequest(
                 buyerId,
                 request.productId(),
@@ -186,27 +186,27 @@ public class BuyerController {
 
     @PostMapping("/cart/remove")
     public ApiResponse<Void> removeFromCart(
-            @RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+            @RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
             @Valid @RequestBody OrderApi.RemoveFromCartRequest request) {
-        String buyerId = resolvePlayerId(headerPlayerId, request.buyerId());
+        String buyerId = resolveBuyerId(headerBuyerId, request.buyerId());
         service.removeFromCart(new OrderApi.RemoveFromCartRequest(buyerId, request.productId()));
         return ApiResponse.success(null);
     }
 
     @PostMapping("/cart/merge")
     public ApiResponse<OrderApi.CartView> mergeCart(
-            @RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+            @RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
             @Valid @RequestBody BuyerApi.MergeGuestCartRequest request) {
         requireSignedInBuyer(headerRoles, "Buyer cart merge");
         return ApiResponse.success(service.mergeGuestCart(
-                requireAuthenticatedPlayerId(headerPlayerId, "Buyer cart merge"),
-                request.guestPlayerId()));
+                requireAuthenticatedBuyerId(headerBuyerId, "Buyer cart merge"),
+                request.guestBuyerId()));
     }
 
     @PostMapping("/checkout/create")
     public ApiResponse<BuyerApi.CheckoutResponse> checkout(
-                                                            @RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+                                                            @RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
                                                             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
                                                             @Valid @RequestBody BuyerApi.CheckoutRequest request) {
         requireSignedInBuyer(headerRoles, "Buyer checkout");
@@ -215,7 +215,7 @@ public class BuyerController {
         String result = "success";
         try {
             return ApiResponse.success(service.checkout(new BuyerApi.CheckoutRequest(
-                    resolvePlayerId(headerPlayerId, request.playerId()),
+                    resolveBuyerId(headerBuyerId, request.buyerId()),
                     request.couponCode(),
                     request.paymentMethod(),
                     request.pointsToUse())));
@@ -246,11 +246,11 @@ public class BuyerController {
     }
 
     @PostMapping("/order/list")
-    public ApiResponse<List<OrderApi.OrderResponse>> listOrders(@RequestHeader(value = "X-Player-Id", required = false) String headerPlayerId,
+    public ApiResponse<List<OrderApi.OrderResponse>> listOrders(@RequestHeader(value = "X-Buyer-Id", required = false) String headerBuyerId,
                                                                 @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
                                                                 @Valid @RequestBody BuyerApi.BuyerContextRequest request) {
         requireSignedInBuyer(headerRoles, "Buyer order history");
-        return ApiResponse.success(service.listOrders(resolvePlayerId(headerPlayerId, request.playerId()), "buyer"));
+        return ApiResponse.success(service.listOrders(resolveBuyerId(headerBuyerId, request.buyerId()), "buyer"));
     }
 
     @PostMapping("/order/get")
@@ -261,21 +261,21 @@ public class BuyerController {
     }
 
     @PostMapping("/order/cancel")
-    public ApiResponse<OrderApi.OrderResponse> cancelOrder(@RequestHeader(value = "X-Player-Id", required = false) String headerPlayerId,
+    public ApiResponse<OrderApi.OrderResponse> cancelOrder(@RequestHeader(value = "X-Buyer-Id", required = false) String headerBuyerId,
                                                            @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
                                                            @Valid @RequestBody OrderApi.CancelOrderRequest request) {
         requireSignedInBuyer(headerRoles, "Buyer order cancellation");
-        return ApiResponse.success(service.cancelOrder(request.orderId(), headerPlayerId));
+        return ApiResponse.success(service.cancelOrder(request.orderId(), headerBuyerId));
     }
 
     // ── Loyalty ──
 
     @GetMapping("/loyalty/account")
     public ApiResponse<LoyaltyApi.AccountResponse> loyaltyAccount(
-            @RequestHeader(value = "X-Player-Id", required = false) String headerPlayerId,
+            @RequestHeader(value = "X-Buyer-Id", required = false) String headerBuyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles) {
         requireSignedInBuyer(headerRoles, "Loyalty account");
-        return ApiResponse.success(service.getLoyaltyAccount(headerPlayerId));
+        return ApiResponse.success(service.getLoyaltyAccount(headerBuyerId));
     }
 
     private String normalizeProvider(String paymentMethod) {
@@ -287,94 +287,94 @@ public class BuyerController {
 
     @GetMapping("/loyalty/hub")
     public ApiResponse<BuyerApi.LoyaltyHubResponse> loyaltyHub(
-            @RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+            @RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles) {
         requireSignedInBuyer(headerRoles, "Loyalty hub");
-        return ApiResponse.success(service.loadLoyaltyHub(requireAuthenticatedPlayerId(headerPlayerId, "Loyalty hub")));
+        return ApiResponse.success(service.loadLoyaltyHub(requireAuthenticatedBuyerId(headerBuyerId, "Loyalty hub")));
     }
 
     @PostMapping("/loyalty/checkin")
     public ApiResponse<LoyaltyApi.CheckinResponse> loyaltyCheckin(
-            @RequestHeader(value = "X-Player-Id", required = false) String headerPlayerId,
+            @RequestHeader(value = "X-Buyer-Id", required = false) String headerBuyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles) {
         requireSignedInBuyer(headerRoles, "Loyalty check-in");
-        return ApiResponse.success(service.loyaltyCheckin(headerPlayerId));
+        return ApiResponse.success(service.loyaltyCheckin(headerBuyerId));
     }
 
     @GetMapping("/loyalty/checkin/calendar")
     public ApiResponse<List<LoyaltyApi.CheckinResponse>> loyaltyCalendar(
-            @RequestHeader(value = "X-Player-Id", required = false) String headerPlayerId,
+            @RequestHeader(value = "X-Buyer-Id", required = false) String headerBuyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
             @RequestParam int year, @RequestParam int month) {
         requireSignedInBuyer(headerRoles, "Loyalty calendar");
-        return ApiResponse.success(service.loyaltyCheckinCalendar(headerPlayerId, year, month));
+        return ApiResponse.success(service.loyaltyCheckinCalendar(headerBuyerId, year, month));
     }
 
     @GetMapping("/loyalty/transactions")
     public ApiResponse<List<LoyaltyApi.TransactionResponse>> loyaltyTransactions(
-            @RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+            @RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         requireSignedInBuyer(headerRoles, "Loyalty transactions");
         return ApiResponse.success(service.getLoyaltyTransactions(
-                requireAuthenticatedPlayerId(headerPlayerId, "Loyalty transactions"), page, size));
+                requireAuthenticatedBuyerId(headerBuyerId, "Loyalty transactions"), page, size));
     }
 
     @GetMapping("/loyalty/rewards")
     public ApiResponse<List<LoyaltyApi.RewardItemResponse>> loyaltyRewards(
-            @RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+            @RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles) {
         requireSignedInBuyer(headerRoles, "Loyalty rewards");
-        requireAuthenticatedPlayerId(headerPlayerId, "Loyalty rewards");
+        requireAuthenticatedBuyerId(headerBuyerId, "Loyalty rewards");
         return ApiResponse.success(service.listLoyaltyRewards());
     }
 
     @PostMapping("/loyalty/rewards/redeem")
     public ApiResponse<LoyaltyApi.RedemptionResponse> redeemLoyaltyReward(
-            @RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+            @RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
             @Valid @RequestBody LoyaltyApi.RedeemRequest request) {
         requireSignedInBuyer(headerRoles, "Loyalty redemption");
         return ApiResponse.success(service.redeemLoyaltyReward(
-                requireAuthenticatedPlayerId(headerPlayerId, "Loyalty redemption"), request));
+                requireAuthenticatedBuyerId(headerBuyerId, "Loyalty redemption"), request));
     }
 
     @GetMapping("/loyalty/redemptions")
     public ApiResponse<List<LoyaltyApi.RedemptionResponse>> loyaltyRedemptions(
-            @RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+            @RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         requireSignedInBuyer(headerRoles, "Loyalty redemptions");
         return ApiResponse.success(service.getLoyaltyRedemptions(
-                requireAuthenticatedPlayerId(headerPlayerId, "Loyalty redemptions"), page, size));
+                requireAuthenticatedBuyerId(headerBuyerId, "Loyalty redemptions"), page, size));
     }
 
     @GetMapping("/loyalty/onboarding/tasks")
     public ApiResponse<List<LoyaltyApi.OnboardingTaskResponse>> loyaltyOnboardingTasks(
-            @RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+            @RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles) {
         requireSignedInBuyer(headerRoles, "Loyalty onboarding tasks");
         return ApiResponse.success(service.getLoyaltyOnboardingTasks(
-                requireAuthenticatedPlayerId(headerPlayerId, "Loyalty onboarding tasks")));
+                requireAuthenticatedBuyerId(headerBuyerId, "Loyalty onboarding tasks")));
     }
 
     @GetMapping("/welcome/summary")
     public ApiResponse<BuyerApi.WelcomeSummaryResponse> welcomeSummary(
-            @RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+            @RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles) {
         requireSignedInBuyer(headerRoles, "Welcome summary");
         return ApiResponse.success(service.loadWelcomeSummary(
-                requireAuthenticatedPlayerId(headerPlayerId, "Welcome summary")));
+                requireAuthenticatedBuyerId(headerBuyerId, "Welcome summary")));
     }
 
     @GetMapping("/invite/stats")
     public ApiResponse<BuyerApi.InviteStatsResponse> inviteStats(
-            @RequestHeader(value = TrustedHeaderNames.PLAYER_ID, required = false) String headerPlayerId,
+            @RequestHeader(value = TrustedHeaderNames.BUYER_ID, required = false) String headerBuyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles) {
         requireSignedInBuyer(headerRoles, "Invite stats");
         return ApiResponse.success(service.getInviteStats(
-                requireAuthenticatedPlayerId(headerPlayerId, "Invite stats")));
+                requireAuthenticatedBuyerId(headerBuyerId, "Invite stats")));
     }
 }

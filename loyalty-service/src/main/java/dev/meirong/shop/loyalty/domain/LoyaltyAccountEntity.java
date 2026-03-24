@@ -14,7 +14,7 @@ public class LoyaltyAccountEntity {
 
     @Id
     @Column(name = "player_id", nullable = false, length = 64)
-    private String playerId;
+    private String buyerId;
 
     @Column(name = "total_points", nullable = false)
     private long totalPoints;
@@ -40,8 +40,8 @@ public class LoyaltyAccountEntity {
     protected LoyaltyAccountEntity() {
     }
 
-    public LoyaltyAccountEntity(String playerId) {
-        this.playerId = playerId;
+    public LoyaltyAccountEntity(String buyerId) {
+        this.buyerId = buyerId;
         this.totalPoints = 0;
         this.usedPoints = 0;
         this.balance = 0;
@@ -90,7 +90,7 @@ public class LoyaltyAccountEntity {
         }
     }
 
-    public String getPlayerId() { return playerId; }
+    public String getBuyerId() { return buyerId; }
     public long getTotalPoints() { return totalPoints; }
     public long getUsedPoints() { return usedPoints; }
     public long getBalance() { return balance; }

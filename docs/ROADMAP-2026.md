@@ -88,7 +88,7 @@
 > Spring Boot 3.5 升级设计文档：`docs/superpowers/specs/2026-03-23-spring-boot-35-upgrades-design.md` | 实施计划：`docs/superpowers/plans/2026-03-23-spring-boot-35-upgrades.md`
 - [x] **Resilience4j 全量标准化**：已在 `shop-common` 新增程序化四层防护 `ResilienceHelper`，`seller-bff` / `buyer-bff` 已统一接入，promotion/search/checkout 旧 annotation 路径已收口，并已通过 focused Maven 验证
 - [x] **补偿持久化**：promotion / marketplace / loyalty 三服务 compensation_task Outbox + Scheduled retry 已落地（CompensationTaskEntity + CompensationRetryScheduler + DB migration）
-- [x] **Kafka 幂等规范**：loyalty OrderEventListener / UserRegisteredListener、promotion WalletRewardListener 已从 `@IdempotencyExempt` 迁移至 `IdempotencyGuard.executeOnce()`，全量 consumer 统一 guard 完成
+- [x] **Kafka 幂等规范**：loyalty OrderEventListener / BuyerRegisteredListener、promotion WalletRewardListener 已从 `@IdempotencyExempt` 迁移至 `IdempotencyGuard.executeOnce()`，全量 consumer 统一 guard 完成
 - [x] **Bloom Filter 幂等加速**：`shop-common` 已落地 `IdempotencyGuard` / Redis BF auto-config，`wallet-service`（HTTP `Idempotency-Key`）与 `promotion-service`（welcome coupon Kafka consumer）已完成首批接入并通过 focused Maven 验证
   > 设计文档：`docs/superpowers/specs/2026-03-23-bloom-filter-idempotency-design.md` | 实施计划：`docs/superpowers/plans/2026-03-23-bloom-filter-idempotency.md`
 - [x] **ArchUnit 规则**：新增 `architecture-tests` 模块，落地 5 大类共 19 条规则（编码规范、分层约束、命名规范、Spring 专项、幂等契约），同步修复 activity-service / marketplace-service 分层违规；详见 `docs/ARCHUNIT-RULES.md`
@@ -250,9 +250,9 @@ Phase 1          Phase 2          Phase 3          Phase 4          Phase 5     
 | 任务 | 服务 |
 |------|------|
 | ✅ Outbox 模式 + 发布 `order.events.v1` | order-service |
-| ✅ 注册时发布 `user.registered.v1`（含 email） | profile-service |
+| ✅ 注册时发布 `buyer.registered.v1`（含 email） | profile-service |
 | ✅ WalletTransactionEventData 追加 email + balance 字段 | wallet-service |
-| ✅ 新增 `UserRegisteredEventData`、`OrderEventData` DTO | shop-contracts |
+| ✅ 新增 `BuyerRegisteredEventData`、`OrderEventData` DTO | shop-contracts |
 
 ### Epic 1.5：商品基础搜索（P1）✅
 
@@ -282,7 +282,7 @@ Phase 1          Phase 2          Phase 3          Phase 4          Phase 5     
 | ✅ `notification_log` 表（ULID 主键） | Flyway 迁移 |
 | ✅ Channel SPI 接口 + `EmailChannel`（Spring Mail + Thymeleaf） | |
 | ✅ `NotificationRouter` 路由规则（7 种事件 → 模板 + 渠道） | |
-| ✅ Kafka Listeners：`UserRegisteredListener`、`OrderEventListener`、`WalletTransactionListener` | |
+| ✅ Kafka Listeners：`BuyerRegisteredListener`、`OrderEventListener`、`WalletTransactionListener` | |
 | ✅ 幂等发送（event_id + channel 唯一约束） | |
 | ✅ 失败重试（`@Scheduled`，最多 3 次） | |
 
@@ -361,7 +361,7 @@ Phase 1          Phase 2          Phase 3          Phase 4          Phase 5     
 ### Epic 3.1：loyalty-service ✅（P0）
 
 > 设计文档：`docs/services/loyalty-service.md`
-> 依赖：Epic 1.4（order.events.v1、user.registered.v1）
+> 依赖：Epic 1.4（order.events.v1、buyer.registered.v1）
 > **状态：核心已实现** — 积分账户、签到、兑换、新手任务、Kafka 消费、api-gateway 路由
 
 | 任务 | 说明 |

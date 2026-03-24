@@ -10,12 +10,12 @@ import org.springframework.stereotype.Service;
 public class MockPaymentGateway implements StripeGateway {
 
     @Override
-    public PaymentReference createDeposit(String playerId, BigDecimal amount, String currency) {
+    public PaymentReference createDeposit(String buyerId, BigDecimal amount, String currency) {
         return new PaymentReference("MOCK-DEP-" + UUID.randomUUID(), "MOCK");
     }
 
     @Override
-    public PaymentReference createWithdrawal(String playerId, BigDecimal amount, String currency) {
+    public PaymentReference createWithdrawal(String buyerId, BigDecimal amount, String currency) {
         return new PaymentReference("MOCK-WIT-" + UUID.randomUUID(), "MOCK");
     }
 }

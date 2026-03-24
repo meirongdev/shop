@@ -22,7 +22,7 @@ public final class PromotionApi {
     private PromotionApi() {
     }
 
-    public record ListOffersRequest(String playerId) {
+    public record ListOffersRequest(String buyerId) {
     }
 
     public record CreateOfferRequest(@NotBlank String sellerId,

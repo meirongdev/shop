@@ -16,8 +16,8 @@ public final class ProfileInternalApi {
     }
 
     public record RegisterBuyerRequest(
-            @Schema(description = "玩家 ID", example = "player-01HXABCD1234")
-            @NotBlank String playerId,
+            @Schema(description = "买家 ID", example = "buyer-01HXABCD1234")
+            @NotBlank String buyerId,
             @Schema(description = "平台用户名", example = "alice123")
             @NotBlank String username,
             @Schema(description = "展示名", example = "alice123")
@@ -29,8 +29,8 @@ public final class ProfileInternalApi {
     }
 
     public record InviteStatsRequest(
-            @Schema(description = "邀请人玩家 ID", example = "player-01HXABCD1234")
-            @NotBlank String playerId) {
+            @Schema(description = "邀请人买家 ID", example = "buyer-01HXABCD1234")
+            @NotBlank String buyerId) {
     }
 
     public record InviteRecord(
@@ -60,14 +60,14 @@ public final class ProfileInternalApi {
     }
 
     public record ReferralFirstOrderRequest(
-            @Schema(description = "完成首单的被邀请人 ID", example = "player-01HXINVITEE")
+            @Schema(description = "完成首单的被邀请人 ID", example = "buyer-01HXINVITEE")
             @NotBlank String inviteeId) {
     }
 
     public record ReferralRewardResult(
             @Schema(description = "本次是否需要发放邀请奖励", example = "true")
             boolean rewardIssued,
-            @Schema(description = "邀请人玩家 ID，若无奖励则为空", example = "player-01HXREFERRER")
+            @Schema(description = "邀请人买家 ID，若无奖励则为空", example = "buyer-01HXREFERRER")
             String referrerId) {
     }
 }

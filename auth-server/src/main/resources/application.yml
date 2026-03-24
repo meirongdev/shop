@@ -84,7 +84,7 @@ shop:
     apple-client-id: ${APPLE_OAUTH2_CLIENT_ID:placeholder-apple-client-id}
     profile-service-url: ${PROFILE_SERVICE_URL:http://profile-service:8080}
     internal-token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
-    user-registered-topic: ${USER_REGISTERED_TOPIC:user.registered.v1}
+    buyer-registered-topic: ${BUYER_REGISTERED_TOPIC:buyer.registered.v1}
   auth-otp:
     code-ttl: ${AUTH_OTP_CODE_TTL:PT5M}
     cooldown-ttl: ${AUTH_OTP_COOLDOWN_TTL:PT1M}

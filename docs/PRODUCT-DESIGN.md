@@ -349,7 +349,7 @@ PRIORITY（优先级）：按优先级依次应用，总折扣有上限
 
 ### 3.9 新用户注册福利
 
-> 模块归属：profile-service 发布 `user.registered.v1` 事件，loyalty-service（积分+任务）和 promotion-service（优惠券）独立监听并行处理，无需新增服务。
+> 模块归属：profile-service 发布 `buyer.registered.v1` 事件，loyalty-service（积分+任务）和 promotion-service（优惠券）独立监听并行处理，无需新增服务。
 
 #### 即时礼包（注册成功后 ≤ 5 秒到账）
 

@@ -60,7 +60,7 @@ Request:
 
 Response 201:
 {
-  "player_id":   "01HX...",
+  "buyer_id":   "01HX...",
   "username":    "alice123",
   "email":       "alice@example.com",
   "access_token":  "eyJ...",        // 注册即登录，减少用户摩擦
@@ -108,7 +108,7 @@ Error codes:
 注册成功页聚合以下信息，展示新用户福利全貌：
 
 ```
-/buyer/welcome?playerId={playerId}
+/buyer/welcome?buyerId={buyerId}
 （由注册成功后客户端带 JWT 访问，buyer-bff 聚合数据）
 ```
 
@@ -117,10 +117,10 @@ Error codes:
 ```java
 // WelcomeSummaryService.java — 并发聚合
 try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-    var loyaltyFuture  = scope.fork(() -> loyaltyClient.getAccount(playerId));
-    var couponsFuture  = scope.fork(() -> promotionClient.getNewUserCoupons(playerId));
-    var tasksFuture    = scope.fork(() -> loyaltyClient.getOnboardingTasks(playerId));
-    var inviteFuture   = scope.fork(() -> profileClient.getInviteCode(playerId));
+    var loyaltyFuture  = scope.fork(() -> loyaltyClient.getAccount(buyerId));
+    var couponsFuture  = scope.fork(() -> promotionClient.getNewUserCoupons(buyerId));
+    var tasksFuture    = scope.fork(() -> loyaltyClient.getOnboardingTasks(buyerId));
+    var inviteFuture   = scope.fork(() -> profileClient.getInviteCode(buyerId));
     scope.join();
 
     return WelcomeSummaryResponse.builder()
@@ -189,8 +189,8 @@ public static String generate() {
 CREATE TABLE referral_record (
     id                CHAR(26)      NOT NULL PRIMARY KEY,   -- ULID
     invite_code       VARCHAR(20)   NOT NULL,               -- INV-XXXXXXXXXX
-    referrer_id       CHAR(26)      NOT NULL,               -- 邀请人 player_id
-    invitee_id        CHAR(26),                             -- 被邀请人 player_id（注册后写入）
+    referrer_id       CHAR(26)      NOT NULL,               -- 邀请人 buyer_id
+    invitee_id        CHAR(26),                             -- 被邀请人 buyer_id（注册后写入）
     status            VARCHAR(20)   NOT NULL DEFAULT 'PENDING',
                                                             -- PENDING / REGISTERED / REWARDED / EXPIRED
     registered_at     TIMESTAMP(6),                         -- 被邀请人完成注册的时间
@@ -212,7 +212,7 @@ CREATE TABLE referral_record (
 ```sql
 ALTER TABLE buyer_profile
   ADD COLUMN invite_code    VARCHAR(20)  UNIQUE,        -- 该用户自己的邀请码（注册时生成）
-  ADD COLUMN referrer_id    CHAR(26),                   -- 邀请人 player_id（可空）
+  ADD COLUMN referrer_id    CHAR(26),                   -- 邀请人 buyer_id（可空）
   ADD COLUMN email_verified TINYINT(1)   NOT NULL DEFAULT 0;
 ```
 
@@ -240,7 +240,7 @@ auth-server 查询 referral_record WHERE invite_code = ? AND status = 'PENDING'
 触发链路：
   order.events.v1 (ORDER_COMPLETED)
     → loyalty-service 消费
-    → 判断 data.playerId 是否有关联的 referral_record（status=REGISTERED）
+    → 判断 data.buyerId 是否有关联的 referral_record（status=REGISTERED）
     → 若有且为首单：
         a. 向邀请人发放 50 pts（earnPoints, source=REFERRAL_REWARD）
         b. 更新 referral_record.status = REWARDED，first_order_at / reward_issued_at 写入
@@ -323,7 +323,7 @@ public interface SmsOtpProvider {
 
     /**
      * 验证 OTP 并返回 phone-bound 的用户（或新建用户）。
-     * @return 验证通过的 player_id
+     * @return 验证通过的 buyer_id
      * @throws OtpInvalidException OTP 错误
      * @throws OtpExpiredException OTP 已过期
      * @throws OtpLockedOutException 失败次数超限
@@ -364,9 +364,9 @@ POST /auth/otp/verify
    - VALUE 匹配：
        DEL otp:{phone}:code otp:{phone}:attempt
 3. 查询是否有绑定该手机号的买家账号
-   - 有 → 返回 player_id，签发 JWT
+   - 有 → 返回 buyer_id，签发 JWT
    - 无 → 创建新买家账号（phone-first 注册，username 自动生成）
-         → 返回 player_id + is_new_user=true
+         → 返回 buyer_id + is_new_user=true
 4. 返回 200 { "access_token": "eyJ...", "is_new_user": false }
 ```
 
@@ -699,7 +699,7 @@ public ResponseEntity<Void> handleKlarnaWebhook(
 -- Flyway: V20260323_1__buyer_profile_invite_fields.sql
 ALTER TABLE buyer_profile
   ADD COLUMN invite_code    VARCHAR(20)   UNIQUE COMMENT '该用户的专属邀请码（注册时生成）',
-  ADD COLUMN referrer_id    CHAR(26)      NULL   COMMENT '邀请人 player_id（ULID）',
+  ADD COLUMN referrer_id    CHAR(26)      NULL   COMMENT '邀请人 buyer_id（ULID）',
   ADD COLUMN email_verified TINYINT(1)    NOT NULL DEFAULT 0 COMMENT '邮箱是否已验证';
 
 CREATE INDEX idx_buyer_invite_code ON buyer_profile (invite_code);
@@ -713,8 +713,8 @@ CREATE INDEX idx_buyer_referrer    ON buyer_profile (referrer_id);
 CREATE TABLE referral_record (
     id                    CHAR(26)      NOT NULL PRIMARY KEY COMMENT 'ULID',
     invite_code           VARCHAR(20)   NOT NULL             COMMENT '邀请码',
-    referrer_id           CHAR(26)      NOT NULL             COMMENT '邀请人 player_id',
-    invitee_id            CHAR(26)      NULL                 COMMENT '被邀请人 player_id（注册后写入）',
+    referrer_id           CHAR(26)      NOT NULL             COMMENT '邀请人 buyer_id',
+    invitee_id            CHAR(26)      NULL                 COMMENT '被邀请人 buyer_id（注册后写入）',
     status                VARCHAR(20)   NOT NULL DEFAULT 'PENDING'
                                                              COMMENT 'PENDING/REGISTERED/REWARDED/EXPIRED',
     registered_at         TIMESTAMP(6)  NULL,
@@ -762,11 +762,11 @@ ALTER TABLE wallet_transaction
 
 ### 6.1 buyer.registered.v1（新增）
 
-由 auth-server 在买家注册成功后通过 Outbox Pattern 发布（替代 / 补充现有 `user.registered.v1`）：
+由 auth-server 在买家注册成功后通过 Outbox Pattern 发布（替代 / 补充现有 `buyer.registered.v1`）：
 
 ```
 Topic:   buyer.events.v1
-Key:     {player_id}
+Key:     {buyer_id}
 Headers: eventType=buyer.registered.v1
 
 Payload:
@@ -777,7 +777,7 @@ Payload:
   "specVersion":      "1.0",
   "timestamp":        "2026-03-23T10:00:00Z",
   "data": {
-    "player_id":        "01HX...",
+    "buyer_id":        "01HX...",
     "username":         "alice123",
     "email":            "alice@example.com",
     "phone":            null,
@@ -794,9 +794,9 @@ Payload:
   notification-service-buyer          → 发送欢迎邮件（USER_REGISTERED 模板）
 ```
 
-**与 `profile.events.v1 (user.registered.v1)` 的关系：**
+**与 `profile.events.v1 (buyer.registered.v1)` 的关系：**
 
-profile-service 现有事件继续保留（profile-service 主动发布时），auth-server 的 `buyer.registered.v1` 是在注册 Endpoint 新建后额外发布的业务语义事件。两者 `player_id` 相同，消费方需做幂等处理。
+profile-service 现有事件继续保留（profile-service 主动发布时），auth-server 的 `buyer.registered.v1` 是在注册 Endpoint 新建后额外发布的业务语义事件。两者 `buyer_id` 相同，消费方需做幂等处理。
 
 ### 6.2 referral.completed.v1（新增）
 

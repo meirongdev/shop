@@ -45,7 +45,7 @@ public class GameEngine {
     }
 
     @Transactional
-    public ParticipateResult participate(String gameId, String playerId, String payload,
+    public ParticipateResult participate(String gameId, String buyerId, String payload,
                                           String ipAddress, String deviceFingerprint) {
         ActivityGame game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Game not found"));
@@ -54,20 +54,20 @@ public class GameEngine {
             throw new BusinessException(CommonErrorCode.VALIDATION_ERROR, "Game is not active");
         }
 
-        antiCheatGuard.check(game, playerId, ipAddress, deviceFingerprint);
-        validateLimits(game, playerId);
+        antiCheatGuard.check(game, buyerId, ipAddress, deviceFingerprint);
+        validateLimits(game, buyerId);
 
         GamePlugin plugin = pluginRegistry.requirePlugin(game.getType());
 
         ParticipateContext ctx = new ParticipateContext(
-                gameId, game.getType(), playerId, null,
+                gameId, game.getType(), buyerId, null,
                 game.getConfig(), payload, Instant.now()
         );
 
         ParticipateResult result = plugin.participate(ctx);
 
         ActivityParticipation participation = new ActivityParticipation(
-                UUID.randomUUID().toString(), gameId, game.getType(), playerId);
+                UUID.randomUUID().toString(), gameId, game.getType(), buyerId);
         participation.setIpAddress(ipAddress);
         participation.setDeviceFingerprint(deviceFingerprint);
 
@@ -93,21 +93,21 @@ public class GameEngine {
                 .tag("game_type", game.getType().name())
                 .register(meterRegistry).increment();
 
-        log.info("Player {} participated in game {}, result: {}", playerId, gameId, result.win() ? "WIN" : "MISS");
+        log.info("Player {} participated in game {}, result: {}", buyerId, gameId, result.win() ? "WIN" : "MISS");
         return result;
     }
 
-    private void validateLimits(ActivityGame game, String playerId) {
-        if (playerId == null) return;
+    private void validateLimits(ActivityGame game, String buyerId) {
+        if (buyerId == null) return;
 
-        long totalCount = participationRepository.countByGameIdAndPlayerId(game.getId(), playerId);
+        long totalCount = participationRepository.countByGameIdAndPlayerId(game.getId(), buyerId);
         if (game.getPerUserTotalLimit() > 0 && totalCount >= game.getPerUserTotalLimit()) {
             throw new BusinessException(CommonErrorCode.VALIDATION_ERROR,
                     "You have reached the total participation limit for this game");
         }
 
         Instant todayStart = LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant();
-        long dailyCount = participationRepository.countByGameIdAndPlayerIdSince(game.getId(), playerId, todayStart);
+        long dailyCount = participationRepository.countByGameIdAndPlayerIdSince(game.getId(), buyerId, todayStart);
         if (game.getPerUserDailyLimit() > 0 && dailyCount >= game.getPerUserDailyLimit()) {
             throw new BusinessException(CommonErrorCode.VALIDATION_ERROR,
                     "You have reached the daily participation limit for this game");

@@ -43,7 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "shop.auth.apple-client-id=test-apple-client-id",
         "shop.auth.profile-service-url=http://profile-service:8080",
         "shop.auth.internal-token=test-internal-token",
-        "shop.auth.user-registered-topic=user.registered.v1"
+        "shop.auth.user-registered-topic=buyer.registered.v1"
 })
 class AuthControllerTest {
 

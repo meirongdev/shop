@@ -23,30 +23,30 @@ public class ProfileApplicationService {
 
     @Transactional(readOnly = true)
     public ProfileApi.ProfileResponse getProfile(ProfileApi.GetProfileRequest request) {
-        return repository.findById(request.playerId())
+        return repository.findById(request.buyerId())
                 .map(this::toResponse)
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Profile not found: " + request.playerId()));
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Profile not found: " + request.buyerId()));
     }
 
     @Transactional
     public ProfileApi.ProfileResponse updateProfile(ProfileApi.UpdateProfileRequest request) {
-        BuyerProfileEntity entity = repository.findById(request.playerId())
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Profile not found: " + request.playerId()));
+        BuyerProfileEntity entity = repository.findById(request.buyerId())
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Profile not found: " + request.buyerId()));
         entity.update(request.displayName(), request.email(), request.tier());
         return toResponse(repository.save(entity));
     }
 
     @Transactional(readOnly = true)
     public ProfileApi.ProfileResponse getSellerProfile(ProfileApi.GetProfileRequest request) {
-        return sellerRepository.findById(request.playerId())
+        return sellerRepository.findById(request.buyerId())
                 .map(this::toResponse)
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Seller profile not found: " + request.playerId()));
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Seller profile not found: " + request.buyerId()));
     }
 
     @Transactional
     public ProfileApi.ProfileResponse updateSellerProfile(ProfileApi.UpdateProfileRequest request) {
-        SellerProfileEntity entity = sellerRepository.findById(request.playerId())
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Seller profile not found: " + request.playerId()));
+        SellerProfileEntity entity = sellerRepository.findById(request.buyerId())
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND, "Seller profile not found: " + request.buyerId()));
         entity.update(request.displayName(), request.email(), request.tier());
         return toResponse(sellerRepository.save(entity));
     }
@@ -69,7 +69,7 @@ public class ProfileApplicationService {
 
     private ProfileApi.ProfileResponse toResponse(BuyerProfileEntity entity) {
         return new ProfileApi.ProfileResponse(
-                entity.getPlayerId(),
+                entity.getBuyerId(),
                 entity.getUsername(),
                 entity.getDisplayName(),
                 entity.getEmail(),

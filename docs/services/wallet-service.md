@@ -59,7 +59,7 @@ wallet-service/src/main/java/dev/meirong/shop/wallet/
 ```sql
 -- 钱包账户（已存在）
 CREATE TABLE wallet_account (
-    player_id   VARCHAR(64)    NOT NULL PRIMARY KEY,
+    buyer_id   VARCHAR(64)    NOT NULL PRIMARY KEY,
     balance     DECIMAL(19,2)  NOT NULL DEFAULT 0.00,
     updated_at  TIMESTAMP(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
 );
@@ -67,7 +67,7 @@ CREATE TABLE wallet_account (
 -- 交易流水（已存在，扩展字段）
 CREATE TABLE wallet_transaction (
     id                VARCHAR(36)    NOT NULL PRIMARY KEY,
-    player_id         VARCHAR(64)    NOT NULL,
+    buyer_id         VARCHAR(64)    NOT NULL,
     type              VARCHAR(32)    NOT NULL,  -- DEPOSIT/WITHDRAW/ORDER_PAYMENT/ORDER_REFUND/ADJUSTMENT
     amount            DECIMAL(19,2)  NOT NULL,
     currency          VARCHAR(8)     NOT NULL DEFAULT 'USD',
@@ -77,7 +77,7 @@ CREATE TABLE wallet_transaction (
     reference_type    VARCHAR(32),              -- ORDER / WITHDRAWAL
     balance_after     DECIMAL(19,2),            -- 【新增】事后余额快照（对账用）
     created_at        TIMESTAMP(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    INDEX idx_player_created (player_id, created_at DESC)
+    INDEX idx_player_created (buyer_id, created_at DESC)
 );
 
 -- Outbox 事件表（已存在）
@@ -100,7 +100,7 @@ CREATE TABLE wallet_outbox_event (
 -- 支付方式（绑定信用卡，避免每次都输卡号）
 CREATE TABLE wallet_payment_method (
     id                VARCHAR(36)   NOT NULL PRIMARY KEY,
-    player_id         VARCHAR(64)   NOT NULL,
+    buyer_id         VARCHAR(64)   NOT NULL,
     type              VARCHAR(32)   NOT NULL,   -- CARD / APPLE_PAY / GOOGLE_PAY / PAYPAL
     provider          VARCHAR(32)   NOT NULL,   -- STRIPE / PAYPAL
     provider_method_id VARCHAR(256) NOT NULL,   -- Stripe PaymentMethod ID
@@ -110,7 +110,7 @@ CREATE TABLE wallet_payment_method (
     card_exp_year     INT,
     is_default        TINYINT(1)    NOT NULL DEFAULT 0,
     created_at        TIMESTAMP(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    INDEX idx_player (player_id)
+    INDEX idx_player (buyer_id)
 );
 
 -- 幂等键（防止重复支付）
@@ -207,7 +207,7 @@ DELETE /wallet/v1/payment-methods/{id}           # 解绑
 # 内部接口（X-Internal-Token，服务间调用）
 POST /internal/wallet/pay                        # order-service 调用扣款
 POST /internal/wallet/refund                     # order-service 调用退款
-GET  /internal/wallet/account/{playerId}         # buyer-bff 聚合查询
+GET  /internal/wallet/account/{buyerId}         # buyer-bff 聚合查询
 
 # Webhook（Stripe 回调，不走 Gateway）
 POST /internal/wallet/webhook/stripe
@@ -227,7 +227,7 @@ EventEnvelope<WalletTransactionEventData> {
   timestamp: "2026-03-20T10:00:00Z",
   data: {
     transaction_id:   "txn-uuid",
-    player_id:        "player-1001",
+    buyer_id:        "buyer-1001",
     type:             "DEPOSIT",          // DEPOSIT/WITHDRAW/ORDER_PAYMENT/ORDER_REFUND
     amount:           100.00,
     currency:         "USD",

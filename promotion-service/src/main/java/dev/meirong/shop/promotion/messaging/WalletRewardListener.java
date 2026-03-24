@@ -69,7 +69,7 @@ public class WalletRewardListener {
                             promotionApplicationService.createWalletRewardOffer(
                                     code,
                                     "Wallet Deposit Bonus",
-                                    "Generated from wallet deposit event for " + data.playerId(),
+                                    "Generated from wallet deposit event for " + data.buyerId(),
                                     data.amount().min(new java.math.BigDecimal("20.00"))
                             );
                             idempotencyKeyRepository.save(new PromotionIdempotencyKeyEntity(idempotencyKey));
@@ -98,12 +98,13 @@ public class WalletRewardListener {
         if (event == null || event.data() == null) {
             throw new IllegalArgumentException("Wallet reward event data is required");
         }
+        event.assertSupportedSchema(EventEnvelope.CURRENT_SCHEMA_VERSION);
         WalletTransactionEventData data = event.data();
         if (!StringUtils.hasText(data.transactionId())) {
             throw new IllegalArgumentException("Wallet reward transactionId is required");
         }
-        if (!StringUtils.hasText(data.playerId())) {
-            throw new IllegalArgumentException("Wallet reward playerId is required");
+        if (!StringUtils.hasText(data.buyerId())) {
+            throw new IllegalArgumentException("Wallet reward buyerId is required");
         }
         if (!StringUtils.hasText(data.type())) {
             throw new IllegalArgumentException("Wallet reward type is required");

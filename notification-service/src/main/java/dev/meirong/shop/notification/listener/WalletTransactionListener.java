@@ -64,10 +64,10 @@ public class WalletTransactionListener {
             log.info("Received wallet transaction event: transactionId={} type={}", data.transactionId(), eventType);
 
             // Use email from event if available, otherwise fallback
-            String recipientEmail = data.email() != null ? data.email() : data.playerId() + "@shop.dev.meirong";
+            String recipientEmail = data.email() != null ? data.email() : data.buyerId() + "@shop.dev.meirong";
 
             Map<String, Object> variables = new HashMap<>();
-            variables.put("username", data.playerId());
+            variables.put("username", data.buyerId());
             variables.put("amount", data.amount());
             variables.put("balance", data.balance());
             variables.put("currency", data.currency());
@@ -75,7 +75,7 @@ public class WalletTransactionListener {
             notificationService.processEvent(
                     event.eventId(),
                     eventType,
-                    data.playerId(),
+                    data.buyerId(),
                     recipientEmail,
                     variables
             );
@@ -106,6 +106,7 @@ public class WalletTransactionListener {
         if (event == null || event.data() == null) {
             throw new IllegalArgumentException("Notification wallet event data is required");
         }
+        event.assertSupportedSchema(EventEnvelope.CURRENT_SCHEMA_VERSION);
         WalletTransactionEventData data = event.data();
         if (!StringUtils.hasText(event.eventId())) {
             throw new IllegalArgumentException("Notification eventId is required");
@@ -113,8 +114,8 @@ public class WalletTransactionListener {
         if (!StringUtils.hasText(data.transactionId())) {
             throw new IllegalArgumentException("Notification transactionId is required");
         }
-        if (!StringUtils.hasText(data.playerId())) {
-            throw new IllegalArgumentException("Notification playerId is required");
+        if (!StringUtils.hasText(data.buyerId())) {
+            throw new IllegalArgumentException("Notification buyerId is required");
         }
         if (!StringUtils.hasText(data.type())) {
             throw new IllegalArgumentException("Notification wallet type is required");

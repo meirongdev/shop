@@ -138,9 +138,9 @@ class VirtualFarmPluginTest {
     private void wireFarmRepository(ActivityVirtualFarmRepository farmRepository, List<ActivityVirtualFarm> farms) {
         when(farmRepository.findByGameIdAndPlayerId(anyString(), anyString())).thenAnswer(invocation -> {
             String gameId = invocation.getArgument(0, String.class);
-            String playerId = invocation.getArgument(1, String.class);
+            String buyerId = invocation.getArgument(1, String.class);
             return farms.stream()
-                    .filter(farm -> farm.getGameId().equals(gameId) && farm.getPlayerId().equals(playerId))
+                    .filter(farm -> farm.getGameId().equals(gameId) && farm.getBuyerId().equals(buyerId))
                     .findFirst();
         });
 

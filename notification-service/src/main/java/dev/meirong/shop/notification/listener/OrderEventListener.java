@@ -101,6 +101,7 @@ public class OrderEventListener {
         if (event == null || event.data() == null) {
             throw new IllegalArgumentException("Notification order event data is required");
         }
+        event.assertSupportedSchema(EventEnvelope.CURRENT_SCHEMA_VERSION);
         OrderEventData data = event.data();
         if (!StringUtils.hasText(event.eventId())) {
             throw new IllegalArgumentException("Notification eventId is required");

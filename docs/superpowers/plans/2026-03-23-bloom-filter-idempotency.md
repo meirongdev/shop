@@ -783,13 +783,13 @@
   ```java
   @Transactional
   public WalletApi.TransactionResponse depositWithIdempotency(WalletApi.DepositRequest request, String idempotencyKey) {
-      WalletAccountEntity account = accountRepository.findById(request.playerId())
-              .orElseGet(() -> accountRepository.save(new WalletAccountEntity(request.playerId(), BigDecimal.ZERO)));
-      StripeGateway.PaymentReference ref = stripeGateway.createDeposit(request.playerId(), request.amount(), request.currency());
+      WalletAccountEntity account = accountRepository.findById(request.buyerId())
+              .orElseGet(() -> accountRepository.save(new WalletAccountEntity(request.buyerId(), BigDecimal.ZERO)));
+      StripeGateway.PaymentReference ref = stripeGateway.createDeposit(request.buyerId(), request.amount(), request.currency());
       account.credit(request.amount());
       accountRepository.save(account);
       WalletTransactionEntity transaction = transactionRepository.save(
-              new WalletTransactionEntity(request.playerId(), "DEPOSIT", request.amount(), request.currency(), "COMPLETED", ref.providerReference()));
+              new WalletTransactionEntity(request.buyerId(), "DEPOSIT", request.amount(), request.currency(), "COMPLETED", ref.providerReference()));
       // Save idempotency key within same transaction — DIVE on duplicate signals concurrent request
       idempotencyKeyRepository.save(new WalletIdempotencyKeyEntity(idempotencyKey, transaction.getId()));
       publishableEvent(transaction);
@@ -886,8 +886,8 @@
 
   @Test
   void onUserRegistered_firstCall_executesViaIdempotencyGuard() throws Exception {
-      UserRegisteredEventData data = new UserRegisteredEventData("player-123", "user", "e@e.com");
-      EventEnvelope<UserRegisteredEventData> event = new EventEnvelope<>(
+      BuyerRegisteredEventData data = new BuyerRegisteredEventData("player-123", "user", "e@e.com");
+      EventEnvelope<BuyerRegisteredEventData> event = new EventEnvelope<>(
               UUID.randomUUID().toString(), "auth", "USER_REGISTERED", Instant.now(), data);
       String payload = objectMapper.writeValueAsString(event);
 
@@ -904,8 +904,8 @@
 
   @Test
   void onUserRegistered_duplicateCall_usesIdempotencyGuardFallback() throws Exception {
-      UserRegisteredEventData data = new UserRegisteredEventData("player-999", "user", "e@e.com");
-      EventEnvelope<UserRegisteredEventData> event = new EventEnvelope<>(
+      BuyerRegisteredEventData data = new BuyerRegisteredEventData("player-999", "user", "e@e.com");
+      EventEnvelope<BuyerRegisteredEventData> event = new EventEnvelope<>(
               UUID.randomUUID().toString(), "auth", "USER_REGISTERED", Instant.now(), data);
       String payload = objectMapper.writeValueAsString(event);
 
@@ -1001,7 +1001,7 @@
   import dev.meirong.shop.common.error.BusinessException;
   import dev.meirong.shop.common.idempotency.IdempotencyGuard;
   import dev.meirong.shop.contracts.event.EventEnvelope;
-  import dev.meirong.shop.contracts.event.UserRegisteredEventData;
+  import dev.meirong.shop.contracts.event.BuyerRegisteredEventData;
   import dev.meirong.shop.promotion.domain.CouponEntity;
   import dev.meirong.shop.promotion.domain.CouponRepository;
   import dev.meirong.shop.promotion.domain.PromotionIdempotencyKeyRepository;
@@ -1041,24 +1041,24 @@
           this.idempotencyGuard = idempotencyGuard;
       }
 
-      @KafkaListener(topics = "${shop.kafka.user-registered-topic}", groupId = "${spring.application.name}")
+      @KafkaListener(topics = "${shop.kafka.buyer-registered-topic}", groupId = "${spring.application.name}")
       @Transactional
       public void onUserRegistered(String payload) {
           try {
-              EventEnvelope<UserRegisteredEventData> envelope = objectMapper.readValue(
+              EventEnvelope<BuyerRegisteredEventData> envelope = objectMapper.readValue(
                       payload, new TypeReference<>() {});
-              String playerId = envelope.data().playerId();
-              String key = "WELCOME_COUPON:" + playerId;
+              String buyerId = envelope.data().buyerId();
+              String key = "WELCOME_COUPON:" + buyerId;
 
               idempotencyGuard.executeOnce(key,
                   () -> {
                       // Save idempotency key first — DIVE signals duplicate to the guard
                       idempotencyKeyRepository.saveKey(key);
-                      issueWelcomeCoupons(playerId);
+                      issueWelcomeCoupons(buyerId);
                       return null;
                   },
                   () -> {
-                      log.info("Welcome coupons already issued for player={}, skipping", playerId);
+                      log.info("Welcome coupons already issued for player={}, skipping", buyerId);
                       return null;
                   });
           } catch (IOException | BusinessException | DataAccessException e) {
@@ -1066,8 +1066,8 @@
           }
       }
 
-      private void issueWelcomeCoupons(String playerId) {
-          String baseCode = "WELCOME-" + playerId.substring(0, Math.min(8, playerId.length())).toUpperCase();
+      private void issueWelcomeCoupons(String buyerId) {
+          String baseCode = "WELCOME-" + buyerId.substring(0, Math.min(8, buyerId.length())).toUpperCase();
           Instant now = Instant.now();
 
           couponRepository.save(new CouponEntity(SYSTEM_SELLER, baseCode + "-5OFF", "FIXED",
@@ -1078,24 +1078,24 @@
                   new BigDecimal("9.00"), BigDecimal.ZERO, new BigDecimal("20.00"), 1,
                   now.plus(14, ChronoUnit.DAYS)));
 
-          createWelcomeInstances(playerId, baseCode, now);
-          log.info("Issued welcome coupons for player={}", playerId);
+          createWelcomeInstances(buyerId, baseCode, now);
+          log.info("Issued welcome coupons for player={}", buyerId);
       }
 
-      private void createWelcomeInstances(String playerId, String baseCode, Instant now) {
+      private void createWelcomeInstances(String buyerId, String baseCode, Instant now) {
           try {
               var t1 = couponTemplateService.createTemplate(SYSTEM_SELLER, "WELCOME-5OFF",
                       "$5 Off Welcome", "FIXED", new BigDecimal("5.00"), BigDecimal.ZERO, null, 0, 1, 14);
-              couponTemplateService.issueToBuyerWithCode(t1.getId(), playerId,
+              couponTemplateService.issueToBuyerWithCode(t1.getId(), buyerId,
                       baseCode + "-5OFF-I", now.plus(14, ChronoUnit.DAYS));
               var t2 = couponTemplateService.createTemplate(SYSTEM_SELLER, "WELCOME-SHIP",
                       "Free Shipping", "FIXED", new BigDecimal("10.00"), BigDecimal.ZERO, null, 0, 1, 30);
-              couponTemplateService.issueToBuyerWithCode(t2.getId(), playerId,
+              couponTemplateService.issueToBuyerWithCode(t2.getId(), buyerId,
                       baseCode + "-SHIP-I", now.plus(30, ChronoUnit.DAYS));
               var t3 = couponTemplateService.createTemplate(SYSTEM_SELLER, "WELCOME-9PCT",
                       "9% Off Welcome", "PERCENTAGE", new BigDecimal("9.00"), BigDecimal.ZERO,
                       new BigDecimal("20.00"), 0, 1, 14);
-              couponTemplateService.issueToBuyerWithCode(t3.getId(), playerId,
+              couponTemplateService.issueToBuyerWithCode(t3.getId(), buyerId,
                       baseCode + "-9PCT-I", now.plus(14, ChronoUnit.DAYS));
           } catch (BusinessException | DataAccessException e) {
               log.debug("Welcome coupon instance creation note: {}", e.getMessage());

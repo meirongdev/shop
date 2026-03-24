@@ -42,7 +42,7 @@ class ProfileApplicationServiceTest {
 
         ProfileApi.ProfileResponse response = service.getSellerProfile(new ProfileApi.GetProfileRequest("seller-2001"));
 
-        assertThat(response.playerId()).isEqualTo("seller-2001");
+        assertThat(response.buyerId()).isEqualTo("seller-2001");
         assertThat(response.username()).isEqualTo("seller.demo");
         assertThat(response.displayName()).isEqualTo("Seller Demo");
         verifyNoInteractions(buyerRepository);
@@ -68,7 +68,7 @@ class ProfileApplicationServiceTest {
 
         ProfileApi.ProfileResponse response = service.updateSellerProfile(request);
 
-        assertThat(response.playerId()).isEqualTo("seller-2001");
+        assertThat(response.buyerId()).isEqualTo("seller-2001");
         assertThat(response.displayName()).isEqualTo("Seller Studio");
         assertThat(response.email()).isEqualTo("studio@example.com");
         assertThat(response.tier()).isEqualTo("GOLD");

@@ -37,7 +37,7 @@ class TrustedHeadersFilterTest {
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/buyer/orders");
         request.addHeader("X-Request-Id", "req-123");
-        request.addHeader("X-Player-Id", "spoofed-player");
+        request.addHeader("X-Buyer-Id", "spoofed-player");
         request.addHeader("X-Roles", "ROLE_ADMIN");
         request.addHeader("X-Internal-Token", "spoofed-token");
         request.addHeader("X-Custom", "custom-value");
@@ -52,8 +52,8 @@ class TrustedHeadersFilterTest {
         assertThat(chain.request().getHeader("X-Custom")).isEqualTo("custom-value");
         assertThat(Collections.list(chain.request().getHeaders("X-Internal-Token"))).containsExactly("internal-token");
         assertThat(Collections.list(chain.request().getHeaderNames()))
-                .contains("X-Request-Id", "X-Player-Id", "X-User-Id", "X-Username", "X-Roles", "X-Portal", "X-Internal-Token", "X-Custom")
-                .doesNotContain("x-player-id");
+                .contains("X-Request-Id", "X-Buyer-Id", "X-Username", "X-Roles", "X-Portal", "X-Internal-Token", "X-Custom")
+                .doesNotContain("x-player-id", "x-user-id");
     }
 
     @Test
@@ -86,7 +86,7 @@ class TrustedHeadersFilterTest {
     @Test
     void keepsApiRequestsUntouchedWhenNoJwtAuthenticationExists() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/buyer/orders");
-        request.addHeader("X-Player-Id", "client-player");
+        request.addHeader("X-Buyer-Id", "client-player");
         MockHttpServletResponse response = new MockHttpServletResponse();
         CapturingFilterChain chain = new CapturingFilterChain();
 
@@ -94,7 +94,7 @@ class TrustedHeadersFilterTest {
 
         assertThat(chain.invoked()).isTrue();
         assertThat(chain.request()).isSameAs(request);
-        assertThat(chain.request().getHeader("X-Player-Id")).isEqualTo("client-player");
+        assertThat(chain.request().getHeader("X-Buyer-Id")).isEqualTo("client-player");
     }
 
     private Jwt jwt() {
@@ -110,8 +110,8 @@ class TrustedHeadersFilterTest {
     private static final class HttpHeaderAssertions {
 
         private static void assertTrustedHeaders(jakarta.servlet.http.HttpServletRequest request) {
-            assertThat(request.getHeader("X-Player-Id")).isEqualTo("buyer-100");
-            assertThat(request.getHeader("X-User-Id")).isEqualTo("buyer-100");
+            assertThat(request.getHeader("X-Buyer-Id")).isEqualTo("buyer-100");
+            assertThat(request.getHeader("X-User-Id")).isNull();
             assertThat(request.getHeader("X-Username")).isEqualTo("alice");
             assertThat(request.getHeader("X-Roles")).isEqualTo("ROLE_BUYER");
             assertThat(request.getHeader("X-Portal")).isEqualTo("buyer");

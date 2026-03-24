@@ -37,7 +37,7 @@ public class RedemptionService {
     }
 
     @Transactional
-    public LoyaltyRedemptionEntity redeem(String playerId, String rewardItemId, int quantity) {
+    public LoyaltyRedemptionEntity redeem(String buyerId, String rewardItemId, int quantity) {
         LoyaltyRewardItemEntity item = rewardItemRepository.findById(rewardItemId)
                 .orElseThrow(() -> new IllegalArgumentException("Reward item not found: " + rewardItemId));
 
@@ -48,7 +48,7 @@ public class RedemptionService {
         long totalCost = item.getPointsRequired() * quantity;
 
         // Verify balance
-        LoyaltyAccountEntity account = accountService.getOrCreateAccount(playerId);
+        LoyaltyAccountEntity account = accountService.getOrCreateAccount(buyerId);
         if (account.getBalance() < totalCost) {
             throw new IllegalStateException("Insufficient points: need " + totalCost + ", have " + account.getBalance());
         }
@@ -61,12 +61,12 @@ public class RedemptionService {
 
         // Deduct points
         String redemptionId = UUID.randomUUID().toString();
-        accountService.deductPoints(playerId, "REDEMPTION", totalCost,
+        accountService.deductPoints(buyerId, "REDEMPTION", totalCost,
                 "redemption-" + redemptionId, "Redeemed " + item.getName() + " x" + quantity);
 
         // Create redemption record
         LoyaltyRedemptionEntity redemption = new LoyaltyRedemptionEntity(
-                playerId, rewardItemId, item.getName(), totalCost, quantity, item.getType());
+                buyerId, rewardItemId, item.getName(), totalCost, quantity, item.getType());
 
         // Auto-complete for COUPON type
         if ("COUPON".equals(item.getType())) {
@@ -75,11 +75,11 @@ public class RedemptionService {
         }
 
         redemptionRepository.save(redemption);
-        log.info("Player {} redeemed {} x{} for {} points", playerId, item.getName(), quantity, totalCost);
+        log.info("Player {} redeemed {} x{} for {} points", buyerId, item.getName(), quantity, totalCost);
         return redemption;
     }
 
-    public Page<LoyaltyRedemptionEntity> getRedemptions(String playerId, Pageable pageable) {
-        return redemptionRepository.findByPlayerIdOrderByCreatedAtDesc(playerId, pageable);
+    public Page<LoyaltyRedemptionEntity> getRedemptions(String buyerId, Pageable pageable) {
+        return redemptionRepository.findByPlayerIdOrderByCreatedAtDesc(buyerId, pageable);
     }
 }

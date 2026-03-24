@@ -141,7 +141,7 @@ class BuyerControllerTest {
                 .thenReturn(response);
 
         mockMvc.perform(post(BuyerApi.CART_ADD)
-                        .header("X-Player-Id", "buyer-1001")
+                        .header("X-Buyer-Id", "buyer-1001")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -183,7 +183,7 @@ class BuyerControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SC_OK"))
-                .andExpect(jsonPath("$.data.playerId").value("buyer-1001"))
+                .andExpect(jsonPath("$.data.buyerId").value("buyer-1001"))
                 .andExpect(jsonPath("$.data.balance").value(25.00));
     }
 
@@ -216,11 +216,11 @@ class BuyerControllerTest {
     @Test
     void checkout_recordsDurationMetric() throws Exception {
         BuyerApi.CheckoutRequest request = new BuyerApi.CheckoutRequest("buyer-1001", null, "APPLE_PAY", null);
-        when(service.checkout(argThat(checkoutRequest -> "buyer-1001".equals(checkoutRequest.playerId()))))
+        when(service.checkout(argThat(checkoutRequest -> "buyer-1001".equals(checkoutRequest.buyerId()))))
                 .thenReturn(new BuyerApi.CheckoutResponse(List.of(), BigDecimal.ZERO, "APPLE_PAY", "secret", null));
 
         mockMvc.perform(post(BuyerApi.CHECKOUT_CREATE)
-                        .header("X-Player-Id", "buyer-1001")
+                        .header("X-Buyer-Id", "buyer-1001")
                         .header("X-Roles", "ROLE_BUYER")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))

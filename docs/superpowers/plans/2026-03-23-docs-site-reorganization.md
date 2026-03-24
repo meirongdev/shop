@@ -774,7 +774,7 @@ title: 事件驱动架构
 | `order.events.v1` | order-service | loyalty-service, notification-service, webhook-service | 订单全生命周期事件 |
 | `wallet.transactions.v1` | wallet-service | promotion-service, notification-service, webhook-service | 充值/提现事件 |
 | `marketplace.product.events.v1` | marketplace-service | search-service | 商品变更 → 索引更新 |
-| `user.registered.v1` | auth-server | loyalty-service, notification-service, promotion-service | 新用户注册 → 积分/欢迎邮件/欢迎券 |
+| `buyer.registered.v1` | auth-server | loyalty-service, notification-service, promotion-service | 新用户注册 → 积分/欢迎邮件/欢迎券 |
 
 ## Consumer 幂等规范
 

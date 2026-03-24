@@ -94,7 +94,7 @@ shop:
         - /v3/api-docs
         - /swagger-ui
   notification:
-    user-registered-topic: ${USER_REGISTERED_TOPIC:user.registered.v1}
+    buyer-registered-topic: ${BUYER_REGISTERED_TOPIC:buyer.registered.v1}
     order-events-topic: ${ORDER_EVENTS_TOPIC:order.events.v1}
     wallet-transactions-topic: ${WALLET_TRANSACTIONS_TOPIC:wallet.transactions.v1}
     retry-max-attempts: ${NOTIFICATION_RETRY_MAX_ATTEMPTS:3}

@@ -51,13 +51,13 @@ public class ActivityController {
     public ApiResponse<ActivityApi.ParticipateResponse> participate(
             @PathVariable String gameId,
             @RequestBody(required = false) ActivityApi.ParticipateRequest request,
-            @RequestHeader(TrustedHeaderNames.PLAYER_ID) String playerId,
+            @RequestHeader(TrustedHeaderNames.BUYER_ID) String buyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles,
             @RequestHeader(value = "X-Forwarded-For", required = false) String ipAddress,
             @RequestHeader(value = DEVICE_FINGERPRINT, required = false) String deviceFingerprint) {
         requireSignedInBuyer(headerRoles, "Activity participation");
         String payload = request != null ? request.payload() : null;
-        ParticipateResult result = gameEngine.participate(gameId, playerId, payload, ipAddress, deviceFingerprint);
+        ParticipateResult result = gameEngine.participate(gameId, buyerId, payload, ipAddress, deviceFingerprint);
         return ApiResponse.success(new ActivityApi.ParticipateResponse(
                 result.win(), result.prizeId(), result.prizeName(),
                 result.prizeType() != null ? result.prizeType().name() : null,
@@ -67,10 +67,10 @@ public class ActivityController {
     @GetMapping(ActivityApi.MY_HISTORY)
     public ApiResponse<List<ActivityApi.ParticipationResponse>> myHistory(
             @PathVariable String gameId,
-            @RequestHeader(TrustedHeaderNames.PLAYER_ID) String playerId,
+            @RequestHeader(TrustedHeaderNames.BUYER_ID) String buyerId,
             @RequestHeader(value = TrustedHeaderNames.ROLES, required = false) String headerRoles) {
         requireSignedInBuyer(headerRoles, "Activity history");
-        List<ActivityParticipation> records = queryService.getParticipationHistory(gameId, playerId);
+        List<ActivityParticipation> records = queryService.getParticipationHistory(gameId, buyerId);
         return ApiResponse.success(records.stream().map(this::toParticipationResponse).toList());
     }
 

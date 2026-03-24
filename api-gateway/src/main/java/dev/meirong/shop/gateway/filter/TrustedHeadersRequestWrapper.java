@@ -14,16 +14,16 @@ import java.util.Set;
 public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
 
     private static final String REQUEST_ID = "X-Request-Id";
-    private static final String PLAYER_ID = "X-Player-Id";
-    private static final String USER_ID = "X-User-Id";
+    private static final String BUYER_ID = "X-Buyer-Id";
     private static final String USERNAME = "X-Username";
     private static final String ROLES = "X-Roles";
     private static final String PORTAL = "X-Portal";
     private static final String INTERNAL_TOKEN = "X-Internal-Token";
 
     private static final Set<String> STRIPPED_HEADERS = Set.of(
-            PLAYER_ID.toLowerCase(Locale.ROOT),
-            USER_ID.toLowerCase(Locale.ROOT),
+            BUYER_ID.toLowerCase(Locale.ROOT),
+            "x-player-id",
+            "x-user-id",
             USERNAME.toLowerCase(Locale.ROOT),
             ROLES.toLowerCase(Locale.ROOT),
             PORTAL.toLowerCase(Locale.ROOT),
@@ -34,7 +34,7 @@ public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
 
     public TrustedHeadersRequestWrapper(HttpServletRequest request,
                                         String requestId,
-                                        String playerId,
+                                        String buyerId,
                                         String username,
                                         String roles,
                                         String portal,
@@ -42,8 +42,7 @@ public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
         super(request);
         Map<String, String> headers = new LinkedHashMap<>();
         putIfPresent(headers, REQUEST_ID, requestId);
-        putIfPresent(headers, PLAYER_ID, playerId);
-        putIfPresent(headers, USER_ID, playerId);
+        putIfPresent(headers, BUYER_ID, buyerId);
         putIfPresent(headers, USERNAME, username);
         putIfPresent(headers, ROLES, roles);
         putIfPresent(headers, PORTAL, portal);

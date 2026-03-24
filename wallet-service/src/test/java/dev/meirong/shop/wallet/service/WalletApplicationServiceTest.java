@@ -72,19 +72,19 @@ class WalletApplicationServiceTest {
 
     @Test
     void getWallet_existingAccount_returnsWalletWithTransactions() {
-        String playerId = "player-1";
-        WalletAccountEntity account = new WalletAccountEntity(playerId, new BigDecimal("100.00"));
+        String buyerId = "player-1";
+        WalletAccountEntity account = new WalletAccountEntity(buyerId, new BigDecimal("100.00"));
 
         WalletTransactionEntity tx = new WalletTransactionEntity(
-                playerId, "DEPOSIT", new BigDecimal("100.00"), "USD", "COMPLETED", "pi_abc123"
+                buyerId, "DEPOSIT", new BigDecimal("100.00"), "USD", "COMPLETED", "pi_abc123"
         );
 
-        when(accountRepository.findById(playerId)).thenReturn(Optional.of(account));
-        when(transactionRepository.findTop10ByPlayerIdOrderByCreatedAtDesc(playerId)).thenReturn(List.of(tx));
+        when(accountRepository.findById(buyerId)).thenReturn(Optional.of(account));
+        when(transactionRepository.findTop10ByBuyerIdOrderByCreatedAtDesc(buyerId)).thenReturn(List.of(tx));
 
-        WalletApi.WalletAccountResponse result = service.getWallet(new WalletApi.GetWalletRequest(playerId));
+        WalletApi.WalletAccountResponse result = service.getWallet(new WalletApi.GetWalletRequest(buyerId));
 
-        assertThat(result.playerId()).isEqualTo(playerId);
+        assertThat(result.buyerId()).isEqualTo(buyerId);
         assertThat(result.balance()).isEqualByComparingTo(new BigDecimal("100.00"));
         assertThat(result.recentTransactions()).hasSize(1);
         assertThat(result.recentTransactions().get(0).type()).isEqualTo("DEPOSIT");
@@ -92,12 +92,12 @@ class WalletApplicationServiceTest {
 
     @Test
     void deposit_creditsAccountAndSavesTransaction() {
-        String playerId = "player-2";
+        String buyerId = "player-2";
         BigDecimal depositAmount = new BigDecimal("50.00");
-        WalletAccountEntity account = new WalletAccountEntity(playerId, new BigDecimal("100.00"));
+        WalletAccountEntity account = new WalletAccountEntity(buyerId, new BigDecimal("100.00"));
 
-        when(accountRepository.findById(playerId)).thenReturn(Optional.of(account));
-        when(stripeGateway.createDeposit(eq(playerId), eq(depositAmount), eq("USD")))
+        when(accountRepository.findById(buyerId)).thenReturn(Optional.of(account));
+        when(stripeGateway.createDeposit(eq(buyerId), eq(depositAmount), eq("USD")))
                 .thenReturn(new StripeGateway.PaymentReference("pi_dep456", "stripe"));
         when(accountRepository.save(any(WalletAccountEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -107,10 +107,10 @@ class WalletApplicationServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         WalletApi.TransactionResponse result = service.deposit(
-                new WalletApi.DepositRequest(playerId, depositAmount, "USD")
+                new WalletApi.DepositRequest(buyerId, depositAmount, "USD")
         );
 
-        assertThat(result.playerId()).isEqualTo(playerId);
+        assertThat(result.buyerId()).isEqualTo(buyerId);
         assertThat(result.type()).isEqualTo("DEPOSIT");
         assertThat(result.amount()).isEqualByComparingTo(depositAmount);
         assertThat(result.status()).isEqualTo("COMPLETED");
@@ -123,13 +123,13 @@ class WalletApplicationServiceTest {
 
     @Test
     void depositWithIdempotency_firstCall_savesKeyAndReturnsResult() {
-        String playerId = "player-5";
+        String buyerId = "player-5";
         String idempotencyKey = "idem-key-001";
         BigDecimal depositAmount = new BigDecimal("10.00");
-        WalletAccountEntity account = new WalletAccountEntity(playerId, new BigDecimal("100.00"));
+        WalletAccountEntity account = new WalletAccountEntity(buyerId, new BigDecimal("100.00"));
 
-        when(accountRepository.findById(playerId)).thenReturn(Optional.of(account));
-        when(stripeGateway.createDeposit(eq(playerId), eq(depositAmount), eq("USD")))
+        when(accountRepository.findById(buyerId)).thenReturn(Optional.of(account));
+        when(stripeGateway.createDeposit(eq(buyerId), eq(depositAmount), eq("USD")))
                 .thenReturn(new StripeGateway.PaymentReference("pi_dep789", "stripe"));
         when(accountRepository.save(any(WalletAccountEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -141,11 +141,11 @@ class WalletApplicationServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         WalletApi.TransactionResponse result = service.depositWithIdempotency(
-                new WalletApi.DepositRequest(playerId, depositAmount, "USD"),
+                new WalletApi.DepositRequest(buyerId, depositAmount, "USD"),
                 idempotencyKey
         );
 
-        assertThat(result.playerId()).isEqualTo(playerId);
+        assertThat(result.buyerId()).isEqualTo(buyerId);
         assertThat(result.type()).isEqualTo("DEPOSIT");
         verify(idempotencyKeyRepository).save(any(WalletIdempotencyKeyEntity.class));
     }
@@ -162,17 +162,17 @@ class WalletApplicationServiceTest {
         WalletApi.TransactionResponse result = service.findByIdempotencyKey("idem-key-002");
 
         assertThat(result.transactionId()).isEqualTo(transaction.getId());
-        assertThat(result.playerId()).isEqualTo("player-6");
+        assertThat(result.buyerId()).isEqualTo("player-6");
     }
 
     @Test
     void withdraw_sufficientBalance_succeeds() {
-        String playerId = "player-3";
+        String buyerId = "player-3";
         BigDecimal withdrawAmount = new BigDecimal("30.00");
-        WalletAccountEntity account = new WalletAccountEntity(playerId, new BigDecimal("100.00"));
+        WalletAccountEntity account = new WalletAccountEntity(buyerId, new BigDecimal("100.00"));
 
-        when(accountRepository.findById(playerId)).thenReturn(Optional.of(account));
-        when(stripeGateway.createWithdrawal(eq(playerId), eq(withdrawAmount), eq("USD")))
+        when(accountRepository.findById(buyerId)).thenReturn(Optional.of(account));
+        when(stripeGateway.createWithdrawal(eq(buyerId), eq(withdrawAmount), eq("USD")))
                 .thenReturn(new StripeGateway.PaymentReference("pi_wd789", "stripe"));
         when(accountRepository.save(any(WalletAccountEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -182,10 +182,10 @@ class WalletApplicationServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         WalletApi.TransactionResponse result = service.withdraw(
-                new WalletApi.WithdrawRequest(playerId, withdrawAmount, "USD")
+                new WalletApi.WithdrawRequest(buyerId, withdrawAmount, "USD")
         );
 
-        assertThat(result.playerId()).isEqualTo(playerId);
+        assertThat(result.buyerId()).isEqualTo(buyerId);
         assertThat(result.type()).isEqualTo("WITHDRAW");
         assertThat(result.amount()).isEqualByComparingTo(withdrawAmount);
         assertThat(result.status()).isEqualTo("COMPLETED");
@@ -194,14 +194,14 @@ class WalletApplicationServiceTest {
 
     @Test
     void withdraw_insufficientBalance_throwsException() {
-        String playerId = "player-4";
+        String buyerId = "player-4";
         BigDecimal withdrawAmount = new BigDecimal("200.00");
-        WalletAccountEntity account = new WalletAccountEntity(playerId, new BigDecimal("50.00"));
+        WalletAccountEntity account = new WalletAccountEntity(buyerId, new BigDecimal("50.00"));
 
-        when(accountRepository.findById(playerId)).thenReturn(Optional.of(account));
+        when(accountRepository.findById(buyerId)).thenReturn(Optional.of(account));
 
         assertThatThrownBy(() -> service.withdraw(
-                new WalletApi.WithdrawRequest(playerId, withdrawAmount, "USD")
+                new WalletApi.WithdrawRequest(buyerId, withdrawAmount, "USD")
         ))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("Insufficient balance");

@@ -9,16 +9,16 @@ public interface ActivityPlayerCardRepository extends JpaRepository<ActivityPlay
     @Query("""
             SELECT COUNT(DISTINCT c.cardId)
             FROM ActivityPlayerCard c
-            WHERE c.gameId = :gameId AND c.playerId = :playerId
+            WHERE c.gameId = :gameId AND c.buyerId = :buyerId
             """)
-    long countDistinctCardIdByGameIdAndPlayerId(String gameId, String playerId);
+    long countDistinctCardIdByGameIdAndPlayerId(String gameId, String buyerId);
 
     @Query("""
             SELECT COUNT(c)
             FROM ActivityPlayerCard c
-            WHERE c.gameId = :gameId AND c.playerId = :playerId AND c.cardId = :cardId
+            WHERE c.gameId = :gameId AND c.buyerId = :buyerId AND c.cardId = :cardId
             """)
-    long countByGameIdAndPlayerIdAndCardId(String gameId, String playerId, String cardId);
+    long countByGameIdAndPlayerIdAndCardId(String gameId, String buyerId, String cardId);
 
-    List<ActivityPlayerCard> findByGameIdAndPlayerIdOrderByCreatedAtAsc(String gameId, String playerId);
+    List<ActivityPlayerCard> findByGameIdAndPlayerIdOrderByCreatedAtAsc(String gameId, String buyerId);
 }

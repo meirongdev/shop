@@ -21,7 +21,7 @@
 
 - `order.events.v1`
 - `wallet.transactions.v1`
-- `user.registered.v1`
+- `buyer.registered.v1`
 
 `WebhookEventListener` 只负责把消息解析为统一事件入口，随后交给 `WebhookDeliveryService#dispatchEvent(...)`：
 

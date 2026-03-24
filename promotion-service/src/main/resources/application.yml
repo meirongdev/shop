@@ -81,7 +81,7 @@ shop:
         - /swagger-ui
   kafka:
     wallet-topic: ${WALLET_TOPIC:wallet.transactions.v1}
-    user-registered-topic: ${USER_REGISTERED_TOPIC:user.registered.v1}
+    buyer-registered-topic: ${BUYER_REGISTERED_TOPIC:buyer.registered.v1}
   idempotency:
     bloom-filter:
       enabled: ${PROMOTION_IDEMPOTENCY_BF_ENABLED:true}

@@ -110,19 +110,19 @@ public class OrderEventListener {
     }
 
     private void handleOrderCompleted(OrderEventData data) {
-        String playerId = data.buyerId();
+        String buyerId = data.buyerId();
         double amount = data.totalAmount() != null ? data.totalAmount().doubleValue() : 0;
 
-        accountService.earnByRule(playerId, "PURCHASE", amount,
+        accountService.earnByRule(buyerId, "PURCHASE", amount,
                 "order-" + data.orderId(), "Purchase reward for order " + data.orderNo());
 
         try {
-            onboardingTaskService.completeTask(playerId, "FIRST_ORDER");
+            onboardingTaskService.completeTask(buyerId, "FIRST_ORDER");
         } catch (IllegalArgumentException | IllegalStateException exception) {
             log.debug("Onboarding task FIRST_ORDER not applicable: {}", exception.getMessage());
         }
 
-        ProfileInternalApi.ReferralRewardResult referralReward = resolveReferralReward(playerId);
+        ProfileInternalApi.ReferralRewardResult referralReward = resolveReferralReward(buyerId);
         if (referralReward.rewardIssued() && referralReward.referrerId() != null) {
             accountService.earnPoints(
                     referralReward.referrerId(),
@@ -132,7 +132,7 @@ public class OrderEventListener {
                     "Referral reward for invitee first order " + data.orderNo());
         }
 
-        log.info("Processed ORDER_COMPLETED for player={}, orderId={}", playerId, data.orderId());
+        log.info("Processed ORDER_COMPLETED for player={}, orderId={}", buyerId, data.orderId());
     }
 
     private ProfileInternalApi.ReferralRewardResult resolveReferralReward(String inviteeId) {
@@ -152,6 +152,7 @@ public class OrderEventListener {
         if (envelope == null || envelope.data() == null) {
             throw new IllegalArgumentException("Loyalty order event data is required");
         }
+        envelope.assertSupportedSchema(EventEnvelope.CURRENT_SCHEMA_VERSION);
         if (!StringUtils.hasText(envelope.data().orderId())) {
             throw new IllegalArgumentException("Loyalty orderId is required");
         }

@@ -8,7 +8,7 @@ import dev.meirong.shop.common.idempotency.IdempotencyGuard;
 import dev.meirong.shop.common.kafka.NonRetryableKafkaConsumerException;
 import dev.meirong.shop.common.kafka.RetryableKafkaConsumerException;
 import dev.meirong.shop.contracts.event.EventEnvelope;
-import dev.meirong.shop.contracts.event.UserRegisteredEventData;
+import dev.meirong.shop.contracts.event.BuyerRegisteredEventData;
 import dev.meirong.shop.promotion.domain.CouponEntity;
 import dev.meirong.shop.promotion.domain.CouponTemplateEntity;
 import dev.meirong.shop.promotion.domain.CouponRepository;
@@ -64,24 +64,24 @@ public class WelcomeCouponListener {
             autoCreateTopics = "true",
             exclude = NonRetryableKafkaConsumerException.class
     )
-    @KafkaListener(topics = "${shop.kafka.user-registered-topic}", groupId = "${spring.application.name}")
+    @KafkaListener(topics = "${shop.kafka.buyer-registered-topic}", groupId = "${spring.application.name}")
     @Transactional
-    public void onUserRegistered(String payload) {
+    public void onBuyerRegistered(String payload) {
         try {
-            EventEnvelope<UserRegisteredEventData> envelope = objectMapper.readValue(
+            EventEnvelope<BuyerRegisteredEventData> envelope = objectMapper.readValue(
                     payload, new TypeReference<>() {});
             validateEnvelope(envelope);
-            UserRegisteredEventData data = envelope.data();
-            String playerId = data.playerId();
-            String idempotencyKey = "WELCOME_COUPON:" + playerId;
+            BuyerRegisteredEventData data = envelope.data();
+            String buyerId = data.buyerId();
+            String idempotencyKey = "WELCOME_COUPON:" + buyerId;
             idempotencyGuard.executeOnce(
                     idempotencyKey,
                     () -> {
-                        issueWelcomeCoupons(playerId, idempotencyKey);
+                        issueWelcomeCoupons(buyerId, idempotencyKey);
                         return null;
                     },
                     () -> {
-                        log.info("Welcome coupons already issued for player={}, skipping duplicate event", playerId);
+                        log.info("Welcome coupons already issued for buyer={}, skipping duplicate event", buyerId);
                         return null;
                     });
         } catch (JsonProcessingException exception) {
@@ -98,8 +98,8 @@ public class WelcomeCouponListener {
         log.error("Welcome coupon event sent to DLT: {}", payload);
     }
 
-    private void issueWelcomeCoupons(String playerId, String idempotencyKey) {
-        String baseCode = "WELCOME-" + playerId.substring(0, Math.min(8, playerId.length())).toUpperCase();
+    private void issueWelcomeCoupons(String buyerId, String idempotencyKey) {
+        String baseCode = "WELCOME-" + buyerId.substring(0, Math.min(8, buyerId.length())).toUpperCase();
         Instant now = Instant.now();
 
         couponRepository.save(new CouponEntity(
@@ -132,29 +132,29 @@ public class WelcomeCouponListener {
                 1,
                 now.plus(14, ChronoUnit.DAYS)));
 
-        createWelcomeInstances(playerId, baseCode, now);
+        createWelcomeInstances(buyerId, baseCode, now);
         promotionIdempotencyKeyRepository.save(new PromotionIdempotencyKeyEntity(idempotencyKey));
-        log.info("Issued 3 welcome coupons for new user: player={}", playerId);
+        log.info("Issued 3 welcome coupons for new buyer: buyer={}", buyerId);
     }
 
-    private void createWelcomeInstances(String playerId, String baseCode, Instant now) {
+    private void createWelcomeInstances(String buyerId, String baseCode, Instant now) {
         CouponTemplateEntity fiveOffTemplate = ensureWelcomeTemplate(
                 "WELCOME-5OFF", "$5 Off Welcome", "FIXED", new BigDecimal("5.00"),
                 BigDecimal.ZERO, null, 0, 1, 14);
         couponTemplateService.issueToBuyerWithCode(
-                fiveOffTemplate.getId(), playerId, baseCode + "-5OFF-I", now.plus(14, ChronoUnit.DAYS));
+                fiveOffTemplate.getId(), buyerId, baseCode + "-5OFF-I", now.plus(14, ChronoUnit.DAYS));
 
         CouponTemplateEntity shippingTemplate = ensureWelcomeTemplate(
                 "WELCOME-SHIP", "Free Shipping", "FIXED", new BigDecimal("10.00"),
                 BigDecimal.ZERO, null, 0, 1, 30);
         couponTemplateService.issueToBuyerWithCode(
-                shippingTemplate.getId(), playerId, baseCode + "-SHIP-I", now.plus(30, ChronoUnit.DAYS));
+                shippingTemplate.getId(), buyerId, baseCode + "-SHIP-I", now.plus(30, ChronoUnit.DAYS));
 
         CouponTemplateEntity percentageTemplate = ensureWelcomeTemplate(
                 "WELCOME-9PCT", "9% Off Welcome", "PERCENTAGE", new BigDecimal("9.00"),
                 BigDecimal.ZERO, new BigDecimal("20.00"), 0, 1, 14);
         couponTemplateService.issueToBuyerWithCode(
-                percentageTemplate.getId(), playerId, baseCode + "-9PCT-I", now.plus(14, ChronoUnit.DAYS));
+                percentageTemplate.getId(), buyerId, baseCode + "-9PCT-I", now.plus(14, ChronoUnit.DAYS));
     }
 
     private CouponTemplateEntity ensureWelcomeTemplate(String code, String title, String discountType,
@@ -183,12 +183,13 @@ public class WelcomeCouponListener {
         }
     }
 
-    private void validateEnvelope(EventEnvelope<UserRegisteredEventData> envelope) {
+    private void validateEnvelope(EventEnvelope<BuyerRegisteredEventData> envelope) {
         if (envelope == null || envelope.data() == null) {
             throw new IllegalArgumentException("Welcome coupon event data is required");
         }
-        if (!StringUtils.hasText(envelope.data().playerId())) {
-            throw new IllegalArgumentException("Welcome coupon event playerId is required");
+        envelope.assertSupportedSchema(EventEnvelope.CURRENT_SCHEMA_VERSION);
+        if (!StringUtils.hasText(envelope.data().buyerId())) {
+            throw new IllegalArgumentException("Welcome coupon event buyerId is required");
         }
     }
 }

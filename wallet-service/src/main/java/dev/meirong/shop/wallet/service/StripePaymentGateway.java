@@ -24,14 +24,14 @@ public class StripePaymentGateway implements StripeGateway {
     }
 
     @Override
-    public PaymentReference createDeposit(String playerId, BigDecimal amount, String currency) {
+    public PaymentReference createDeposit(String buyerId, BigDecimal amount, String currency) {
         requireStripe();
         try {
             Stripe.apiKey = properties.stripeSecretKey();
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setAmount(toMinorUnits(amount))
                     .setCurrency(currency.toLowerCase())
-                    .putMetadata("playerId", playerId)
+                    .putMetadata("buyerId", buyerId)
                     .build();
             PaymentIntent intent = PaymentIntent.create(params);
             return new PaymentReference(intent.getId(), "STRIPE");
@@ -41,14 +41,14 @@ public class StripePaymentGateway implements StripeGateway {
     }
 
     @Override
-    public PaymentReference createWithdrawal(String playerId, BigDecimal amount, String currency) {
+    public PaymentReference createWithdrawal(String buyerId, BigDecimal amount, String currency) {
         requireStripe();
         try {
             Stripe.apiKey = properties.stripeSecretKey();
             PayoutCreateParams params = PayoutCreateParams.builder()
                     .setAmount(toMinorUnits(amount))
                     .setCurrency(currency.toLowerCase())
-                    .putMetadata("playerId", playerId)
+                    .putMetadata("buyerId", buyerId)
                     .build();
             Payout payout = Payout.create(params);
             return new PaymentReference(payout.getId(), "STRIPE");

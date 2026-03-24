@@ -24,17 +24,17 @@ public class AntiCheatGuard {
         this.meterRegistry = meterRegistry;
     }
 
-    public void check(ActivityGame game, String playerId, String ipAddress, String deviceFingerprint) {
-        if (playerId == null || playerId.isBlank()) {
+    public void check(ActivityGame game, String buyerId, String ipAddress, String deviceFingerprint) {
+        if (buyerId == null || buyerId.isBlank()) {
             return;
         }
-        checkPlayerRateLimit(game.getId(), playerId);
+        checkPlayerRateLimit(game.getId(), buyerId);
         checkIpRateLimit(game.getId(), ipAddress);
-        checkDeviceReuse(game.getId(), playerId, deviceFingerprint);
+        checkDeviceReuse(game.getId(), buyerId, deviceFingerprint);
     }
 
-    private void checkPlayerRateLimit(String gameId, String playerId) {
-        long count = incrementWithinWindow("activity:ac:player:%s:%s".formatted(gameId, playerId));
+    private void checkPlayerRateLimit(String gameId, String buyerId) {
+        long count = incrementWithinWindow("activity:ac:player:%s:%s".formatted(gameId, buyerId));
         if (count > properties.antiCheat().playerRequestsPerWindow()) {
             recordBlock("player_rate_limit");
             throw new BusinessException(CommonErrorCode.TOO_MANY_REQUESTS,
@@ -55,7 +55,7 @@ public class AntiCheatGuard {
         }
     }
 
-    private void checkDeviceReuse(String gameId, String playerId, String deviceFingerprint) {
+    private void checkDeviceReuse(String gameId, String buyerId, String deviceFingerprint) {
         if (!properties.antiCheat().deviceFingerprintEnabled()
                 || deviceFingerprint == null
                 || deviceFingerprint.isBlank()) {
@@ -64,11 +64,11 @@ public class AntiCheatGuard {
         String key = "activity:ac:device:%s:%s".formatted(gameId, deviceFingerprint);
         String existingPlayer = redisTemplate.opsForValue().get(key);
         if (existingPlayer == null) {
-            redisTemplate.opsForValue().set(key, playerId,
+            redisTemplate.opsForValue().set(key, buyerId,
                     Duration.ofHours(properties.antiCheat().deviceFingerprintTtlHours()));
             return;
         }
-        if (!existingPlayer.equals(playerId)) {
+        if (!existingPlayer.equals(buyerId)) {
             recordBlock("device_reuse");
             throw new BusinessException(CommonErrorCode.FORBIDDEN,
                     "Device fingerprint is already bound to another participant");

@@ -76,9 +76,27 @@ cd docs-site && npm install && npm start
 工程与技术栈统一标准见：
 
 - `docs/ENGINEERING-STANDARDS-2026.md`（2026 统一技术栈与微服务 Scaffold 标准）
+- `docs/COMPATIBILITY-DEVELOPMENT-STANDARD-2026.md`（版本升级 / 新特性开发兼容性规范与当前项目支持情况）
+- `docs/DEVELOPER-EXPERIENCE-STANDARD-2026.md`（CI、Makefile、git hooks、.editorconfig、archetype 开发流程）
+
+## Developer Experience
+
+推荐先看：
+
+```bash
+make help
+make install-hooks
+```
+
+常用入口：
+
+- `make verify`
+- `make test`
+- `make docs-build`
+- `make archetypes-install`
 
 ## 运行测试
 
 ```bash
-mvn test
+./mvnw test
 ```

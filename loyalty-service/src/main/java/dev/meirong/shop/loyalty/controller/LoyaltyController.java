@@ -42,18 +42,18 @@ public class LoyaltyController {
 
     @GetMapping(LoyaltyApi.ACCOUNT)
     public ApiResponse<LoyaltyApi.AccountResponse> getAccount(
-            @RequestHeader(TrustedHeaderNames.PLAYER_ID) String playerId) {
-        LoyaltyAccountEntity account = accountService.getOrCreateAccount(playerId);
+            @RequestHeader(TrustedHeaderNames.BUYER_ID) String buyerId) {
+        LoyaltyAccountEntity account = accountService.getOrCreateAccount(buyerId);
         return ApiResponse.success(toAccountResponse(account));
     }
 
     @GetMapping(LoyaltyApi.TRANSACTIONS)
     public ApiResponse<Page<LoyaltyApi.TransactionResponse>> getTransactions(
-            @RequestHeader(TrustedHeaderNames.PLAYER_ID) String playerId,
+            @RequestHeader(TrustedHeaderNames.BUYER_ID) String buyerId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Page<LoyaltyApi.TransactionResponse> result = accountService
-                .getTransactions(playerId, PageRequest.of(page, size))
+                .getTransactions(buyerId, PageRequest.of(page, size))
                 .map(this::toTransactionResponse);
         return ApiResponse.success(result);
     }
@@ -62,25 +62,25 @@ public class LoyaltyController {
 
     @PostMapping(LoyaltyApi.CHECKIN)
     public ApiResponse<LoyaltyApi.CheckinResponse> checkin(
-            @RequestHeader(TrustedHeaderNames.PLAYER_ID) String playerId) {
-        LoyaltyCheckinEntity checkin = checkinService.checkin(playerId);
+            @RequestHeader(TrustedHeaderNames.BUYER_ID) String buyerId) {
+        LoyaltyCheckinEntity checkin = checkinService.checkin(buyerId);
         return ApiResponse.success(toCheckinResponse(checkin));
     }
 
     @PostMapping(LoyaltyApi.CHECKIN_MAKEUP)
     public ApiResponse<LoyaltyApi.CheckinResponse> makeupCheckin(
-            @RequestHeader(TrustedHeaderNames.PLAYER_ID) String playerId,
+            @RequestHeader(TrustedHeaderNames.BUYER_ID) String buyerId,
             @Valid @RequestBody LoyaltyApi.MakeupCheckinRequest request) {
-        LoyaltyCheckinEntity checkin = checkinService.makeupCheckin(playerId, request.date());
+        LoyaltyCheckinEntity checkin = checkinService.makeupCheckin(buyerId, request.date());
         return ApiResponse.success(toCheckinResponse(checkin));
     }
 
     @GetMapping(LoyaltyApi.CHECKIN_CALENDAR)
     public ApiResponse<List<LoyaltyApi.CheckinResponse>> getCalendar(
-            @RequestHeader(TrustedHeaderNames.PLAYER_ID) String playerId,
+            @RequestHeader(TrustedHeaderNames.BUYER_ID) String buyerId,
             @RequestParam int year,
             @RequestParam int month) {
-        List<LoyaltyApi.CheckinResponse> result = checkinService.getCalendar(playerId, year, month)
+        List<LoyaltyApi.CheckinResponse> result = checkinService.getCalendar(buyerId, year, month)
                 .stream().map(this::toCheckinResponse).toList();
         return ApiResponse.success(result);
     }
@@ -96,20 +96,20 @@ public class LoyaltyController {
 
     @PostMapping(LoyaltyApi.REDEEM)
     public ApiResponse<LoyaltyApi.RedemptionResponse> redeem(
-            @RequestHeader(TrustedHeaderNames.PLAYER_ID) String playerId,
+            @RequestHeader(TrustedHeaderNames.BUYER_ID) String buyerId,
             @Valid @RequestBody LoyaltyApi.RedeemRequest request) {
         LoyaltyRedemptionEntity redemption = redemptionService.redeem(
-                playerId, request.rewardItemId(), request.quantity());
+                buyerId, request.rewardItemId(), request.quantity());
         return ApiResponse.success(toRedemptionResponse(redemption));
     }
 
     @GetMapping(LoyaltyApi.REDEMPTIONS)
     public ApiResponse<Page<LoyaltyApi.RedemptionResponse>> getRedemptions(
-            @RequestHeader(TrustedHeaderNames.PLAYER_ID) String playerId,
+            @RequestHeader(TrustedHeaderNames.BUYER_ID) String buyerId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Page<LoyaltyApi.RedemptionResponse> result = redemptionService
-                .getRedemptions(playerId, PageRequest.of(page, size))
+                .getRedemptions(buyerId, PageRequest.of(page, size))
                 .map(this::toRedemptionResponse);
         return ApiResponse.success(result);
     }
@@ -118,17 +118,17 @@ public class LoyaltyController {
 
     @GetMapping(LoyaltyApi.ONBOARDING_TASKS)
     public ApiResponse<List<LoyaltyApi.OnboardingTaskResponse>> getOnboardingTasks(
-            @RequestHeader(TrustedHeaderNames.PLAYER_ID) String playerId) {
-        List<LoyaltyApi.OnboardingTaskResponse> tasks = onboardingTaskService.getProgress(playerId)
+            @RequestHeader(TrustedHeaderNames.BUYER_ID) String buyerId) {
+        List<LoyaltyApi.OnboardingTaskResponse> tasks = onboardingTaskService.getProgress(buyerId)
                 .stream().map(this::toTaskResponse).toList();
         return ApiResponse.success(tasks);
     }
 
     @PostMapping(LoyaltyApi.ONBOARDING_COMPLETE)
     public ApiResponse<LoyaltyApi.OnboardingTaskResponse> completeTask(
-            @RequestHeader(TrustedHeaderNames.PLAYER_ID) String playerId,
+            @RequestHeader(TrustedHeaderNames.BUYER_ID) String buyerId,
             @Valid @RequestBody LoyaltyApi.CompleteTaskRequest request) {
-        OnboardingTaskProgressEntity progress = onboardingTaskService.completeTask(playerId, request.taskKey());
+        OnboardingTaskProgressEntity progress = onboardingTaskService.completeTask(buyerId, request.taskKey());
         return ApiResponse.success(toTaskResponse(progress));
     }
 
@@ -136,7 +136,7 @@ public class LoyaltyController {
 
     private LoyaltyApi.AccountResponse toAccountResponse(LoyaltyAccountEntity e) {
         return new LoyaltyApi.AccountResponse(
-                e.getPlayerId(), e.getTotalPoints(), e.getUsedPoints(),
+                e.getBuyerId(), e.getTotalPoints(), e.getUsedPoints(),
                 e.getBalance(), e.getTier(), e.getTierPoints());
     }
 

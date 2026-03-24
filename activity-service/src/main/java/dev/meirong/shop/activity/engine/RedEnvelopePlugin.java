@@ -67,7 +67,7 @@ public class RedEnvelopePlugin implements GamePlugin {
         List<Object> result = redisTemplate.execute(
                 GRAB_PACKET_SCRIPT,
                 List.of(packetsKey(ctx.gameId()), claimsKey(ctx.gameId())),
-                ctx.playerId());
+                ctx.buyerId());
         if (result == null || result.isEmpty()) {
             throw new BusinessException(CommonErrorCode.INTERNAL_ERROR, "Red envelope claim returned empty result");
         }

@@ -5,7 +5,6 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.github.resilience4j.retry.RetryRegistry;
 import io.github.resilience4j.timelimiter.TimeLimiterRegistry;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -20,12 +19,6 @@ import org.springframework.context.annotation.Bean;
 public class ResilienceAutoConfiguration {
 
     @Bean(destroyMethod = "close")
-    @ConditionalOnBean({
-            CircuitBreakerRegistry.class,
-            RetryRegistry.class,
-            BulkheadRegistry.class,
-            TimeLimiterRegistry.class
-    })
     @ConditionalOnMissingBean
     ResilienceHelper resilienceHelper(CircuitBreakerRegistry circuitBreakerRegistry,
                                       RetryRegistry retryRegistry,

@@ -18,11 +18,11 @@ export const options = {
   },
 };
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:30080';
+const BASE_URL = __ENV.BASE_URL || 'http://localhost:38080';
 
 export default function () {
   const marketplaceRes = http.post(
-    `${BASE_URL}/api/buyer/marketplace/list`,
+    `${BASE_URL}/public/buyer/v1/marketplace/list`,
     JSON.stringify({}),
     { headers: { 'Content-Type': 'application/json' } }
   );
@@ -31,7 +31,7 @@ export default function () {
   check(marketplaceRes, { 'marketplace 200': (r) => r.status === 200 });
 
   const categoryRes = http.post(
-    `${BASE_URL}/api/buyer/category/list`,
+    `${BASE_URL}/public/buyer/v1/category/list`,
     JSON.stringify({}),
     { headers: { 'Content-Type': 'application/json' } }
   );

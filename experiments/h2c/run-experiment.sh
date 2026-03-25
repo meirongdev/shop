@@ -3,12 +3,12 @@
 set -euo pipefail
 
 RESULTS_FILE="experiments/h2c/h2c-results.json"
-BASE_URL="${BASE_URL:-http://localhost:30080}"
+BASE_URL="${BASE_URL:-http://localhost:38080}"
 
 echo "=== 验证服务可用 ==="
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
   -H 'Content-Type: application/json' -d '{}' \
-  "${BASE_URL}/api/buyer/marketplace/list")
+  "${BASE_URL}/public/buyer/v1/marketplace/list")
 if [ "${HTTP_STATUS}" != "200" ]; then
   echo "❌ 服务不可达，返回 ${HTTP_STATUS}"; exit 1
 fi

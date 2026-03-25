@@ -3,13 +3,13 @@
 set -euo pipefail
 
 RESULTS_FILE="experiments/h2c/baseline-results.json"
-BASE_URL="${BASE_URL:-http://localhost:30080}"
+BASE_URL="${BASE_URL:-http://localhost:38080}"
 
 echo "=== 验证服务可用 ==="
-# 用实际 API 端点做可用性探测，避免 actuator 未在 NodePort 暴露的问题
+# 用公开端点做可用性探测（无需鉴权）
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
   -H 'Content-Type: application/json' -d '{}' \
-  "${BASE_URL}/api/buyer/marketplace/list")
+  "${BASE_URL}/public/buyer/v1/marketplace/list")
 if [ "${HTTP_STATUS}" != "200" ]; then
   echo "❌ marketplace/list 返回 ${HTTP_STATUS}，请确认 Kind 集群和所有 Pod 已就绪"
   exit 1

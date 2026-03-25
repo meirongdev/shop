@@ -1,6 +1,6 @@
 # Cilium CNI + NetworkPolicy 替换 Internal Token 设计
 
-> 版本：1.0 | 日期：2026-03-25
+> 版本：1.2 | 日期：2026-03-25
 
 ---
 
@@ -46,26 +46,64 @@ cilium install \
 cilium status --wait
 ```
 
-**前提依赖：** 本地需安装 `cilium` CLI（`brew install cilium-cli`）。
+**前提依赖：** 本地需安装 `cilium` CLI（`brew install cilium-cli`）。建议锁定版本以确保可重现：
+
+```bash
+# 推荐固定版本，避免 CLI 与 Cilium chart 版本不匹配
+CILIUM_CLI_VERSION=v0.16.22
+```
+
+**注意：** Kind 的 control-plane 节点带有 `node-role.kubernetes.io/control-plane:NoSchedule` taint。`cilium install` 通常会自动添加对应 toleration，但如果 `cilium status --wait` 超时，可以执行以下命令确认 Cilium DaemonSet 是否已在 control-plane 上调度：
+
+```bash
+kubectl -n kube-system get ds cilium -o jsonpath='{.spec.template.spec.tolerations}'
+```
+
+若缺少 toleration，需手动补充：`kubectl -n kube-system patch ds cilium --type=json -p '[{"op":"add","path":"/spec/template/spec/tolerations/-","value":{"key":"node-role.kubernetes.io/control-plane","operator":"Exists","effect":"NoSchedule"}}]'`
 
 ---
 
-## 二、NetworkPolicy 设计
+## 二、前置条件
 
-### 2.1 策略总览
+### 2.1 order-service manifest 缺失
 
-| 策略名 | 作用 |
-|--------|------|
-| `allow-infra-from-shop` | MySQL/Kafka/Redis/Meilisearch/Mailpit 对所有 shop Pod 开放 |
-| `allow-from-gateway` | 所有 app Pod 接受来自 `api-gateway` 的 ingress（含 Swagger 聚合） |
-| `allow-bff-to-domain` | BFF 调用 domain service 的 specific 规则 |
-| `allow-domain-to-domain` | 服务间直接调用规则（order→wallet、activity→loyalty 等） |
-| `allow-prometheus-scrape` | Prometheus 访问所有 Pod 的 `:8081` management 端口 |
-| `allow-mirrord-agent` | mirrord agent Pod 访问所有 Pod（本地开发） |
+`k8s/apps/platform.yaml` 当前**没有** `order-service` 的 Deployment 和 Service 资源（只存在于其他服务的 `ORDER_SERVICE_URL` 环境变量中）。若直接应用 NetworkPolicy，所有引用 `app: order-service` 的策略将选中空集，既不保护也不限制任何 Pod。
+
+**本方案实施前，必须先在 `platform.yaml` 中补充 `order-service` 的 Deployment + Service。** 这是独立的前置任务，不在本方案范围内，但属于硬性依赖。
+
+---
+
+## 三、NetworkPolicy 设计
+
+### 3.1 App Pod 标签约定
+
+为区分应用 Pod 与基础设施 Pod（MySQL、Kafka 等），所有应用 Pod 在 `platform.yaml` 的 Deployment `template.labels` 中新增：
+
+```yaml
+tier: app
+```
+
+这样 NetworkPolicy 可以用 `tier: app` 精确选定所有应用 Pod，避免 `allow-from-gateway` 策略意外覆盖基础设施 Pod。
+
+### 3.2 策略总览
+
+| 策略名 | 位置 | 作用 |
+|--------|------|------|
+| `allow-infra-from-shop` | `infra/base.yaml` | MySQL/Kafka/Redis/Meilisearch/Mailpit/otel-collector 对所有 shop Pod 开放 |
+| `allow-from-gateway` | `apps/platform.yaml` | 所有 **app** Pod（`tier: app`）接受来自 `api-gateway` 的 ingress（限端口 8080） |
+| `allow-from-buyer-bff` | `apps/platform.yaml` | buyer-bff 调用 domain service（限端口 8080） |
+| `allow-from-seller-bff` | `apps/platform.yaml` | seller-bff 调用 domain service（限端口 8080） |
+| `allow-portals-to-auth` | `apps/platform.yaml` | Portal 直接调用 auth-server |
+| `allow-order-to-wallet` | `apps/platform.yaml` | order-service → wallet-service |
+| `allow-activity-to-loyalty` | `apps/platform.yaml` | activity-service → loyalty-service |
+| `allow-subscription-to-order` | `apps/platform.yaml` | subscription-service → order-service |
+| `allow-config-watcher` | `infra/base.yaml` | config-watcher POST `/actuator/refresh` 到所有 app Pod（端口 8080） |
+| `allow-prometheus-scrape` | `infra/base.yaml` | Prometheus 访问所有 Pod 的 `:8081` management 端口 |
+| `allow-mirrord-agent` | `infra/base.yaml` | mirrord agent Pod 访问所有 Pod（本地开发） |
 
 移除现有 `allow-shop-internal`（放行所有）。
 
-### 2.2 服务调用图
+### 3.3 服务调用图
 
 ```
 外部
@@ -73,34 +111,37 @@ cilium status --wait
   └── seller-portal ─────────┤
                              ▼
                         api-gateway
-                        ├── /auth/**        → auth-server
-                        ├── /buyer/**       → buyer-portal（SSR 路由）
-                        ├── /seller/**      → seller-portal（SSR 路由）
-                        ├── /api/buyer/**   → buyer-bff
-                        ├── /api/seller/**  → seller-bff
-                        ├── /api/loyalty/** → loyalty-service
-                        ├── /api/activity/** → activity-service
-                        ├── /api/webhook/** → webhook-service
+                        ├── /auth/**             → auth-server
+                        ├── /buyer/**            → buyer-portal（SSR 路由）
+                        ├── /seller/**           → seller-portal（SSR 路由）
+                        ├── /api/buyer/**        → buyer-bff
+                        ├── /api/seller/**       → seller-bff
+                        ├── /api/loyalty/**      → loyalty-service
+                        ├── /api/activity/**     → activity-service
+                        ├── /api/webhook/**      → webhook-service
                         ├── /api/subscription/** → subscription-service
-                        └── /v3/api-docs/** → 所有服务（Swagger 聚合）
+                        └── /v3/api-docs/**      → 所有服务（Swagger 聚合）
 
-buyer-bff → profile-service, marketplace-service, order-service,
-            wallet-service, search-service, promotion-service
+buyer-bff  → profile-service, marketplace-service, order-service,
+             wallet-service, search-service, promotion-service
 
-seller-bff → marketplace-service, order-service, profile-service
+seller-bff → marketplace-service, order-service, profile-service,
+             wallet-service, promotion-service, search-service
 
-buyer-portal, seller-portal → auth-server（独立 OAuth 回调）
+buyer-portal, seller-portal → auth-server（OAuth 回调）
 
-order-service       → wallet-service
-activity-service    → loyalty-service
+order-service        → wallet-service
+activity-service     → loyalty-service
 subscription-service → order-service
 
 notification-service：纯 Kafka 消费，无 HTTP ingress
 ```
 
-### 2.3 具体 NetworkPolicy 资源
+### 3.4 具体 NetworkPolicy 资源
 
-**① 基础设施开放**
+**① 基础设施开放**（放入 `infra/base.yaml`，替换 `allow-shop-internal`）
+
+> **设计权衡：** Policy ① 允许 `shop` namespace 内所有 Pod 访问基础设施（MySQL、Kafka 等）。严格来说，Portal 和 BFF 无需直接连接 MySQL，但维护逐服务的精确 infra 权限清单成本过高且易出错。当前选择以运维简洁性为优先，接受这一宽松策略。
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -121,7 +162,7 @@ spec:
   policyTypes: [Ingress]
 ```
 
-**② Gateway 可达所有 App Pod**
+**② Gateway 可达所有 App Pod**（`tier: app` 精确选定，不覆盖基础设施 Pod；限端口 8080，防止 gateway 访问 actuator）
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -129,16 +170,20 @@ metadata:
   name: allow-from-gateway
   namespace: shop
 spec:
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      tier: app
   ingress:
     - from:
         - podSelector:
             matchLabels:
               app: api-gateway
+      ports:
+        - port: 8080
   policyTypes: [Ingress]
 ```
 
-**③ buyer-bff → domain services**
+**③ buyer-bff → domain services**（限端口 8080）
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -157,10 +202,12 @@ spec:
         - podSelector:
             matchLabels:
               app: buyer-bff
+      ports:
+        - port: 8080
   policyTypes: [Ingress]
 ```
 
-**④ seller-bff → domain services**
+**④ seller-bff → domain services**（限端口 8080）
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -172,12 +219,15 @@ spec:
     matchExpressions:
       - key: app
         operator: In
-        values: [marketplace-service, order-service, profile-service]
+        values: [marketplace-service, order-service, profile-service,
+                 wallet-service, promotion-service, search-service]
   ingress:
     - from:
         - podSelector:
             matchLabels:
               app: seller-bff
+      ports:
+        - port: 8080
   policyTypes: [Ingress]
 ```
 
@@ -203,36 +253,64 @@ spec:
   policyTypes: [Ingress]
 ```
 
-**⑥ 服务间直接调用**
+**⑥ 服务间直接调用（精确配对，独立策略防止交叉权限）**
 ```yaml
+# order-service → wallet-service only
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-domain-to-domain
+  name: allow-order-to-wallet
   namespace: shop
 spec:
   podSelector:
-    matchExpressions:
-      - key: app
-        operator: In
-        values: [wallet-service, loyalty-service, order-service]
+    matchLabels:
+      app: wallet-service
   ingress:
     - from:
         - podSelector:
             matchLabels:
-              app: order-service      # order → wallet
+              app: order-service
+  policyTypes: [Ingress]
+---
+# activity-service → loyalty-service only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-activity-to-loyalty
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: loyalty-service
+  ingress:
     - from:
         - podSelector:
             matchLabels:
-              app: activity-service   # activity → loyalty
+              app: activity-service
+  policyTypes: [Ingress]
+---
+# subscription-service → order-service only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-subscription-to-order
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: order-service
+  ingress:
     - from:
         - podSelector:
             matchLabels:
-              app: subscription-service  # subscription → order
+              app: subscription-service
   policyTypes: [Ingress]
 ```
 
 **⑦ Prometheus scrape**
+
+> 前提：Prometheus 部署在 `shop` namespace（`app: prometheus`，见 `infra/base.yaml`）。若将来迁移到独立 namespace，需同时添加 `namespaceSelector` 并与 `podSelector` 置于同一 `from` 条目（AND 语义）。
+
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -251,7 +329,28 @@ spec:
   policyTypes: [Ingress]
 ```
 
-**⑧ mirrord agent（本地开发）**
+**⑧ config-watcher → 所有 app Pod**（ConfigMap/Secret 变更时 POST `/actuator/refresh`）
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-config-watcher
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      tier: app
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: spring-cloud-kubernetes-configuration-watcher
+      ports:
+        - port: 8080
+  policyTypes: [Ingress]
+```
+
+**⑨ mirrord agent（本地开发）**
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -270,41 +369,49 @@ spec:
 
 ---
 
-## 三、关闭 Internal Token
+## 四、关闭 Internal Token
 
-`k8s/apps/platform.yaml` 的 `shop-shared-config` ConfigMap 新增一个 key：
+`k8s/apps/platform.yaml` 的 `shop-shared-config` ConfigMap 新增：
 
 ```yaml
 data:
   SHOP_SECURITY_INTERNAL_ENABLED: "false"
 ```
 
-所有服务通过 `envFrom.configMapRef` 继承该值，`InternalAccessFilter` 自动跳过校验，无需修改任何服务代码。
+**实现说明：** `InternalAccessFilterConfiguration` 的条件注解为：
 
-`shop-shared-secret` 中的 `SHOP_INTERNAL_TOKEN` 保留（Gateway 继续注入 header 也无影响，服务不再校验）。文档更新见 `docs/SECURITY-BASELINE-2026.md`。
+```java
+@ConditionalOnProperty(prefix = "shop.security.internal", name = "enabled", havingValue = "true")
+```
+
+当 `shop.security.internal.enabled` 不为 `true` 时，`InternalAccessFilter` Bean **不会被注册**（而非运行时跳过校验）。设置环境变量为 `"false"` 与不设置效果相同，但显式设置可以作为意图说明，让代码审查者清楚这是主动关闭而非遗漏。
+
+`shop-shared-secret` 中的 `SHOP_INTERNAL_TOKEN` 保留（Gateway 继续注入 header 无影响）。
 
 ---
 
-## 四、Egress 策略
+## 五、Egress 策略
 
 本方案不限制 Egress（保持 `egress: - {}`）。服务需要访问集群外部（Stripe webhook、SMTP relay 等），强制 Egress 策略会带来额外维护成本，超出本方案范围。
 
 ---
 
-## 五、变更文件清单
+## 六、变更文件清单
 
 | 文件 | 变更类型 | 说明 |
 |------|---------|------|
-| `kind/cluster-config.yaml` | 修改 | 禁用 kindnet，kubeProxyMode: none |
+| `kind/cluster-config.yaml` | 修改 | 禁用 kindnet，`kubeProxyMode: none` |
 | `kind/setup.sh` | 修改 | 新增 Cilium 安装步骤 |
-| `k8s/infra/base.yaml` | 修改 | 移除 `allow-shop-internal`，新增 ①⑦⑧ |
-| `k8s/apps/platform.yaml` | 修改 | shop-shared-config 新增 `SHOP_SECURITY_INTERNAL_ENABLED: "false"`；新增 NetworkPolicy ②③④⑤⑥ |
+| `k8s/infra/base.yaml` | 修改 | 移除 `allow-shop-internal`；新增策略 ①⑧⑨（infra、config-watcher、mirrord）；新增 Prometheus scrape ⑦ |
+| `k8s/apps/platform.yaml` | 修改 | 所有 app Deployment 新增 `tier: app` label；shop-shared-config 新增 `SHOP_SECURITY_INTERNAL_ENABLED: "false"`；新增 NetworkPolicy ②③④⑤⑥ |
+| `k8s/apps/platform.yaml`（前置） | **新增** | `order-service` Deployment + Service（硬性前置条件，独立任务） |
 | `docs/SECURITY-BASELINE-2026.md` | 已更新 | 已记录 Cilium/NetworkPolicy 演进说明 |
 
 ---
 
-## 六、本地开发注意事项
+## 七、本地开发注意事项
 
 - 重建集群前需先 `kind delete cluster`，再执行更新后的 `kind/setup.sh`
-- `cilium-cli` 需提前安装：`brew install cilium-cli`
-- mirrord 运行时会创建带 `app.kubernetes.io/name: mirrord` label 的 agent Pod，已通过 `allow-mirrord-agent` 策略放行
+- `cilium-cli` 需提前安装，建议锁定版本（`brew install cilium-cli` 或指定版本）
+- mirrord agent Pod 带有 `app.kubernetes.io/name: mirrord` label，已通过 `allow-mirrord-agent` 策略放行
+- Prometheus 当前在 `shop` namespace，若迁移到独立 namespace 需更新 `allow-prometheus-scrape` 策略（添加 `namespaceSelector` AND `podSelector` 组合）

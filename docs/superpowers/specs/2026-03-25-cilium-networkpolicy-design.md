@@ -97,7 +97,7 @@ tier: app
 | `allow-order-to-wallet` | `apps/platform.yaml` | order-service → wallet-service |
 | `allow-activity-to-loyalty` | `apps/platform.yaml` | activity-service → loyalty-service |
 | `allow-subscription-to-order` | `apps/platform.yaml` | subscription-service → order-service |
-| `allow-config-watcher` | `infra/base.yaml` | config-watcher POST `/actuator/refresh` 到所有 app Pod（端口 8080） |
+| `allow-config-watcher` | `infra/base.yaml` | config-watcher POST `/actuator/refresh` 到所有 app Pod（端口 8081） |
 | `allow-prometheus-scrape` | `infra/base.yaml` | Prometheus 访问所有 Pod 的 `:8081` management 端口 |
 | `allow-mirrord-agent` | `infra/base.yaml` | mirrord agent Pod 访问所有 Pod（本地开发） |
 

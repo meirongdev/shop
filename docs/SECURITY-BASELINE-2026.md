@@ -61,6 +61,13 @@
 - `shop-common` 提供 `InternalAccessFilter` 进行统一校验。
 - 当 `shop.security.internal.enabled=true` 时，内部接口必须校验 token。
 
+**网络隔离与 Internal Token 的关系**
+
+Internal Token 的核心价值是防止绕过 Gateway 直接访问内部服务（携带伪造的 `X-Buyer-Id` 等可信头）。其必要性取决于网络隔离程度：
+
+- 当前 Kind / 生产部署模型：所有 BFF 和 Domain Service 均为 `ClusterIP`，仅 `api-gateway` 通过 Ingress / NodePort 对外暴露。在此模型下，外部流量天然无法绕过 Gateway，Internal Token 起**纵深防御**作用（防集群内横向渗透）。
+- 若将来引入 **Istio / Cilium** 并启用 **NetworkPolicy** 或 **mTLS**，可以在网络层强制"只有 Gateway 的 workload identity 才能调用 BFF / Domain Service"，Internal Token 届时可以安全移除，避免维护共享密钥的额外成本。
+
 ### 3.2 Header 传播规则
 
 - Gateway → BFF / Domain：传播可信身份头 + `X-Internal-Token`
@@ -127,7 +134,7 @@
 ## 七、后续演进方向
 
 - JWT 从共享密钥逐步演进到非对称签名 + JWKS
-- 东西向从共享 internal token 演进到服务身份 / mTLS
+- 东西向从共享 internal token 演进到服务身份 / mTLS（引入 Istio / Cilium NetworkPolicy 或 mTLS 后，Internal Token 可安全移除）
 - 为 BFF / Gateway 增加统一限流、风控与审计策略
 - 为管理面增加更清晰的网络边界与最小暴露策略
 

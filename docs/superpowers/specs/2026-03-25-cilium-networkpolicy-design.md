@@ -1,6 +1,6 @@
 # Cilium CNI + NetworkPolicy 替换 Internal Token 设计
 
-> 版本：1.2 | 日期：2026-03-25
+> 版本：1.3 | 日期：2026-03-25
 
 ---
 
@@ -231,7 +231,7 @@ spec:
   policyTypes: [Ingress]
 ```
 
-**⑤ Portal → auth-server**
+**⑤ Portal → auth-server**（限端口 8080）
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -250,10 +250,12 @@ spec:
         - podSelector:
             matchLabels:
               app: seller-portal
+      ports:
+        - port: 8080
   policyTypes: [Ingress]
 ```
 
-**⑥ 服务间直接调用（精确配对，独立策略防止交叉权限）**
+**⑥ 服务间直接调用（精确配对，独立策略防止交叉权限，限端口 8080）**
 ```yaml
 # order-service → wallet-service only
 apiVersion: networking.k8s.io/v1
@@ -270,6 +272,8 @@ spec:
         - podSelector:
             matchLabels:
               app: order-service
+      ports:
+        - port: 8080
   policyTypes: [Ingress]
 ---
 # activity-service → loyalty-service only
@@ -287,6 +291,8 @@ spec:
         - podSelector:
             matchLabels:
               app: activity-service
+      ports:
+        - port: 8080
   policyTypes: [Ingress]
 ---
 # subscription-service → order-service only
@@ -304,6 +310,8 @@ spec:
         - podSelector:
             matchLabels:
               app: subscription-service
+      ports:
+        - port: 8080
   policyTypes: [Ingress]
 ```
 
@@ -330,6 +338,9 @@ spec:
 ```
 
 **⑧ config-watcher → 所有 app Pod**（ConfigMap/Secret 变更时 POST `/actuator/refresh`）
+
+> config-watcher 通过 `SPRING_CLOUD_KUBERNETES_CONFIGURATION_WATCHER_ACTUATORPORT: "8081"` 配置调用 management 端口 8081，因此这里开放的是 **8081**，而非业务端口 8080。
+
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -346,7 +357,7 @@ spec:
             matchLabels:
               app: spring-cloud-kubernetes-configuration-watcher
       ports:
-        - port: 8080
+        - port: 8081
   policyTypes: [Ingress]
 ```
 

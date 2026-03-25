@@ -1,11 +1,11 @@
 package dev.meirong.shop.buyerbff.config;
 
 import dev.meirong.shop.buyerbff.client.SearchServiceClient;
-import org.springframework.http.client.ClientHttpRequestFactory;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import java.net.http.HttpClient;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
@@ -15,15 +15,27 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 public class BuyerBffConfig {
 
     @Bean
-    RestClient.Builder restClientBuilder(BuyerClientProperties properties) {
-        return RestClient.builder()
-                .requestFactory(requestFactory(properties));
+    JdkClientHttpRequestFactory jdkClientHttpRequestFactory(BuyerClientProperties properties) {
+        HttpClient httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(properties.connectTimeout())
+                .build();
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
+        factory.setReadTimeout(properties.readTimeout());
+        return factory;
     }
 
     @Bean
-    SearchServiceClient searchServiceClient(BuyerClientProperties properties) {
+    RestClient.Builder restClientBuilder(JdkClientHttpRequestFactory jdkClientHttpRequestFactory) {
+        return RestClient.builder()
+                .requestFactory(jdkClientHttpRequestFactory);
+    }
+
+    @Bean
+    SearchServiceClient searchServiceClient(BuyerClientProperties properties,
+                                            JdkClientHttpRequestFactory jdkClientHttpRequestFactory) {
         RestClient searchRestClient = RestClient.builder()
-                .requestFactory(requestFactory(properties))
+                .requestFactory(jdkClientHttpRequestFactory)
                 .baseUrl(properties.searchServiceUrl())
                 .defaultHeader("X-Internal-Token", properties.internalToken())
                 .build();
@@ -31,12 +43,5 @@ public class BuyerBffConfig {
                 .builderFor(RestClientAdapter.create(searchRestClient))
                 .build();
         return factory.createClient(SearchServiceClient.class);
-    }
-
-    private ClientHttpRequestFactory requestFactory(BuyerClientProperties properties) {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Math.toIntExact(properties.connectTimeout().toMillis()));
-        factory.setReadTimeout(Math.toIntExact(properties.readTimeout().toMillis()));
-        return factory;
     }
 }

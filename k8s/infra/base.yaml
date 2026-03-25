@@ -481,20 +481,68 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-shop-internal
+  name: allow-infra-from-shop
   namespace: shop
 spec:
-  podSelector: {}
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: [mysql, kafka, redis, meilisearch, mailpit, otel-collector]
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: shop
-  egress:
-    - {}
-  policyTypes:
-    - Ingress
-    - Egress
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: shop
+spec:
+  podSelector: {}
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - port: 8081
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-config-watcher
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      tier: app
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: spring-cloud-kubernetes-configuration-watcher
+      ports:
+        - port: 8081
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-mirrord-agent
+  namespace: shop
+spec:
+  podSelector: {}
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: mirrord
+  policyTypes: [Ingress]
 ---
 apiVersion: v1
 kind: ServiceAccount

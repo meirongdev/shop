@@ -1,10 +1,10 @@
 package dev.meirong.shop.sellerbff.config;
 
-import org.springframework.http.client.ClientHttpRequestFactory;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import java.net.http.HttpClient;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 @Configuration(proxyBeanMethods = false)
@@ -12,24 +12,29 @@ import org.springframework.web.client.RestClient;
 public class SellerBffConfig {
 
     @Bean
-    RestClient.Builder restClientBuilder(SellerClientProperties properties) {
-        return RestClient.builder()
-                .requestFactory(requestFactory(properties));
+    JdkClientHttpRequestFactory jdkClientHttpRequestFactory(SellerClientProperties properties) {
+        HttpClient httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(properties.connectTimeout())
+                .build();
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
+        factory.setReadTimeout(properties.readTimeout());
+        return factory;
     }
 
     @Bean
-    RestClient searchRestClient(SellerClientProperties properties) {
+    RestClient.Builder restClientBuilder(JdkClientHttpRequestFactory jdkClientHttpRequestFactory) {
         return RestClient.builder()
-                .requestFactory(requestFactory(properties))
+                .requestFactory(jdkClientHttpRequestFactory);
+    }
+
+    @Bean
+    RestClient searchRestClient(SellerClientProperties properties,
+                                JdkClientHttpRequestFactory jdkClientHttpRequestFactory) {
+        return RestClient.builder()
+                .requestFactory(jdkClientHttpRequestFactory)
                 .baseUrl(properties.searchServiceUrl())
                 .defaultHeader("X-Internal-Token", properties.internalToken())
                 .build();
-    }
-
-    private ClientHttpRequestFactory requestFactory(SellerClientProperties properties) {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Math.toIntExact(properties.connectTimeout().toMillis()));
-        factory.setReadTimeout(Math.toIntExact(properties.readTimeout().toMillis()));
-        return factory;
     }
 }

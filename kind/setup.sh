@@ -19,7 +19,17 @@ else
   echo "✅ Kind cluster created"
 fi
 
-# 2. Build all Docker images
+# 2. Install Cilium CNI
+echo ""
+echo "🔒 Installing Cilium CNI..."
+cilium install \
+  --set kubeProxyReplacement=true \
+  --set k8sServiceHost=kind-control-plane \
+  --set k8sServicePort=6443
+cilium status --wait
+echo "✅ Cilium installed"
+
+# 3. Build all Docker images
 echo ""
 echo "🔨 Building Docker images..."
 bash "${ROOT_DIR}/scripts/build-images.sh"

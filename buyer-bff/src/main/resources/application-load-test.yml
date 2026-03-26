@@ -1,0 +1,121 @@
+# Load-test profile for buyer-bff
+# Activated via: SPRING_PROFILES_ACTIVE=load-test
+#
+# Neutralizes all Resilience4j layers for services under test so that k6
+# measures raw request latency/error-rate rather than CB fast-reject behaviour.
+#
+# Scope: ALL instances, so any endpoint tested won't be skewed by circuit
+# breaking, bulkhead shedding or time-limiter cancellation.
+#
+# DO NOT enable this profile in production.
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      searchService:
+        sliding-window-size: 100000
+        failure-rate-threshold: 100
+        slow-call-rate-threshold: 100
+        wait-duration-in-open-state: 1ms
+        permitted-number-of-calls-in-half-open-state: 100000
+      promotionService:
+        sliding-window-size: 100000
+        failure-rate-threshold: 100
+        slow-call-rate-threshold: 100
+        wait-duration-in-open-state: 1ms
+        permitted-number-of-calls-in-half-open-state: 100000
+      loyaltyService:
+        sliding-window-size: 100000
+        failure-rate-threshold: 100
+        slow-call-rate-threshold: 100
+        wait-duration-in-open-state: 1ms
+        permitted-number-of-calls-in-half-open-state: 100000
+      marketplaceService:
+        sliding-window-size: 100000
+        failure-rate-threshold: 100
+        slow-call-rate-threshold: 100
+        wait-duration-in-open-state: 1ms
+        permitted-number-of-calls-in-half-open-state: 100000
+      orderService:
+        sliding-window-size: 100000
+        failure-rate-threshold: 100
+        slow-call-rate-threshold: 100
+        wait-duration-in-open-state: 1ms
+        permitted-number-of-calls-in-half-open-state: 100000
+      profileService:
+        sliding-window-size: 100000
+        failure-rate-threshold: 100
+        slow-call-rate-threshold: 100
+        wait-duration-in-open-state: 1ms
+        permitted-number-of-calls-in-half-open-state: 100000
+      walletService:
+        sliding-window-size: 100000
+        failure-rate-threshold: 100
+        slow-call-rate-threshold: 100
+        wait-duration-in-open-state: 1ms
+        permitted-number-of-calls-in-half-open-state: 100000
+
+  retry:
+    instances:
+      searchService:
+        max-attempts: 1
+      promotionService:
+        max-attempts: 1
+      loyaltyService:
+        max-attempts: 1
+      marketplaceService:
+        max-attempts: 1
+      orderService:
+        max-attempts: 1
+      profileService:
+        max-attempts: 1
+      walletService:
+        max-attempts: 1
+
+  bulkhead:
+    instances:
+      searchService:
+        max-concurrent-calls: 10000
+        max-wait-duration: 0ms
+      promotionService:
+        max-concurrent-calls: 10000
+        max-wait-duration: 0ms
+      loyaltyService:
+        max-concurrent-calls: 10000
+        max-wait-duration: 0ms
+      marketplaceService:
+        max-concurrent-calls: 10000
+        max-wait-duration: 0ms
+      orderService:
+        max-concurrent-calls: 10000
+        max-wait-duration: 0ms
+      profileService:
+        max-concurrent-calls: 10000
+        max-wait-duration: 0ms
+      walletService:
+        max-concurrent-calls: 10000
+        max-wait-duration: 0ms
+
+  timelimiter:
+    instances:
+      searchService:
+        timeout-duration: 300s
+        cancel-running-future: false
+      promotionService:
+        timeout-duration: 300s
+        cancel-running-future: false
+      loyaltyService:
+        timeout-duration: 300s
+        cancel-running-future: false
+      marketplaceService:
+        timeout-duration: 300s
+        cancel-running-future: false
+      orderService:
+        timeout-duration: 300s
+        cancel-running-future: false
+      profileService:
+        timeout-duration: 300s
+        cancel-running-future: false
+      walletService:
+        timeout-duration: 300s
+        cancel-running-future: false

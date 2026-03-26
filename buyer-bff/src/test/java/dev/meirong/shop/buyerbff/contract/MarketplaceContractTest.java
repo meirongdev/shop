@@ -14,6 +14,7 @@ import dev.meirong.shop.common.resilience.ResilienceHelper;
 import dev.meirong.shop.contracts.api.MarketplaceApi;
 import dev.meirong.shop.contracts.api.PromotionApi;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import java.net.http.HttpClient;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
@@ -62,7 +63,7 @@ class MarketplaceContractTest {
         BuyerClientProperties properties = new BuyerClientProperties(
                 "test-token",
                 baseUrl, baseUrl, baseUrl, baseUrl, baseUrl, baseUrl, baseUrl,
-                Duration.ofHours(48), Duration.ofSeconds(2), Duration.ofSeconds(5));
+                Duration.ofHours(48), HttpClient.Version.HTTP_1_1, Duration.ofSeconds(2), Duration.ofSeconds(5));
 
         ResilienceHelper resilienceHelper = Mockito.mock(ResilienceHelper.class);
         Mockito.doAnswer(inv -> ((Supplier<?>) inv.getArgument(1)).get())

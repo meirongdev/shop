@@ -17,6 +17,7 @@ import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
 import dev.meirong.shop.common.resilience.ResilienceHelper;
 import dev.meirong.shop.contracts.api.MarketplaceApi;
+import java.net.http.HttpClient;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.function.Function;
@@ -55,6 +56,7 @@ class BuyerAggregationServiceTest {
                         "http://search",
                         "http://loyalty",
                         Duration.ofHours(48),
+                        HttpClient.Version.HTTP_1_1,
                         Duration.ofSeconds(2),
                         Duration.ofSeconds(5)),
                 resilienceHelper,

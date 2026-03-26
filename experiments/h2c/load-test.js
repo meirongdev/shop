@@ -12,13 +12,10 @@ export const options = {
     { duration: '60s', target: 10 },  // steady state
     { duration: '15s', target: 0  },  // ramp-down
   ],
-  // Thresholds are informational only (no abort). Both HTTP/1.1 and h2c
-  // runs are driven with the load-test Spring profile so CB/bulkhead/
-  // timelimiter do not interfere with the measurements.
+  // Only enforce zero request errors. Latency/throughput are reported in the
+  // summary and documented in FINDINGS.md; they should not make k6 exit non-zero.
   thresholds: {
-    bff_latency_ms: ['p(95)<500'],
-    // error_rate threshold intentionally removed: h2c has real Tomcat
-    // FLOW_CONTROL_ERROR failures we want to measure, not hide.
+    error_rate: ['rate==0'],
   },
 };
 

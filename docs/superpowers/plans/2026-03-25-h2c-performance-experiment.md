@@ -10,6 +10,33 @@
 
 ---
 
+## 执行结果（2026-03-26）
+
+本计划已完成，但执行过程中有几个重要偏差，必须补充说明：
+
+- **Tomcat h2c 路径不可用**：JDK `HttpClient` 并发流下会稳定打出 `FLOW_CONTROL_ERROR`，Tomcat 10.1 与 11.0.20 均复现，因此最终实验服务端改为 **Undertow**
+- **原始真实业务 workload 结论是“h2c 不一定赢”**：在 `buyer-bff -> marketplace-service` 的单下游、小 payload 请求上，修复后的 Undertow+h2c 虽然实现了 `0%` 错误率，但只在 `avg latency / throughput` 上略优，`p95` 反而略差
+- **正例实验也已补齐**：通过 `load-test` 专用 `marketplace-burst` fan-out 端点，加上 `BUYER_JDK_JAVA_OPTIONS='-Djdk.httpclient.connectionPoolSize=1'` 构造“同源 fan-out + 连接预算受限”场景，得到一个 `0%` 错误、h2c 明显优于 HTTP/1.1 的稳定结果
+- **结论归档位置**：以 `experiments/h2c/FINDINGS.md` 为最终权威结论文档；本文档保留为实施计划与落地偏差记录
+
+最终正例参数为：
+
+- `fanout=4`
+- `TARGET_VUS=2`
+- `5s ramp + 20s steady`
+- `BUYER_JDK_JAVA_OPTIONS='-Djdk.httpclient.connectionPoolSize=1'`
+
+最终正例结果为：
+
+| 指标 | HTTP/1.1 | h2c | 变化 |
+|------|----------|-----|------|
+| avg latency | 8.56 ms | 4.30 ms | -49.70% |
+| p95 latency | 22.93 ms | 8.92 ms | -61.09% |
+| 吞吐量 | 201.88 req/s | 397.90 req/s | +97.10% |
+| 错误率 | 0.00% | 0.00% | 0 |
+
+---
+
 ## 文件清单
 
 | 操作 | 文件 | 说明 |

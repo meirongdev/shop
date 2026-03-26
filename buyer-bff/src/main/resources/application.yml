@@ -74,6 +74,7 @@ shop:
     search-service-url: ${SEARCH_SERVICE_URL:http://search-service:8080}
     loyalty-service-url: ${LOYALTY_SERVICE_URL:http://loyalty-service:8080}
     guest-cart-ttl: ${BUYER_GUEST_CART_TTL:48h}
+    http-version: ${BUYER_BFF_HTTP_VERSION:HTTP_1_1}
     connect-timeout: ${BUYER_BFF_CONNECT_TIMEOUT:2s}
     read-timeout: ${BUYER_BFF_READ_TIMEOUT:5s}
 resilience4j:

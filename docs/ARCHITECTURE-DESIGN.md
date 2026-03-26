@@ -280,6 +280,25 @@ Outbox Poller (5s):
 
 ---
 
+### 3.7 API 合约与内部模型 (DTO vs. Domain Model)
+
+**当前实践**：
+在 `order-service` 和 `marketplace-service` 等领域服务中，Controller 和 Application Service 直接使用 `shop-contracts` 中定义的 Record 对象（DTO）作为方法参数和返回值。
+
+**架构权衡**：
+- **优点**：极高的开发效率，减少了 DTO -> Domain -> Entity 的冗余转换，代码结构简洁，适合 CRUD 较多或业务逻辑尚在演进初期的服务。
+- **缺点**：内部业务逻辑与外部接口强耦合。若合约发生破坏性变更，需同步大规模重构内部逻辑；且复杂的业务规则（如多版本 API 支持）难以在单一模型中优雅实现。
+
+**演进原则**：
+1. **充血实体（Rich Entity）**：尽管没有独立的 POJO 领域层，但必须将状态流转和核心业务逻辑留在 JPA Entity 中（如 `order.markPaid()`），避免 Application Service 变成臃肿的“过程式脚本”。
+2. **触发隔离的信号**：当出现以下情况时，必须引入独立的内部领域模型（Domain Model）：
+   - 服务需要同时支持多个不兼容的 API 版本（如 v1 和 v2）。
+   - 业务逻辑复杂度导致单个 Entity 无法承载，需要多个聚合根协作。
+   - DTO 的字段变更频繁导致非相关的业务计算代码被迫修改。
+3. **查询路径建议**：对于纯查询（Read-only）路径，鼓励继续直接映射到合约 DTO，以保持极致的简洁性。
+
+---
+
 ## 四、关键流程
 
 ### 4.1 游客下单流程

@@ -16,7 +16,7 @@
 
 - `auth-server`：JWT 登录、Google 社交登录、guest buyer token
 - `api-gateway`：YAML 路由、JWT 校验、Trusted Headers、Redis Lua 限流、Canary、`/api/**` 与 `/public/**` CORS
-- `buyer-portal` / `seller-portal`：Kotlin + Thymeleaf 门户
+- `buyer-portal`：Kotlin + Thymeleaf 买家门户
 
 ### 购物主链路
 

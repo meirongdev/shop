@@ -142,7 +142,6 @@
 | `webhook-service` | 8093 | Java 25 | 开放平台 Webhook：事件订阅、HMAC 签名、重试推送 |
 | `subscription-service` | 8094 | Java 25 | 订阅计划管理、自动续费 |
 | `buyer-portal` | — | Kotlin | 买家门户 SSR（经 api-gateway 访问） |
-| `seller-portal` | — | Kotlin | 卖家门户 SSR（经 api-gateway 访问） |
 
 > 端口为外部（host）映射端口，仅供开发直连。生产环境所有流量经 api-gateway (:8080) 统一入口。
 > 详细模块归属说明见 `docs/services/SERVICE-DEPENDENCY-MAP.md`
@@ -440,7 +439,6 @@ activity-service（弹性配置）：
 
 Ingress:
   shop.example.com          → buyer-portal
-  seller.shop.example.com   → seller-portal
   api.shop.example.com      → api-gateway
 
 Storage:

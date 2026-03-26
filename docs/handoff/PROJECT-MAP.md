@@ -178,26 +178,21 @@
 - `templates/buyer-activities.html`
 - `templates/buyer-activity-detail.html`
 
-### `seller-portal`
+### KMP `seller-app`
+
+卖家管理端由 KMP 模块承载（取代原 seller-portal SSR 服务），覆盖 Web WASM、Android、iOS 三端。
 
 功能：
 
-- seller 登录
-- dashboard
-- 商品管理
-- 订单履约
-- promotion / coupon 管理
-- 店铺设置
+- seller 登录（通过 `kmp/feature-auth`）
+- dashboard / 商品管理 / 订单履约 / promotion 管理 / 店铺设置
 
-关键文件：
+关键模块：
 
-- `service/SellerPortalApiClient.kt`
-- `controller/SellerPortalController.kt`
-- `templates/seller-dashboard.html`
-- `templates/seller-products.html`
-- `templates/seller-orders.html`
-- `templates/seller-promotions.html`
-- `templates/seller-shop.html`
+- `kmp/seller-app`（Web WASM 入口）
+- `kmp/seller-android-app`（Android 入口）
+- `kmp/feature-*`（共享业务逻辑）
+- 后端：`seller-bff`（`/api/seller/**`）
 
 ---
 

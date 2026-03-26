@@ -31,7 +31,8 @@ title: 扩展能力与二次开发
 | `search-service` | 搜索封装、索引配置、特性开关 | 调整排序、分词、联想词策略 |
 | `webhook-service` | 投递服务、签名、退避参数 | 换签名方式、增加 callback 策略 |
 | `subscription-service` | 生命周期状态、续费任务 | 加新订阅计划、续费窗口或试用态 |
-| `buyer-portal` / `seller-portal` | API client、Controller、Thymeleaf | 扩页面、表单流程、模板组件 |
+| `buyer-portal` | API client、Controller、Thymeleaf | 扩页面、表单流程、模板组件 |
+| KMP `seller-app` | feature 模块、`SellerApi` 契约 | 新卖家功能页面、seller-bff 新聚合接口 |
 
 ## 三种最常见的扩展路线
 

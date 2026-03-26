@@ -965,66 +965,6 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: seller-portal
-  namespace: shop
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: seller-portal
-  template:
-    metadata:
-      labels:
-        app: seller-portal
-        tier: app
-    spec:
-      containers:
-        - name: seller-portal
-          image: shop/seller-portal:dev
-          imagePullPolicy: IfNotPresent
-          env:
-            - name: AUTH_BASE_URL
-              value: http://auth-server:8080
-            - name: GATEWAY_BASE_URL
-              value: http://api-gateway:8080
-          envFrom:
-            - configMapRef:
-                name: shop-shared-config
-          ports:
-            - containerPort: 8080
-            - containerPort: 8081
-          readinessProbe:
-            httpGet:
-              path: /actuator/health/readiness
-              port: 8081
-            initialDelaySeconds: 20
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /actuator/health/liveness
-              port: 8081
-            initialDelaySeconds: 30
-            periodSeconds: 15
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: seller-portal
-  namespace: shop
-spec:
-  selector:
-    app: seller-portal
-  ports:
-    - name: http
-      port: 8080
-      targetPort: 8080
-    - name: management
-      port: 8081
-      targetPort: 8081
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: api-gateway
   namespace: shop
 spec:
@@ -1217,7 +1157,7 @@ spec:
         - port: 8080
   policyTypes: [Ingress]
 ---
-# ⑤ buyer-portal, seller-portal → auth-server (port 8080 only)
+# ⑤ buyer-portal → auth-server (port 8080 only)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -1232,9 +1172,6 @@ spec:
         - podSelector:
             matchLabels:
               app: buyer-portal
-        - podSelector:
-            matchLabels:
-              app: seller-portal
       ports:
         - port: 8080
   policyTypes: [Ingress]

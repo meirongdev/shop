@@ -25,15 +25,17 @@
 | `api-gateway` | 统一 northbound 入口、JWT 校验、Trusted Headers 注入、限流、灰度、响应关联头 | Spring Cloud Gateway Server MVC、Spring Security、Redis Lua、Micrometer/OTLP | `application.yml` 路由定义、`filter/` 下自定义过滤器、`GatewayProperties` 限流阈值、响应头暴露策略 | 把安全、流量治理、追踪关联统一收口，避免各服务重复实现 |
 | `auth-server` | 登录、JWT 签发、Google/Apple/Otp、guest token、注册后联动 profile | Spring Boot、Spring Security、JPA、Redis、Kafka | `SmsGateway` 接口、`SocialLoginService`、`JwtTokenService`、`AuthProperties` / `AuthOtpProperties` / `AuthSmsProperties` | 把身份、令牌和认证方式集中治理，避免业务服务耦合登录细节 |
 | `buyer-bff` | 买家聚合、游客购物流、购物车/结账编排、订单与积分中心入口 | Spring Boot、RestClient、Virtual Threads、Resilience4j、Redis | `BuyerBffConfig` 中新增下游客户端、`BuyerAggregationService` 编排逻辑、`GuestCartStore`、超时与熔断参数 | 在不侵入领域事实的前提下组合多个域服务，控制用户面接口粒度 |
-| `seller-bff` | 卖家工作台聚合、商品/订单/促销管理编排 | Spring Boot、RestClient、Virtual Threads | `SellerBffConfig`、`SellerAggregationService`、搜索专用 `RestClient`、超时配置 | 把卖家侧查询与轻量编排集中在一层，降低 Portal 与领域服务耦合 |
-| `buyer-portal` | 买家 SSR 门户、表单与模板渲染、会话态 UI 入口 | Kotlin、Spring Boot、Thymeleaf | `BuyerPortalApiClient`、Controller、Thymeleaf 模板、条件渲染与特性开关 | 在不引入前后端分离复杂度的前提下快速交付买家页面 |
-| `seller-portal` | 卖家 SSR 门户、商品/订单/促销后台页面 | Kotlin、Spring Boot、Thymeleaf | `SellerPortalApiClient`、Controller、Thymeleaf 模板、表单处理 | 用 SSR 保持管理端页面交付速度，并复用后端统一安全链路 |
+| `seller-bff` | 卖家工作台聚合、商品/订单/促销管理编排 | Spring Boot、RestClient、Virtual Threads | `SellerBffConfig`、`SellerAggregationService`、搜索专用 `RestClient`、超时配置 | 把卖家侧查询与轻量编排集中在一层，降低前端与领域服务耦合 |
+| `buyer-portal` | 买家 SSR 门户、表单与模板渲染、会话态 UI 入口 | Kotlin、Spring Boot、Thymeleaf | `BuyerPortalApiClient`、Controller、Thymeleaf 模板、条件渲染与特性开关 | 在不引入前后端分离复杂度的前提下快速交付买家页面，并保持 SEO 友好 |
+| KMP `seller-app` | 卖家管理端，Web WASM / Android / iOS 三端统一 | Kotlin Multiplatform、Compose Multiplatform、Ktor Client | `kmp/feature-*` 模块、`kmp/core` 共享网络与 token 管理、`kmp/ui-shared` 共享组件 | 无 SEO 需求的管理后台用 KMP 一套代码覆盖三端，节省维护成本 |
 
 ### 这一层推荐怎样扩展
 
 - **入口治理能力**优先放在 `api-gateway`：新增公开路由、限流白名单、灰度 header、统一追踪头时，不要散落到下游服务。
 - **聚合逻辑**优先放在 BFF：新增“买家首页组合接口”“卖家看板组合接口”时，复用 `RestClient + Virtual Threads + timeout` 模式，而不是把跨域编排塞回领域服务。
 - **认证方式**优先放在 `auth-server`：SMS、社交登录、新 claims 方案都应沿着 `SmsGateway`、`SocialLoginService`、`JwtTokenService` 扩展，而不是让 Gateway/BFF 自己生成身份信息。
+- **买家端新页面**优先在 `buyer-portal` 的 Thymeleaf 模板层扩展；SEO 关键页（商品列表、详情）保持 SSR。
+- **卖家端新功能**优先在 `kmp/feature-*` 中以 KMP 模块实现，后端 BFF 接口补充在 `seller-bff`，三端（Web WASM / Android / iOS）共享同一份 feature 代码。
 
 ---
 

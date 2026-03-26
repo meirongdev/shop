@@ -418,7 +418,6 @@ data:
               - webhook-service:8081
               - subscription-service:8081
               - buyer-portal:8081
-              - seller-portal:8081
       - job_name: kafka-exporter
         static_configs:
           - targets:

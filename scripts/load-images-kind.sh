@@ -19,7 +19,6 @@ modules=(
   webhook-service
   subscription-service
   buyer-portal
-  seller-portal
 )
 
 for module in "${modules[@]}"; do

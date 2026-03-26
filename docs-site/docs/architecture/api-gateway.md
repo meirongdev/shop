@@ -13,7 +13,6 @@ title: API Gateway
 |---------|---------|---------|
 | `/auth/**` | auth-server | 无 |
 | `/buyer/**` | buyer-portal | 无 |
-| `/seller/**` | seller-portal | 无 |
 | `/api/buyer/**` | buyer-bff | JWT |
 | `/api/seller/**` | seller-bff | JWT |
 | `/api/loyalty/**` | loyalty-service | JWT |

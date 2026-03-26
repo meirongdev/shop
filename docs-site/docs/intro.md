@@ -25,7 +25,7 @@ title: 项目概览
 | BFF | `buyer-bff`、`seller-bff` | RestClient、Virtual Threads、局部 Resilience4j | 面向端侧聚合下游接口，但不持有领域事实 |
 | Domain | `profile`、`marketplace`、`order`、`wallet`、`promotion`、`loyalty`、`activity`、`subscription` | Spring MVC、JPA、Flyway、MySQL、Kafka、Redis/Redisson | 各自独立拥有业务事实、状态机、规则与调度 |
 | Worker / Integration | `notification`、`webhook`、`search` | Kafka、Thymeleaf、Meilisearch、重试任务 | 异步通知、对外回调、搜索投影、开放能力 |
-| Portal | `buyer-portal`、`seller-portal` | Kotlin、Thymeleaf | 用 SSR 快速交付买家与卖家门户 |
+| Portal | `buyer-portal` | Kotlin、Thymeleaf | 用 SSR 快速交付买家门户，SEO 友好，支持游客模式 |
 
 ## 技术如何解决架构问题
 

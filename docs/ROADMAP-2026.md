@@ -529,7 +529,7 @@ activity.participated.v1  activity.groupbuy.formed.v1
 |------|------|
 | ✅ 店铺主页（自定义 Logo / Banner / 介绍） | seller-profile 增加 shop 字段，V3 migration |
 | ✅ 商家评分（服务分、质量分、物流分） | avg_rating + total_sales 聚合字段 |
-| ✅ 商家店铺管理 | seller-portal Shop Settings 页面 |
+| ✅ 商家店铺管理 | KMP seller-app Shop Settings 页面 |
 | ✅ 买家浏览商家店铺 | buyer-portal 店铺展示页面 |
 | ⬜ 商家入驻在线申请 → 审核 → 开店 | 需额外审核工作流 |
 
@@ -652,8 +652,8 @@ Phase 5: 平台扩张 (P3)  ──→  Phase 6: AI & 生态 (P3)
 | **notification-service** | **8092** | dev 直连 |
 | webhook-service | 8093 | dev 直连 |
 | subscription-service | 8094 | dev 直连 |
-| buyer-portal | — | 仅通过 gateway 访问 |
-| seller-portal | — | 仅通过 gateway 访问 |
+| buyer-portal | — | 仅通过 gateway 访问（SSR，SEO 友好） |
+| KMP seller-app | — | Web WASM / Android / iOS（经 gateway `/api/seller/**`） |
 
 > 所有服务容器内均监听 8080（应用）+ 8081（management/actuator）。外部端口仅供本地开发直接访问，生产环境通过 api-gateway 统一入口。
 
@@ -664,9 +664,12 @@ Phase 5: 平台扩张 (P3)  ──→  Phase 6: AI & 生态 (P3)
 ### 12.1 前端现代化
 
 ```
-Phase 1 (当前)：保留 Kotlin + Thymeleaf SSR，专注功能交付
-Phase 3 (Q3)：buyer-portal 迁移 Next.js 15（ISR + CSR 混合）
-Phase 4 (Q4)：seller-portal 迁移 Nuxt 4（SPA）
+Phase 1 (当前)：
+  - buyer-portal：保留 Kotlin + Thymeleaf SSR，SEO 友好，支持游客模式
+  - seller-app：KMP (Compose Multiplatform) 覆盖 Web WASM / Android / iOS，卖家无 SEO 需求
+
+Phase 3 (Q3)：buyer-portal 可选 Next.js 15 ISR + CSR 混合（进一步增强 SEO）
+Phase 4 (Q4)：buyer KMP app 完善 iOS 和 Android 的原生体验
 ```
 
 ### 12.2 搜索演进

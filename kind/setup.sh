@@ -64,7 +64,7 @@ kubectl -n shop patch svc api-gateway -p '{"spec":{"type":"NodePort","ports":[{"
 # 6. Wait for core services
 echo ""
 echo "⏳ Waiting for services to become ready (this may take 2-3 minutes)..."
-for svc in auth-server api-gateway buyer-bff seller-bff profile-service promotion-service wallet-service marketplace-service order-service search-service notification-service loyalty-service activity-service webhook-service subscription-service buyer-portal seller-portal; do
+for svc in auth-server api-gateway buyer-bff seller-bff profile-service promotion-service wallet-service marketplace-service order-service search-service notification-service loyalty-service activity-service webhook-service subscription-service buyer-portal; do
   kubectl -n shop wait --for=condition=ready pod -l app=${svc} --timeout=180s 2>/dev/null || echo "⚠️  ${svc} not ready yet"
 done
 

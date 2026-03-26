@@ -33,7 +33,6 @@
         <module>webhook-service</module>
         <module>subscription-service</module>
         <module>buyer-portal</module>
-        <module>seller-portal</module>
   </modules>
   <properties>
     <java.version>25</java.version>

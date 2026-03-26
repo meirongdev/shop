@@ -573,7 +573,7 @@ Phase 2：
   + buyer-bff 结账流程调用此接口
 
 Phase 3：
-  + 活动管理 UI（seller-portal）
+  + 活动管理 UI（KMP seller-app）
   + 秒杀活动（FlashSale + Redis 库存计数）
   + 积分加倍活动（与 loyalty-service 联动）
 ```

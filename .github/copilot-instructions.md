@@ -20,14 +20,14 @@ Lint/static-analysis note: there is no dedicated Maven lint plugin configured (n
 - `api-gateway` is the edge (Spring Cloud Gateway/WebFlux). It routes:
   - `/auth/**` -> `auth-server`
   - `/buyer/**` -> `buyer-portal`
-  - `/seller/**` -> `seller-portal`
   - `/api/buyer/**` -> `buyer-bff` (with `stripPrefix(1)`)
   - `/api/seller/**` -> `seller-bff` (with `stripPrefix(1)`)
 - `auth-server` issues JWTs; gateway validates JWT for `/api/**`.
 - BFFs (`buyer-bff`, `seller-bff`) aggregate downstream domain services via `RestClient`, often with virtual threads.
 - Domain services own their own MySQL schema and Flyway migrations (`profile`, `promotion`, `wallet`, `marketplace`, `order`).
 - Event flow: `wallet-service` writes outbox records in DB, scheduled publisher emits to Kafka, `promotion-service` consumes wallet topic.
-- Portals (`buyer-portal`, `seller-portal`) are Kotlin + Thymeleaf apps calling gateway APIs (`/api` + contract paths).
+- `buyer-portal` is a Kotlin + Thymeleaf SSR app calling gateway APIs (`/api` + contract paths); kept for SEO and guest-mode buyer pages.
+- Seller UI is handled by the **KMP `seller-app`** (Kotlin Multiplatform + Compose Multiplatform), targeting Web WASM, Android, and iOS; it calls `seller-bff` via `/api/seller/**`.
 
 ## Key repository conventions
 
@@ -47,4 +47,5 @@ Lint/static-analysis note: there is no dedicated Maven lint plugin configured (n
   - Prometheus endpoint exposed, OTLP tracing configured, structured logstash console format.
 - Language split:
   - Java for gateway/auth/BFF/domain/shared modules.
-  - Kotlin mainly for `buyer-portal` and `seller-portal`.
+  - Kotlin for `buyer-portal` (Spring Boot + Thymeleaf SSR).
+  - Kotlin Multiplatform (Compose Multiplatform) for `kmp/seller-app` and `kmp/buyer-app` (Web WASM / Android / iOS).

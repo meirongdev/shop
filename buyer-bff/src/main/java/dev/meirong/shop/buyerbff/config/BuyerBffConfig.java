@@ -17,7 +17,7 @@ public class BuyerBffConfig {
     @Bean
     JdkClientHttpRequestFactory jdkClientHttpRequestFactory(BuyerClientProperties properties) {
         HttpClient httpClient = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2)
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(properties.connectTimeout())
                 .build();
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);

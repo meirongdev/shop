@@ -4,11 +4,14 @@ set -euo pipefail
 
 RESULTS_FILE="experiments/h2c/h2c-results.json"
 BASE_URL="${BASE_URL:-http://localhost:38080}"
+INTERNAL_TOKEN="${INTERNAL_TOKEN:-local-dev-internal-token-change-me}"
 
 echo "=== 验证服务可用 ==="
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-  -H 'Content-Type: application/json' -d '{}' \
-  "${BASE_URL}/public/buyer/v1/marketplace/list")
+  -H 'Content-Type: application/json' \
+  -H "X-Internal-Token: ${INTERNAL_TOKEN}" \
+  -d '{}' \
+  "${BASE_URL}/buyer/v1/marketplace/list")
 if [ "${HTTP_STATUS}" != "200" ]; then
   echo "❌ 服务不可达，返回 ${HTTP_STATUS}"; exit 1
 fi
@@ -22,6 +25,7 @@ read -r
 echo "=== 运行 HTTP/2 h2c 实验测试（~90s） ==="
 k6 run \
   --env BASE_URL="${BASE_URL}" \
+  --env INTERNAL_TOKEN="${INTERNAL_TOKEN}" \
   --summary-export="${RESULTS_FILE}" \
   experiments/h2c/load-test.js
 

@@ -38,6 +38,7 @@
   <properties>
     <java.version>25</java.version>
     <spring-cloud.version>2025.0.1</spring-cloud.version>
+    <tomcat.version>11.0.20</tomcat.version>
     <kotlin.version>2.3.20</kotlin.version>
     <stripe.version>31.4.1</stripe.version>
     <redisson.version>3.44.0</redisson.version>

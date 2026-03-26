@@ -2,7 +2,7 @@
 
 ## 实验条件
 
-- **日期**：2026-03-25
+- **日期**：2026-03-25 ~ 2026-03-26
 - **集群**：Kind（单节点，OrbStack，macOS）
 - **并发**：10 VUs，60s steady state（直连 buyer-bff，绕过 api-gateway）
 - **端点**：POST /buyer/v1/marketplace/list、POST /buyer/v1/category/list
@@ -13,34 +13,58 @@
 
 ## 指标对比
 
-| 指标 | HTTP/1.1 基线 | h2c 实验 | 变化 |
+| 指标 | HTTP/1.1 基线 | h2c 初次实验 | h2c + Tomcat 11.0.20 + TomcatHttp2AC |
 |------|-------------|---------|------|
-| p50 latency | 6.79 ms | 5.26 ms | -23% |
-| p95 latency | 16.49 ms | 209.83 ms | **+1172%** ⚠️ |
-| avg latency | 8.46 ms | 47.79 ms | **+465%** ⚠️ |
-| 吞吐量 (req/s) | 129.7 req/s | 77.6 req/s | **-40%** ⚠️ |
-| 错误率 | **0%** | **42.7%** | +42.7 pp ⚠️ |
-| 成功率 | 100% | 57.3% | -42.7 pp |
+| p50 latency | 6.79 ms | 5.26 ms | 3.59 ms |
+| p95 latency | 16.49 ms | 209.83 ms | 15.92 ms（仅含快速失败） |
+| avg latency | 8.46 ms | 47.79 ms | 10.65 ms（含快速失败） |
+| 吞吐量 (req/s) | 129.7 req/s | 77.6 req/s | ~82 req/s（成功率仅24%） |
+| 错误率 | **0%** | **42.7%** | **75.8%** ⚠️（更差） |
+| 成功率 | 100% | 57.3% | 24.2% |
+
+> **说明**：Tomcat 11 + TomcatHttp2AutoConfiguration 测试中，75.8% 错误率比初次实验更高。原因是：
+> - marketplace-service 在持续 FLOW_CONTROL_ERROR 冲击下不断崩溃重启（4+ restarts），导致 buyer-bff 的 circuitBreaker 频繁 OPEN
+> - FLOW_CONTROL_ERROR 在 Tomcat 11 中依然存在（stream ID 变大但机制相同）
 
 ## 失败模式分析
 
-### 根本原因：Tomcat h2c HTTP/2 流控窗口错误
+### 根本原因：Tomcat h2c Upgrade 并发流接收窗口竞态（跨版本持久存在）
 
-marketplace-service 日志出现：
+marketplace-service 日志（两版本均出现）：
+
+**Tomcat 10.1.x（初次实验）：**
 ```
 Connection [faf], Stream [3] Closed due to error
 org.apache.coyote.http2.StreamException: Connection [faf],
   Client sent more data than stream window allowed
+    at org.apache.coyote.http2.Http2Parser.readDataFrame(...)
 ```
 
-**触发规律**：每3个请求约有1个失败（33%），精确命中 HTTP/2 stream ID 3（奇数流，客户端发起的第2条流）。
+**Tomcat 11.0.20（修复验证实验）：**
+```
+Connection [8], Stream [567] Closed due to error
+org.apache.coyote.http2.StreamException: Connection [8],
+  Client sent more data than stream window allowed
+    at org.apache.coyote.http2.Http2Parser.readDataFrame(Http2Parser.java:193)
+    at org.apache.coyote.http2.Http2AsyncParser$FrameCompletionHandler.completed(Http2AsyncParser.java:251)
+```
 
-**机制推断**：
-- JDK HttpClient HTTP_2 使用 Prior Knowledge h2c（直接发送 CLIENT_PREFACE，无 Upgrade 握手）
-- 第1条流（stream 1）成功建立并完成
-- 第2条流（stream 3）在 Tomcat 处理完初始 SETTINGS 前，客户端已发送 DATA 帧
-- Tomcat 检测到 DATA 超出 stream 初始窗口（此时服务端 SETTINGS 尚未 ack），返回 RST_STREAM
-- JDK HttpClient 连接重置，新连接重走同样流程
+**触发规律**（初次实验）：每3个请求约有1个失败（33%），精确命中 HTTP/2 stream ID 3（奇数流，客户端发起的第2条流）。仅在并发场景触发；单 VU 顺序请求 100% 成功。
+
+**⚠️ 早期误判**：最初错误地认为 JDK HttpClient 使用 Prior Knowledge 模式（直接发送 CLIENT_PREFACE）。
+经查 JDK 源码（[JDK-8285972](https://bugs.openjdk.org/browse/JDK-8285972)、[JDK-8287589](https://bugs.openjdk.org/browse/JDK-8287589)），
+JDK HttpClient **默认使用 h2c Upgrade 模式**（先发 HTTP/1.1 Upgrade 头，101 成功后切换 HTTP/2）；
+Prior Knowledge 在 JDK 中尚不支持，且代理场景下 Upgrade 头不发送（Won't Fix）。
+本项目 pod 间直连无代理，故 Upgrade 模式正常工作。
+
+**实际机制**：
+- JDK HttpClient 以 h2c Upgrade 建立连接：HTTP/1.1 POST + `Upgrade: h2c` → 101 → CLIENT_PREFACE + SETTINGS 交换
+- Stream 1（Upgrade 请求本身）在握手完成后处理，始终成功
+- 多 VU 并发时，JDK HttpClient 在同一连接上复用 HTTP/2 流（stream 3、5、7…）
+- 并发流与 stream 1 在途时，Tomcat h2c Upgrade 处理器在并发流接收窗口初始化上存在竞态：
+  `Http2Parser.readDataFrame()` 中 `dest.remaining() < dataLength` 检查，抛出 FLOW_CONTROL_ERROR
+- 在 Tomcat 11 中，异步 IO 路径（`Http2AsyncParser$FrameCompletionHandler`）存在同样缺陷
+- `overheadDataThreshold=0` + `initialWindowSize=1MB` 两个参数均无法解决此竞态
 
 ### 失败率随并发升高
 
@@ -48,32 +72,46 @@ org.apache.coyote.http2.StreamException: Connection [faf],
 |---------|-----|--------|
 | 50 次顺序请求（无并发） | 1 | 100% |
 | 100 次顺序请求（slight concurrency） | ~3 | 67% |
-| k6 10 VUs steady state | 10 | 57% |
-| k6 30 VUs steady state | 30 | 5% |
+| k6 10 VUs steady state（Tomcat 10.1） | 10 | 57% |
+| k6 30 VUs steady state（Tomcat 10.1） | 30 | 5% |
+| k6 10 VUs steady state（Tomcat 11.0.20 + TomcatHttp2AC） | 10 | ~24%（CB tripping） |
 
 ## Tempo 确认
 
 - otel-collector 在测试环境未启动，无法获取 Tempo trace
 - 通过 marketplace-service 日志中 HTTP/2 stream error 间接确认 h2c 连接已建立
 
-## 结论
+## 最终结论
 
-**❌ 不建议在当前环境生产启用 h2c。**
+**❌ h2c 实验最终结论：不启用，回滚至 HTTP/1.1。**
 
 | 维度 | 结论 |
 |------|------|
-| 延迟（p50） | 略有改善（-23%），但被 p95 大幅恶化掩盖 |
-| 延迟（p95） | 严重退化（+1172%），超出 500ms SLO |
-| 吞吐量 | 下降 40% |
-| 可靠性 | 42.7% 错误率，不可接受 |
-| 根因 | JDK HttpClient Prior Knowledge h2c 与 Tomcat stream 窗口初始化时序冲突 |
+| 延迟（p50） | 略有改善，但被高错误率掩盖，无实际意义 |
+| 延迟（p95） | 初次实验严重退化（+1172%），Tomcat 11 因 CB 拦截而表面好看但实质失败率更高 |
+| 吞吐量 | 显著下降，Tomcat 11 有效吞吐量更低（仅24%成功率） |
+| 可靠性 | Tomcat 10.1: 42.7% 错误率；Tomcat 11: 75.8% 错误率（CB 导致雪崩） |
+| 根因 | Tomcat h2c Upgrade 处理器在并发流接收窗口初始化上的竞态，跨 Tomcat 10.1 和 11.0 均存在 |
+| 修复可行性 | `TomcatHttp2AutoConfiguration` 参数调优**无效**；Tomcat 升级**无效** |
+| 建议 | **切回 HTTP/1.1**（Direction 4）。Kind 单节点 TCP 开销极低，h2c 连接复用优势无法体现 |
 
-## 修复方向（如需继续调研 h2c）
+## 已应用并验证无效的修复
 
-1. **换用 HTTP Upgrade 模式**：让 JDK HttpClient 先用 HTTP/1.1 发送 Upgrade 头，协商成功后再升级 HTTP/2
-2. **增大 Tomcat 初始流窗口**：在 server.properties 配置 `server.http2.initial-window-size=65536`，确保 stream 3 的窗口在客户端发送前已就绪
-3. **改用 Jetty 或 Undertow**：其 h2c Prior Knowledge 实现与 JDK HttpClient 兼容性更好
-4. **切回 HTTP/1.1**：当前 Kind 单节点环境 TCP 开销本身极低，h2c 连接复用优势无法体现
+`shop-common` 新增 `TomcatHttp2AutoConfiguration`（`@ConditionalOnProperty server.http2.enabled=true`），
+替换 Spring Boot 默认注册的 `Http2Protocol`，配置参数：
+
+| 参数 | 默认值 | 修改为 | 验证结果 |
+|------|--------|--------|---------|
+| `overheadDataThreshold` | 1024 | 0 | ❌ 无效，FLOW_CONTROL_ERROR 仍然出现 |
+| `initialWindowSize` | 65535 | 1048576 (1 MB) | ❌ 无效，竞态发生在窗口初始化阶段，不受此参数影响 |
+| Tomcat 版本 | 10.1.x | 11.0.20 | ❌ 无效，Tomcat 11 异步 IO 路径（Http2AsyncParser）同样受影响 |
+
+## 修复方向（历史记录）
+
+1. ~~**换用 HTTP Upgrade 模式**~~：JDK HttpClient 已默认使用 h2c Upgrade，无需修改
+2. ~~**增大 Tomcat 初始流窗口 + 关闭开销保护**~~：已验证无效
+3. ~~**改用 Jetty 或 Undertow**~~：未测试，但鉴于 HTTP/1.1 表现已满足要求，不值得额外风险
+4. **✅ 切回 HTTP/1.1**：**已执行**，见下方回滚方案
 
 ## 回滚方案
 
@@ -100,9 +138,16 @@ error_rate: 0.00%
 http_reqs: 7786  (129.7 req/s)
 ```
 
-**h2c 实验**（10 VUs, 60s）：
+**h2c 初次实验**（10 VUs, 60s，Tomcat 10.1.x）：
 ```
 bff_latency_ms: avg=47.79ms  p(50)=5.26ms  p(90)=207.36ms  p(95)=209.83ms
 error_rate: 42.66%
 http_reqs: 4662  (77.6 req/s)
+```
+
+**h2c 修复验证实验**（10 VUs, 60s，Tomcat 11.0.20 + TomcatHttp2AutoConfiguration）：
+```
+bff_latency_ms: avg=10.65ms  p(50)=3.59ms  p(90)=11.22ms  p(95)=15.92ms（含快速失败请求）
+error_rate: 75.81%（CB 多次 OPEN，marketplace-service 4次崩溃重启）
+http_reqs: 9814  (163.6 req/s，绝大多数为即时失败的 CB 拒绝）
 ```

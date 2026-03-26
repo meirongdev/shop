@@ -19,21 +19,23 @@ export const options = {
 };
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:38080';
+const INTERNAL_TOKEN = __ENV.INTERNAL_TOKEN || 'local-dev-internal-token-change-me';
+const HEADERS = { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN };
 
 export default function () {
   const marketplaceRes = http.post(
-    `${BASE_URL}/public/buyer/v1/marketplace/list`,
+    `${BASE_URL}/buyer/v1/marketplace/list`,
     JSON.stringify({}),
-    { headers: { 'Content-Type': 'application/json' } }
+    { headers: HEADERS }
   );
   latencyTrend.add(marketplaceRes.timings.duration, { endpoint: 'marketplace' });
   errorRate.add(marketplaceRes.status !== 200);
   check(marketplaceRes, { 'marketplace 200': (r) => r.status === 200 });
 
   const categoryRes = http.post(
-    `${BASE_URL}/public/buyer/v1/category/list`,
+    `${BASE_URL}/buyer/v1/category/list`,
     JSON.stringify({}),
-    { headers: { 'Content-Type': 'application/json' } }
+    { headers: HEADERS }
   );
   latencyTrend.add(categoryRes.timings.duration, { endpoint: 'category' });
   errorRate.add(categoryRes.status !== 200);

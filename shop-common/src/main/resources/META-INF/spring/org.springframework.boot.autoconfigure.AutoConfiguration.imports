@@ -4,3 +4,4 @@ dev.meirong.shop.common.feature.FeatureToggleAutoConfiguration
 dev.meirong.shop.common.idempotency.IdempotencyAutoConfiguration
 dev.meirong.shop.common.observability.ObservabilityAutoConfiguration
 dev.meirong.shop.common.resilience.ResilienceAutoConfiguration
+dev.meirong.shop.common.web.TomcatHttp2AutoConfiguration

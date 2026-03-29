@@ -35,10 +35,6 @@ module_local_image_ref() {
   printf 'shop/%s:%s\n' "${module}" "${LOCAL_IMAGE_TAG}"
 }
 
-module_image_ref() {
-  module_local_image_ref "$@"
-}
-
 module_registry_image_ref() {
   local module="$1"
   printf '%s/shop/%s:%s\n' "${LOCAL_REGISTRY}" "${module}" "${LOCAL_IMAGE_TAG}"

@@ -1,5 +1,3 @@
-ARG JAR_FILE
-
 FROM eclipse-temurin:25-jre
 ARG JAR_FILE
 WORKDIR /app

@@ -1,0 +1,12 @@
+ARG JAR_FILE
+
+FROM eclipse-temurin:25-jre
+ARG JAR_FILE
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+COPY ${JAR_FILE} app.jar
+EXPOSE 8080
+EXPOSE 8081
+USER appuser
+ENTRYPOINT ["java","-XX:MaxRAMPercentage=70.0","-XX:+HeapDumpOnOutOfMemoryError","-XX:HeapDumpPath=/tmp/heapdump.hprof","-jar","/app/app.jar"]

@@ -7,19 +7,21 @@ source "${script_dir}/local-cicd-modules.sh"
 
 usage() {
   cat <<'EOF' >&2
-Usage: ./scripts/build-images.sh [--all|--changed] [--fast|--legacy] [-j N] [--base REF]
+Usage: ./scripts/build-images.sh [--all|--changed|--module MODULE] [--fast|--legacy] [-j N] [--base REF]
 
-  --all       Build all module images (default)
-  --changed   Build only module images affected by Git changes
-  --fast      Build host-packaged jars into images (default)
-  --legacy    Build module images with docker/Dockerfile.module
-  -j N        Parallel Docker build jobs (default: 4)
-  --base REF  Git ref used for change detection (default: origin/main)
+  --all           Build all module images (default)
+  --changed       Build only module images affected by Git changes
+  --module MODULE Build a single named module (e.g. --module buyer-bff)
+  --fast          Build host-packaged jars into images (default)
+  --legacy        Build module images with docker/Dockerfile.module
+  -j N            Parallel Docker build jobs (default: 4)
+  --base REF      Git ref used for change detection (default: origin/main)
 EOF
   exit 1
 }
 
 mode="all"
+single_module=""
 build_mode="${SHOP_LOCAL_BUILD_MODE:-fast}"
 jobs=4
 base_ref="$(default_base_ref)"
@@ -33,6 +35,12 @@ while [[ $# -gt 0 ]]; do
     --changed)
       mode="changed"
       shift
+      ;;
+    --module)
+      [[ $# -ge 2 ]] || usage
+      mode="module"
+      single_module="$2"
+      shift 2
       ;;
     --fast)
       build_mode="fast"
@@ -112,6 +120,12 @@ if [[ "${mode}" == "changed" ]]; then
   while IFS= read -r module; do
     modules+=("${module}")
   done < <(detect_build_modules "${base_ref}")
+elif [[ "${mode}" == "module" ]]; then
+  array_contains "${single_module}" "${ALL_MODULES[@]}" || {
+    echo "error: unknown module '${single_module}'. Valid modules: ${ALL_MODULES[*]}" >&2
+    exit 1
+  }
+  modules=("${single_module}")
 else
   modules=("${ALL_MODULES[@]}")
 fi

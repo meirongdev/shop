@@ -10,7 +10,7 @@ OVERLAY ?= dev
 TILT_REGISTRY ?= localhost:5000
 ARCHETYPE_MODULES := shop-common,shop-contracts,shop-archetypes/gateway-service-archetype,shop-archetypes/auth-service-archetype,shop-archetypes/bff-service-archetype,shop-archetypes/domain-service-archetype,shop-archetypes/event-worker-archetype,shop-archetypes/portal-service-archetype
 
-.PHONY: help test build verify arch-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed smoke-test ui-e2e e2e-playwright e2e-playwright-seller local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap
+.PHONY: help test build verify arch-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed redeploy smoke-test ui-e2e e2e-playwright e2e-playwright-seller local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap
 
 help: ## Show available developer commands
 	@awk 'BEGIN {FS = ":.*## "; printf "\nUsage:\n  make <target>\n\nTargets:\n"} /^[a-zA-Z0-9_.-]+:.*## / { printf "  %-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -79,6 +79,13 @@ build-changed: ## Build only Docker images for changed modules
 
 load-changed: ## Load only Docker images for changed modules into CLUSTER
 	./scripts/load-images-kind.sh $(CLUSTER) --changed
+
+redeploy: ## Rebuild, reload, and restart a single MODULE (usage: make redeploy MODULE=buyer-bff)
+	@test -n "$(MODULE)" || (echo "Usage: make redeploy MODULE=<service-name>" >&2 && false)
+	./scripts/build-images.sh --fast --module $(MODULE)
+	./scripts/load-images-kind.sh $(CLUSTER) --registry --module $(MODULE)
+	kubectl --context kind-$(CLUSTER) -n shop rollout restart deployment/$(MODULE)
+	kubectl --context kind-$(CLUSTER) -n shop rollout status deployment/$(MODULE) --timeout=300s
 
 smoke-test: ## Run smoke tests against the local gateway entrypoint
 	./scripts/smoke-test.sh

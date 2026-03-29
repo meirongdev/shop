@@ -8,25 +8,72 @@ title: 快速开始
 
 ## 前置条件
 
-- Docker Desktop（或任意兼容 Docker 的运行时）
-- Kind
+- Docker Desktop 或 [OrbStack](https://orbstack.dev/)（macOS 推荐，性能更好）
+- [Kind](https://kind.sigs.k8s.io/)
 - kubectl
+- （可选）[mirrord](https://mirrord.dev/) — IDE 调试用
 
-## 5 分钟跑起来
+## 首次启动（全量构建 + 部署）
 
 ```bash
+# 终端 A：一键创建集群 + 构建所有镜像 + 部署 + 验证
 make e2e
 
-# 另开一个终端，建立稳定访问入口
+# 终端 B（保持运行）：建立稳定访问入口
 make local-access
 ```
 
-默认入口（已验证）：
+访问入口（已验证）：
 
-- Buyer Portal: `http://127.0.0.1:18080/buyer/login`
-- Mailpit: `http://127.0.0.1:18025`
-- Prometheus: `http://127.0.0.1:19090`
-- Seller Web：不再通过 `/seller/login` 暴露 SSR 页面；仓库使用 `make ui-e2e` 对 KMP `seller-app` 做页面级校验，手工预览方式见 [`本地部署`](/getting-started/local-deployment)
+| 服务 | 地址 |
+|------|------|
+| Buyer Portal | http://127.0.0.1:18080/buyer/login |
+| Gateway OpenAPI | http://127.0.0.1:18080/v3/api-docs/gateway |
+| Mailpit（邮件） | http://127.0.0.1:18025 |
+| Prometheus | http://127.0.0.1:19090 |
+
+演示账号：
+
+| 角色 | 用户名 | 密码 |
+|------|--------|------|
+| Buyer | buyer.demo | password |
+| Seller | seller.demo | password |
+
+## 日常开发（集群已启动后）
+
+集群已运行时，按场景选择最快路径：
+
+| 场景 | 命令 | 耗时 |
+|------|------|------|
+| 修改某个服务，快速重新部署 | `make redeploy MODULE=buyer-bff` | ~30s |
+| 批量重部署所有变更模块 | `make build-changed && make load-changed` | 按变更数量 |
+| IDE 断点调试（无需 rebuild） | `make mirrord-run MODULE=buyer-bff` | 秒级启动 |
+| 频繁改代码 + 自动热更新 | `make tilt-up` | 持续监听 |
+
+### 修改一个服务后重新部署
+
+```bash
+# 修改代码后执行（~30 秒完成单服务的重建 + 加载 + 滚动重启）
+make redeploy MODULE=buyer-bff
+
+# 验证
+kubectl -n shop logs -f deployment/buyer-bff
+make smoke-test
+```
+
+### IDE 断点调试（推荐：无需 rebuild 镜像）
+
+```bash
+# 集群中已有 buyer-bff 在跑，本地进程接管流量并可在 IDE 中打断点
+make mirrord-run MODULE=buyer-bff
+
+# 附加远程调试端口（5005）：
+./scripts/mirrord-debug.sh buyer-bff -- \
+  ./mvnw -pl buyer-bff -am spring-boot:run \
+  -Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+```
+
+> 安装 mirrord：`brew install metalbear-co/mirrord/mirrord`
 
 ## 快速健康检查
 
@@ -36,14 +83,13 @@ curl -fsS http://127.0.0.1:18080/actuator/health | jq -r '.status'
 curl -fsS "http://127.0.0.1:18080/public/buyer/v1/product/search?q=hair" | head
 ```
 
-如果没有 `jq`，可直接观察返回 JSON 中是否包含 `"status":"UP"`。
-
 ## 常见问题
 
-- 服务未就绪：`kubectl -n shop get pods` 与 `kubectl -n shop logs <pod>`
-- 没有跑 `make local-access`：先在另一个终端执行 `make local-access`
-- 数据重置：`./kind/teardown.sh`
+- **服务未就绪**：`kubectl -n shop get pods` 与 `kubectl -n shop logs <pod>`
+- **访问不通**：确认另一个终端有 `make local-access` 在跑
+- **数据重置**：`./kind/teardown.sh && make e2e`
+- **make redeploy 报错**：确认 KIND 集群在线 `kind get clusters`
 
 ## 进阶
 
-需要了解分步部署、热更新验证或更多冒烟步骤，继续阅读 [`本地部署`](/getting-started/local-deployment)。
+需要了解分步部署、Tilt 热更新、ArgoCD GitOps 或更多冒烟步骤，继续阅读 [`本地部署`](/getting-started/local-deployment)。

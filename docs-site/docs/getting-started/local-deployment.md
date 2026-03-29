@@ -7,9 +7,11 @@ title: 本地部署
 
 ## 前置要求
 
-- Docker Desktop（或任意兼容 Docker 的运行时）
-- Kind
+- Docker Desktop 或 [OrbStack](https://orbstack.dev/)（macOS 推荐）
+- [Kind](https://kind.sigs.k8s.io/)
 - kubectl
+- （可选）[mirrord](https://mirrord.dev/) — IDE 调试
+- （可选）[Tilt](https://tilt.dev/) — 热更新内循环
 
 ## 唯一支持的本地运行方式：Kind / Kubernetes
 
@@ -18,12 +20,13 @@ title: 本地部署
 ### 1. 一键部署（推荐）
 
 ```bash
-./kind/setup.sh
+make e2e
 ```
 
-此脚本会自动：创建 Kind 集群 → 构建全部镜像 → 加载镜像 → 部署基础设施与平台服务。
+此命令会自动：创建 Kind 集群 → 构建变更模块镜像 → 加载镜像 → 部署基础设施与平台服务 → 运行冒烟测试。
 
-> `kind/setup.sh` 会为 Meilisearch 注入符合生产模式要求的 16+ 字节密钥，并在 MySQL 首次启动时初始化各服务所需的数据库与授权。
+> `./kind/setup.sh` 与 `make e2e` 等价，是同一入口的别名。
+> `make e2e` 会为 Meilisearch 注入符合生产模式要求的 16+ 字节密钥，并在 MySQL 首次启动时初始化各服务所需的数据库与授权。
 
 ### 2. 清理环境
 
@@ -40,6 +43,9 @@ title: 本地部署
 # 仅构建相对 origin/main（或 --base 指定基线）发生变化的模块
 ./scripts/build-images.sh --changed -j 4
 
+# 仅构建单个模块（快速）
+./scripts/build-images.sh --fast --module buyer-bff
+
 # 创建 Kind 集群
 kind create cluster --name shop-kind --config kind/cluster-config.yaml
 
@@ -48,6 +54,9 @@ kind create cluster --name shop-kind --config kind/cluster-config.yaml
 
 # 仅加载发生变化的模块镜像
 ./scripts/load-images-kind.sh shop-kind --changed --registry
+
+# 仅加载单个模块镜像
+./scripts/load-images-kind.sh shop-kind --registry --module buyer-bff
 
 # 部署 K8s 清单
 kubectl apply -f k8s/namespace.yaml
@@ -67,6 +76,39 @@ kubectl apply -f k8s/infra/base.yaml
 make platform-validate
 ```
 
+## 日常开发工作流
+
+集群已启动后，根据开发场景选择最快的路径：
+
+| 场景 | 命令 | 说明 |
+|------|------|------|
+| 修改某个服务，快速重部署 | `make redeploy MODULE=buyer-bff` | 构建单模块 → 加载镜像 → 滚动重启（~30s） |
+| 批量重部署所有变更模块 | `make build-changed && make load-changed` | 基于 git diff 识别变更模块 |
+| IDE 断点调试（无需 rebuild） | `make mirrord-run MODULE=buyer-bff` | 本地 JVM 挂到 Kind 集群，秒级启动 |
+| 高频改代码 + 自动热更新 | `make tilt-up` | Tilt 监听文件变化自动重建 |
+
+### make redeploy — 单模块快速重部署
+
+修改某个服务后，无需重建整个集群，直接：
+
+```bash
+# 修改代码后（约 30 秒完成：host Maven package → docker build → push registry → rollout restart）
+make redeploy MODULE=buyer-bff
+
+# 等价的分步操作
+./scripts/build-images.sh --fast --module buyer-bff
+./scripts/load-images-kind.sh shop-kind --registry --module buyer-bff
+kubectl -n shop rollout restart deployment/buyer-bff
+kubectl -n shop rollout status deployment/buyer-bff --timeout=300s
+```
+
+验证：
+
+```bash
+kubectl -n shop logs -f deployment/buyer-bff
+make smoke-test
+```
+
 ## 3.1 更快的镜像循环与内循环开发
 
 如果你频繁修改 `api-gateway`、`buyer-bff`、`marketplace-service`，可以启用本地 registry 与 Tilt：
@@ -81,7 +123,9 @@ make tilt-up
 
 `Tiltfile` 会持续 watch 这三个核心服务及共享模块，并在 Kind 集群中自动重建/重部署。
 
-## 3.2 使用 mirrord 做本地调试
+**扩展 Tilt 到其他服务**：将你当前正在开发的模块加入 `Tiltfile` 的 `TILT_SERVICES` 数组，修改后热更新只需几秒。
+
+## 3.2 使用 mirrord 做本地调试（推荐：零 rebuild）
 
 当你不想 rebuild image / reload Pod，只想把**本地进程**挂到 Kind 集群里的现有 Deployment 上做断点调试时，可以用 mirrord。
 
@@ -109,10 +153,13 @@ make mirrord-run MODULE=api-gateway
 - 本地启动命令是 `./mvnw -pl <module> -am spring-boot:run`
 - 如果仓库里存在 `.mirrord/mirrord.<module>.json`，脚本会自动带上该配置
 
-例如调试 `buyer-bff`：
+**IDE 远程调试（断点）**：
 
 ```bash
-./scripts/mirrord-debug.sh buyer-bff -- ./mvnw -pl buyer-bff -am spring-boot:run
+./scripts/mirrord-debug.sh buyer-bff -- \
+  ./mvnw -pl buyer-bff -am spring-boot:run \
+  -Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+# 然后在 IntelliJ/VS Code 中 "Remote JVM Debug" 连接 localhost:5005
 ```
 
 如果你用 IntelliJ / VS Code 的 mirrord 插件，也可以直接复用仓库内的 `.mirrord/` 示例配置。

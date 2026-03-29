@@ -27,22 +27,66 @@
 ## 快速开始（Kind）
 
 ```bash
-./kind/setup.sh
+# 首次启动：一键创建集群 + 构建镜像 + 部署 + 验证
+make e2e
 
-# 另开一个终端，建立稳定的本地访问入口
+# 另开一个终端，建立稳定的本地访问入口（保持运行）
 make local-access
-
-# Buyer Portal:  http://127.0.0.1:18080/buyer/login
-# Gateway docs:  http://127.0.0.1:18080/v3/api-docs/gateway
-# Mailpit:       http://127.0.0.1:18025
-# Prometheus:    http://127.0.0.1:19090
 ```
+
+默认入口（已验证）：
+
+- Buyer Portal:  http://127.0.0.1:18080/buyer/login
+- Gateway docs:  http://127.0.0.1:18080/v3/api-docs/gateway
+- Mailpit:       http://127.0.0.1:18025
+- Prometheus:    http://127.0.0.1:19090
+
+> `make e2e` 和 `./kind/setup.sh` 等价，后者是前者的别名入口。
 
 清理环境：
 
 ```bash
 ./kind/teardown.sh
 ```
+
+## 日常开发工作流
+
+集群已启动后，根据开发场景选择最快的路径：
+
+| 场景 | 命令 | 说明 |
+|------|------|------|
+| 修改某个服务后重新部署 | `make redeploy MODULE=buyer-bff` | 构建单模块 → 加载镜像 → 滚动重启 |
+| 批量重部署变更模块 | `make build-changed && make load-changed` | 基于 git diff 识别变更模块 |
+| 无需 rebuild 的 IDE 断点调试 | `make mirrord-run MODULE=buyer-bff` | 本地 JVM 挂到 Kind 集群 |
+| 频繁修改 + 自动热更新 | `make tilt-up` | Tilt 监听文件变化自动重建 |
+
+### 修改功能并快速验证
+
+```bash
+# 1. 修改代码
+# 2. 重新构建并部署改动的服务（30s 内完成）
+make redeploy MODULE=buyer-bff
+
+# 3. 查看服务日志
+kubectl -n shop logs -f deployment/buyer-bff
+
+# 4. 冒烟测试（需保持 make local-access 运行）
+make smoke-test
+```
+
+### IDE 断点调试（推荐：无需 rebuild）
+
+```bash
+# 前提：集群已运行，无需 rebuild 镜像
+make mirrord-run MODULE=buyer-bff
+# 等价于：./scripts/mirrord-debug.sh buyer-bff
+# 本地进程会拦截集群流量并通过 IDE 断点调试
+
+# 自定义启动命令（如加 JVM 参数）：
+./scripts/mirrord-debug.sh buyer-bff -- ./mvnw -pl buyer-bff -am spring-boot:run -Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+```
+
+> 安装 mirrord：`brew install metalbear-co/mirrord/mirrord`
 
 > Redis 在当前仓库中不只是缓存：除了 gateway 限流、OTP、guest cart、活动防作弊与 Bloom Filter 幂等外，`marketplace-service`、`order-service`、`subscription-service`、`promotion-service` 也通过 Redisson 做库存与批处理协调。因此本地 Kind 验证不应跳过 `redis`。
 
@@ -113,11 +157,13 @@ make argocd-bootstrap
 ## 本地 CI/CD 与多模块构建
 
 ```bash
-# 仅构建/加载相对于基线发生变化的模块（极大提升开发效率）
-./scripts/build-images.sh --changed --fast
-./scripts/load-images-kind.sh shop-kind --changed --registry
+# 修改某个服务后快速重建 + 重部署（首选）
+make redeploy MODULE=buyer-bff
 
-# 完整本地流水线
+# 仅构建/加载相对于基线发生变化的模块（多模块批量变更时）
+make build-changed && make load-changed
+
+# 完整本地流水线（首次或重建集群时）
 make e2e
 
 # legacy 排障

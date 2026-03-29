@@ -23,10 +23,25 @@ title: 本地部署
 make e2e
 ```
 
-此命令会自动：创建 Kind 集群 → 构建变更模块镜像 → 加载镜像 → 部署基础设施与平台服务 → 运行冒烟测试。
+此命令会自动：创建 Kind 集群 → 构建变更模块镜像 → 推送到本地 registry → 部署基础设施与平台服务 → 并行等待所有 16 个部署就绪 → 运行冒烟测试 + Buyer UI 验证。
+
+**预期耗时**（.m2 / Docker 层缓存热的情况下）：
+
+| 阶段 | 耗时 |
+|------|------|
+| Kind 集群 + 基础设施就绪 | ~1 min |
+| Maven clean package（16 模块，`-T 1C` 并行） | ~25–35s |
+| Docker 镜像构建（4 并行，`Dockerfile.fast` 2-stage） | ~30–60s |
+| Registry push（4 并行，增量层） | ~30–60s |
+| K8s 滚动部署（16 服务并行等待） | ~90–120s |
+| 冒烟测试 + Buyer UI e2e | ~20s |
+| **总计** | **~4–5 min** |
+
+> 首次运行（.m2 为空 / Docker 层缺失）耗时约 10–20 分钟，取决于网速。
 
 > `./kind/setup.sh` 与 `make e2e` 等价，是同一入口的别名。
 > `make e2e` 会为 Meilisearch 注入符合生产模式要求的 16+ 字节密钥，并在 MySQL 首次启动时初始化各服务所需的数据库与授权。
+> 结束时会打印各阶段耗时，便于排查慢点。
 
 ### 2. 清理环境
 
@@ -176,35 +191,35 @@ make argocd-bootstrap
 
 ## 3.4 构建加速与内循环优化（2026 推荐）
 
-在微服务数量较多（16+ 模块）的情况下，全量构建非常耗时。以下是推荐的加速策略：
+以下优化已内置/默认开启，**无需额外配置**：
 
-### 1) 增量构建与并行化
+### 1) Maven `-T 1C` 并行编译（已内置）
+仓库根目录的 `.mvn/maven.config` 已全局配置 `-T 1C --no-transfer-progress`，对所有 `./mvnw` 调用生效。16 模块约 25–35s（缓存热）。
+
+### 2) 增量构建与并行化
 - **增量构建**：始终优先使用 `make build-changed`（或 `scripts/build-images.sh --changed`）。它通过 `git diff` 自动识别受影响的模块，避免重复构建未变动的镜像。
-- **并行 Docker 构建**：`build-images.sh` 默认支持 `-j` 参数。在多核机器上，推荐使用 `make build-changed -j 4` 以上（默认已配置为 4）。
+- **并行 Docker 构建**：`build-images.sh` 默认支持 `-j` 参数，默认 `-j 4`。
 
-### 2) Docker BuildKit 缓存（已内置）
-- `docker/Dockerfile.module` 已启用 `RUN --mount=type=cache,target=/root/.m2`。
-- **效果**：即使 Docker 层失效，Maven 依赖也不会重新下载，`mvn package` 的速度会提升 3-5 倍。
+### 3) 2-stage `Dockerfile.fast`（已内置）
+- Stage 1：包含 JRE + 系统依赖的缓存基础层（几乎不变化）
+- Stage 2：仅 COPY 应用 JAR
+- 首次推送后，后续每个镜像只上传 ~50–130 MB 的应用层；基础层（~200 MB）只上传一次。
 
-### 3) 迁移到 OrbStack (macOS 推荐)
+### 4) Registry push 并行化（已内置）
+`load-images-kind.sh` 默认 4 并行 push，16 个镜像 ~30–60s。
+
+### 5) 迁移到 OrbStack (macOS 推荐)
 - 如果你还在使用 Docker Desktop，建议迁移到 **OrbStack**。
 - **优势**：文件系统同步速度极快，内存占用极低，且能原生支持 Kind 和本项目的所有 `make` 脚本。
 
-### 4) 扩展 Tilt Live Update
+### 6) 扩展 Tilt Live Update
 - `Tiltfile` 默认只为 3 个核心服务开启了 `live_update`。
 - **进阶操作**：将你当前正在开发的模块（如 `order-service`）加入 `Tiltfile` 的 `TILT_SERVICES` 数组。
 - **效果**：修改代码后，Tilt 会直接同步编译后的 `.jar` 到运行中的容器并重启应用，**跳过镜像构建与推送**，热更新仅需几秒。
 
-### 5) 专注模式（Focus Mode）
-- 如果你只关注某个业务链路（如“活动参与”），可以临时修改 `k8s/apps/overlays/dev/kustomization.yaml`，注释掉不相关的服务。
+### 7) 专注模式（Focus Mode）
+- 如果你只关注某个业务链路（如"活动参与"），可以临时修改 `k8s/apps/overlays/dev/kustomization.yaml`，注释掉不相关的服务。
 - **效果**：减少 Kind 的 CPU/内存压力，显著提升活跃服务的响应速度和构建效率。
-
-### 6) Maven 并行编译（针对多模块）
-- 在本地手动运行 Maven 时，使用 `-T` 参数（例如每核心一线程）：
-  ```bash
-  ./mvnw clean package -DskipTests -T 1C
-  ```
-
 ### 4. 访问与基本验证
 
 已验证的稳定访问路径是先跑完整集群，再通过 `make local-access` 建立端口转发：

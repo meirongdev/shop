@@ -18,6 +18,8 @@ title: 快速开始
 ```bash
 # 终端 A：一键创建集群 + 构建所有镜像 + 部署 + 验证
 make e2e
+# 缓存热（.m2 + Docker 层）约 4–5 min，首次约 10–20 min
+# 结束时会打印每个阶段的耗时
 
 # 终端 B（保持运行）：建立稳定访问入口
 make local-access
@@ -49,6 +51,7 @@ make local-access
 | 批量重部署所有变更模块 | `make build-changed && make load-changed` | 按变更数量 |
 | IDE 断点调试（无需 rebuild） | `make mirrord-run MODULE=buyer-bff` | 秒级启动 |
 | 频繁改代码 + 自动热更新 | `make tilt-up` | 持续监听 |
+| 完整验证含 Seller WASM UI | `E2E_FULL_UI=1 make e2e` | ~15 min（首次 Gradle） |
 
 ### 修改一个服务后重新部署
 

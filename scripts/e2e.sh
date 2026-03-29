@@ -10,71 +10,49 @@ flow="${E2E_FLOW:-fast}"
 skip_seller_ui="${E2E_FULL_UI:-}"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
-context_name="kind-${cluster_name}"
 
-wait_for_app_deployment() {
-  local deployment_name="$1"
-  kubectl --context "${context_name}" -n shop rollout status "deployment/${deployment_name}" --timeout=300s
-}
+_t0=$(date +%s)
+phase_start() { _phase_t=$(date +%s); echo "==> $1"; }
+phase_done()  { echo "   ✓ done in $(( $(date +%s) - _phase_t ))s"; }
 
-echo "==> Bootstrapping Kind cluster and infra"
+phase_start "Bootstrapping Kind cluster and infra"
 bash "${repo_root}/scripts/kind-up.sh" "${cluster_name}"
+phase_done
 
 if [[ "${flow}" == "legacy" ]]; then
-  echo "==> Running legacy image build/load/deploy flow"
+  phase_start "Legacy image build/load/deploy"
   bash "${repo_root}/scripts/build-images.sh" --changed --legacy -j "${jobs}"
   bash "${repo_root}/scripts/load-images-kind.sh" "${cluster_name}" --changed --kind-load
   bash "${repo_root}/scripts/deploy-kind.sh" "${overlay}" --all --legacy
+  phase_done
 else
-  echo "==> Running fast image build/load/deploy flow"
+  phase_start "Maven build (clean package, -T 1C)"
   bash "${repo_root}/scripts/build-images.sh" --changed --fast -j "${jobs}"
+  phase_done
+
+  phase_start "Registry push (parallel, ${jobs} workers) + deploy"
   bash "${repo_root}/scripts/load-images-kind.sh" "${cluster_name}" --changed --registry
   bash "${repo_root}/scripts/deploy-kind.sh" "${overlay}" --changed
+  # deploy-kind.sh already waits for all rollouts in parallel — no duplicate wait here.
+  phase_done
 fi
 
-echo "==> Waiting for application deployments"
-deployments=(
-  auth-server
-  api-gateway
-  buyer-bff
-  seller-bff
-  buyer-portal
-  profile-service
-  promotion-service
-  wallet-service
-  marketplace-service
-  order-service
-  search-service
-  notification-service
-  loyalty-service
-  activity-service
-  webhook-service
-  subscription-service
-)
-
-pids=()
-for deployment_name in "${deployments[@]}"; do
-  wait_for_app_deployment "${deployment_name}" &
-  pids+=($!)
-done
-
-for pid in "${pids[@]}"; do
-  wait "${pid}"
-done
-
-echo "==> Running smoke tests"
+phase_start "Smoke tests"
 bash "${repo_root}/scripts/smoke-test.sh"
+phase_done
 
 if [[ -n "${skip_seller_ui}" ]]; then
-  echo "==> Running full UI page automation tests (buyer + seller WASM)"
+  phase_start "Full UI tests (buyer + seller WASM)"
   bash "${repo_root}/scripts/ui-e2e.sh"
+  phase_done
 else
-  echo "==> Running buyer UI page automation tests (seller WASM skipped; use E2E_FULL_UI=1 or make e2e-playwright-seller)"
+  phase_start "Buyer UI tests (seller WASM skipped; use E2E_FULL_UI=1 to include)"
   bash "${repo_root}/scripts/ui-e2e.sh" --buyer-only
+  phase_done
 fi
 
 echo ""
-echo "✅ Local e2e flow completed successfully."
+echo "✅ Local e2e flow completed in $(( $(date +%s) - _t0 ))s."
 echo "   For stable local browser/curl access, run in another terminal:"
 echo "     make local-access"
 echo "   Then use:"

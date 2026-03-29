@@ -11,6 +11,13 @@ SELLER_WASM_DIST_DIR="${SELLER_WASM_DIST_DIR:-kmp/seller-app/build/dist/wasmJs/d
 SELLER_WEB_PORT="${SELLER_WEB_PORT:-18181}"
 SELLER_CHROME_VIRTUAL_TIME_BUDGET_MS="${SELLER_CHROME_VIRTUAL_TIME_BUDGET_MS:-20000}"
 
+# --buyer-only skips the Gradle/WASM seller build and seller UI checks.
+# Enabled by default in make e2e (fast mode). Use make ui-e2e for full checks.
+buyer_only=false
+for arg in "$@"; do
+  [[ "${arg}" == "--buyer-only" ]] && buyer_only=true
+done
+
 failures=0
 port_forward_pid=""
 port_forward_log=""
@@ -297,12 +304,6 @@ if [[ "$(request_status GET "${GATEWAY_URL}/v3/api-docs/gateway")" != "200" ]]; 
   start_gateway_port_forward
 fi
 
-CHROME_BIN="$(detect_chrome || true)"
-if [[ -z "${CHROME_BIN}" ]]; then
-  echo "error: could not find a Chrome/Chromium binary for seller UI automation." >&2
-  exit 1
-fi
-
 echo "UI e2e testing ${GATEWAY_URL}"
 echo ""
 
@@ -310,20 +311,30 @@ check_buyer_page "Buyer login page renders demo entrypoints" "${GATEWAY_URL}/buy
 check_buyer_page "Buyer guest home renders" "${GATEWAY_URL}/buyer/home" "Guest buyer"
 check_buyer_login_flow
 
-echo "==> Building seller web bundle with ${SELLER_WASM_BUILD_TASK}"
-./gradlew -q "${SELLER_WASM_BUILD_TASK}"
+if [[ "${buyer_only}" == "true" ]]; then
+  echo "(Seller WASM checks skipped in buyer-only mode)"
+else
+  CHROME_BIN="$(detect_chrome || true)"
+  if [[ -z "${CHROME_BIN}" ]]; then
+    echo "error: could not find a Chrome/Chromium binary for seller UI automation." >&2
+    exit 1
+  fi
 
-if [[ ! -f "${SELLER_WASM_DIST_DIR}/index.html" ]]; then
-  echo "error: seller web dist was not generated at ${SELLER_WASM_DIST_DIR}" >&2
-  exit 1
+  echo "==> Building seller web bundle with ${SELLER_WASM_BUILD_TASK}"
+  ./gradlew -q "${SELLER_WASM_BUILD_TASK}"
+
+  if [[ ! -f "${SELLER_WASM_DIST_DIR}/index.html" ]]; then
+    echo "error: seller web dist was not generated at ${SELLER_WASM_DIST_DIR}" >&2
+    exit 1
+  fi
+
+  start_seller_proxy
+  prepare_seller_session
+  check_seller_route "Seller auth screen renders" "auth" "0"
+  for route in marketplace orders wallet promotions profile; do
+    check_seller_route "Seller route ${route} loads" "${route}" "1"
+  done
 fi
-
-start_seller_proxy
-prepare_seller_session
-check_seller_route "Seller auth screen renders" "auth" "0"
-for route in marketplace orders wallet promotions profile; do
-  check_seller_route "Seller route ${route} loads" "${route}" "1"
-done
 
 echo ""
 if (( failures > 0 )); then

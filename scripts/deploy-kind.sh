@@ -49,6 +49,21 @@ if [[ "${deploy_mode}" == "fast" ]]; then
   done
 fi
 
+# Wait for all rollouts in parallel — much faster than sequential polling.
+echo "Waiting for ${#deployments[@]} deployment(s) to roll out…"
+pids=()
+failed=()
 for deployment_name in "${deployments[@]}"; do
-  kubectl --context "${context_name}" -n shop rollout status "deployment/${deployment_name}" --timeout=300s
+  kubectl --context "${context_name}" -n shop rollout status \
+    "deployment/${deployment_name}" --timeout=600s &
+  pids+=($!)
 done
+for i in "${!pids[@]}"; do
+  if ! wait "${pids[$i]}"; then
+    failed+=("${deployments[$i]}")
+  fi
+done
+if [[ "${#failed[@]}" -gt 0 ]]; then
+  echo "error: rollout timed out for: ${failed[*]}" >&2
+  exit 1
+fi

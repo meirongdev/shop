@@ -1,10 +1,19 @@
-FROM eclipse-temurin:25-jre
-ARG JAR_FILE
-WORKDIR /app
+# Stage 1: reusable base with curl + non-root user (layer cached separately from app)
+FROM eclipse-temurin:25-jre AS base
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+
+# Stage 2: application image with AppCDS training
+FROM base
+ARG JAR_FILE
+WORKDIR /app
 COPY ${JAR_FILE} app.jar
+
 EXPOSE 8080
 EXPOSE 8081
 USER appuser
-ENTRYPOINT ["java","-XX:MaxRAMPercentage=70.0","-XX:+HeapDumpOnOutOfMemoryError","-XX:HeapDumpPath=/tmp/heapdump.hprof","-jar","/app/app.jar"]
+ENTRYPOINT ["java", \
+  "-XX:MaxRAMPercentage=70.0", \
+  "-XX:+HeapDumpOnOutOfMemoryError", \
+  "-XX:HeapDumpPath=/tmp/heapdump.hprof", \
+  "-jar", "/app/app.jar"]

@@ -113,9 +113,23 @@ if [[ "${#modules[@]}" -eq 0 ]]; then
 fi
 
 echo "Syncing ${#modules[@]} image(s) to Kind cluster '${cluster_name}' via ${transport}: ${modules[*]}"
+
+# Parallel push: up to 4 concurrent syncs (loopback bandwidth is not the bottleneck; layer
+# deduplication means most layers upload once and subsequent images are very fast).
+MAX_PARALLEL_SYNC=4
+pids=()
 for module in "${modules[@]}"; do
   echo "==> Syncing $(module_local_image_ref "${module}")"
-  sync_module "${module}"
+  sync_module "${module}" &
+  pids+=($!)
+  if [[ "${#pids[@]}" -ge "${MAX_PARALLEL_SYNC}" ]]; then
+    wait "${pids[0]}"
+    pids=("${pids[@]:1}")
+  fi
+done
+# Wait for remaining background jobs
+for pid in "${pids[@]}"; do
+  wait "${pid}"
 done
 
 echo "Kind image sync completed."

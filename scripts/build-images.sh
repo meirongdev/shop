@@ -80,7 +80,8 @@ build_host_jars() {
   local modules_csv
 
   modules_csv="$(IFS=,; printf '%s' "${modules[*]}")"
-  ./mvnw -q -pl "${modules_csv}" -am -DskipTests package
+  # Include 'clean' so renamed/deleted resource files never ghost into the JAR.
+  ./mvnw -q --no-transfer-progress -T 1C -pl "${modules_csv}" -am -DskipTests clean package
 }
 
 build_fast_module() {

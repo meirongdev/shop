@@ -5,6 +5,9 @@ cluster_name="${1:-shop-kind}"
 overlay="${2:-dev}"
 jobs="${E2E_BUILD_JOBS:-4}"
 flow="${E2E_FLOW:-fast}"
+# Set E2E_FULL_UI=1 to include the seller Gradle/WASM build (~10 min).
+# Default: only buyer SSR checks (fast). Seller WASM is verified by make e2e-playwright-seller.
+skip_seller_ui="${E2E_FULL_UI:-}"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
 context_name="kind-${cluster_name}"
@@ -55,7 +58,6 @@ for deployment_name in "${deployments[@]}"; do
   pids+=($!)
 done
 
-# Wait for all background rollout status checks to complete
 for pid in "${pids[@]}"; do
   wait "${pid}"
 done
@@ -63,8 +65,13 @@ done
 echo "==> Running smoke tests"
 bash "${repo_root}/scripts/smoke-test.sh"
 
-echo "==> Running UI page automation tests"
-bash "${repo_root}/scripts/ui-e2e.sh"
+if [[ -n "${skip_seller_ui}" ]]; then
+  echo "==> Running full UI page automation tests (buyer + seller WASM)"
+  bash "${repo_root}/scripts/ui-e2e.sh"
+else
+  echo "==> Running buyer UI page automation tests (seller WASM skipped; use E2E_FULL_UI=1 or make e2e-playwright-seller)"
+  bash "${repo_root}/scripts/ui-e2e.sh" --buyer-only
+fi
 
 echo ""
 echo "✅ Local e2e flow completed successfully."

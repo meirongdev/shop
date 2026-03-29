@@ -135,12 +135,28 @@ kind_cluster_has_app_deployments() {
   kubectl --context "$(kind_context_name "${cluster_name}")" -n shop get deployment api-gateway >/dev/null 2>&1
 }
 
+cluster_inventory_has_module_image() {
+  local image_inventory="$1"
+  local module="$2"
+  local image_tag="${3:-${LOCAL_IMAGE_TAG}}"
+  local local_ref
+  local docker_hub_ref
+  local registry_ref
+
+  local_ref="shop/${module}:${image_tag}"
+  docker_hub_ref="docker.io/${local_ref}"
+  registry_ref="${LOCAL_REGISTRY}/${local_ref}"
+
+  grep -Fxq "${local_ref}" <<<"${image_inventory}" ||
+    grep -Fxq "${docker_hub_ref}" <<<"${image_inventory}" ||
+    grep -Fxq "${registry_ref}" <<<"${image_inventory}"
+}
+
 collect_modules_missing_cluster_images() {
   local cluster_name="$1"
   local control_plane_node
   local image_inventory
   local module
-  local image_ref
 
   if ! kind_cluster_exists "${cluster_name}"; then
     printf '%s\n' "${ALL_MODULES[@]}"
@@ -160,8 +176,7 @@ collect_modules_missing_cluster_images() {
 
   image_inventory="$(docker exec "${control_plane_node}" ctr -n k8s.io images ls -q 2>/dev/null || true)"
   for module in "${ALL_MODULES[@]}"; do
-    image_ref="$(module_local_image_ref "${module}")"
-    if ! grep -Fxq "${image_ref}" <<<"${image_inventory}"; then
+    if ! cluster_inventory_has_module_image "${image_inventory}" "${module}"; then
       printf '%s\n' "${module}"
     fi
   done

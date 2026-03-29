@@ -8,7 +8,7 @@ DOCS_STAMP := $(DOCS_DIR)/node_modules/.package-lock-stamp
 CLUSTER ?= shop-kind
 ARCHETYPE_MODULES := shop-common,shop-contracts,shop-archetypes/gateway-service-archetype,shop-archetypes/auth-service-archetype,shop-archetypes/bff-service-archetype,shop-archetypes/domain-service-archetype,shop-archetypes/event-worker-archetype,shop-archetypes/portal-service-archetype
 
-.PHONY: help test build verify arch-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all kind-bootstrap kind-deploy build-images load-images
+.PHONY: help test build verify arch-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy e2e e2e-legacy
 
 help: ## Show available developer commands
 	@awk 'BEGIN {FS = ":.*## "; printf "\nUsage:\n  make <target>\n\nTargets:\n"} /^[a-zA-Z0-9_.-]+:.*## / { printf "  %-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -57,8 +57,20 @@ kind-bootstrap: ## Create the Kind cluster and install infra dependencies
 kind-deploy: ## Apply platform manifests to the current cluster
 	./scripts/kind-up.sh
 
-build-images: ## Build service images for local/Kind use
-	./scripts/build-images.sh
+build-images: ## Build service images for local/Kind use (fast by default)
+	./scripts/build-images.sh --fast
 
-load-images: ## Load built images into the Kind cluster named by CLUSTER
-	./scripts/load-images-kind.sh $(CLUSTER)
+build-images-legacy: ## Build service images with the legacy Docker-in-Docker path
+	./scripts/build-images.sh --legacy
+
+load-images: ## Sync built images into the Kind cluster (registry push by default)
+	./scripts/load-images-kind.sh $(CLUSTER) --registry
+
+load-images-legacy: ## Load built images into the Kind cluster with kind load
+	./scripts/load-images-kind.sh $(CLUSTER) --kind-load
+
+e2e: ## Bootstrap Kind, run fast local build/deploy, and verify buyer/seller flows
+	bash ./scripts/e2e.sh $(CLUSTER) $(OVERLAY)
+
+e2e-legacy: ## Run the legacy Docker build + kind load loop
+	E2E_FLOW=legacy bash ./scripts/e2e.sh $(CLUSTER) $(OVERLAY)

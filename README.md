@@ -49,13 +49,22 @@
 ## Kind/Kubernetes 部署
 
 ```bash
-./scripts/build-images.sh
+./scripts/build-images.sh --fast
 kind create cluster --name shop-kind --config kind/cluster-config.yaml
-./scripts/load-images-kind.sh shop-kind
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/infra/base.yaml
-kubectl apply -f k8s/apps/platform.yaml
+./scripts/load-images-kind.sh shop-kind --registry
+./scripts/deploy-kind.sh dev
+
+# 推荐本地链路
+# 1. make registry（首次或重建 Kind 后执行一次）
+# 2. make e2e（默认走 fast：host Maven build + registry push + selective deploy）
+# 3. 如需排障，使用 make e2e-legacy
+# 4. 验证入口保持不变：make local-access、make smoke-test、make ui-e2e
+
+# legacy 排障路径
+./scripts/load-images-kind.sh shop-kind --kind-load
 ```
+
+> `make e2e` 默认走 fast（host Maven build + registry push + selective deploy）；如需排障可切回 `make e2e-legacy`。
 
 ## 演示账号
 

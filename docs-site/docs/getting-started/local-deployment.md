@@ -37,22 +37,33 @@ title: 本地部署
 # 构建所有 Docker 镜像（镜像内部会完成 Maven 打包）
 ./scripts/build-images.sh
 
+# 或显式使用 fast path
+./scripts/build-images.sh --fast
+
 # 创建 Kind 集群
 kind create cluster --name shop-kind --config kind/cluster-config.yaml
 
-# 加载镜像到集群
-./scripts/load-images-kind.sh shop-kind
+# 加载镜像到集群（fast path：registry sync）
+./scripts/load-images-kind.sh shop-kind --registry
 
-# 部署 K8s 清单
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/infra/base.yaml
-kubectl apply -f k8s/apps/platform.yaml
+# 部署 dev overlay
+./scripts/deploy-kind.sh dev
+
+# 推荐本地链路
+# 1. make registry（首次或重建 Kind 后执行一次）
+# 2. make e2e（默认走 fast：host Maven build + registry push + selective deploy）
+# 3. 如需排障，使用 make e2e-legacy
+# 4. 验证入口保持不变：make local-access、make smoke-test、make ui-e2e
+
+# legacy 排障路径
+./scripts/load-images-kind.sh shop-kind --kind-load
 ```
 
 ### 4. 访问与基本验证
 
+> `make e2e` 默认走 fast（host Maven build + registry push + selective deploy）；如需排障可切回 `make e2e-legacy`。
+
 - **Buyer Portal**: [http://localhost:8080/buyer/login](http://localhost:8080/buyer/login)
-- **Seller Portal**: [http://localhost:8080/seller/login](http://localhost:8080/seller/login)
 - **Guest Checkout**: [http://localhost:8080/buyer/guest/track](http://localhost:8080/buyer/guest/track)
 - **Mailpit（邮件）**: [http://localhost:8025](http://localhost:8025)
 - **Prometheus**: [http://localhost:9090](http://localhost:9090)

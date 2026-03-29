@@ -1,0 +1,64 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  - name: shop/auth-server
+    newName: localhost:5000/shop/auth-server
+    newTag: dev
+  - name: shop/api-gateway
+    newName: localhost:5000/shop/api-gateway
+    newTag: dev
+  - name: shop/buyer-bff
+    newName: localhost:5000/shop/buyer-bff
+    newTag: dev
+  - name: shop/seller-bff
+    newName: localhost:5000/shop/seller-bff
+    newTag: dev
+  - name: shop/profile-service
+    newName: localhost:5000/shop/profile-service
+    newTag: dev
+  - name: shop/promotion-service
+    newName: localhost:5000/shop/promotion-service
+    newTag: dev
+  - name: shop/wallet-service
+    newName: localhost:5000/shop/wallet-service
+    newTag: dev
+  - name: shop/marketplace-service
+    newName: localhost:5000/shop/marketplace-service
+    newTag: dev
+  - name: shop/order-service
+    newName: localhost:5000/shop/order-service
+    newTag: dev
+  - name: shop/search-service
+    newName: localhost:5000/shop/search-service
+    newTag: dev
+  - name: shop/notification-service
+    newName: localhost:5000/shop/notification-service
+    newTag: dev
+  - name: shop/loyalty-service
+    newName: localhost:5000/shop/loyalty-service
+    newTag: dev
+  - name: shop/activity-service
+    newName: localhost:5000/shop/activity-service
+    newTag: dev
+  - name: shop/webhook-service
+    newName: localhost:5000/shop/webhook-service
+    newTag: dev
+  - name: shop/subscription-service
+    newName: localhost:5000/shop/subscription-service
+    newTag: dev
+  - name: shop/buyer-portal
+    newName: localhost:5000/shop/buyer-portal
+    newTag: dev
+patches:
+  - target:
+      kind: Deployment
+      namespace: shop
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always

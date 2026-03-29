@@ -6,12 +6,14 @@ source "${script_dir}/local-cicd-modules.sh"
 
 usage() {
   cat <<'EOF' >&2
-Usage: ./scripts/load-images-kind.sh [cluster-name] [--all|--changed] [--base REF]
+Usage: ./scripts/load-images-kind.sh [cluster-name] [--all|--changed] [--base REF] [--registry|--kind-load]
 
   cluster-name  Kind cluster name (default: shop-kind)
   --all         Load all module images (default)
   --changed     Load only module images affected by Git changes
   --base REF    Git ref used for change detection (default: origin/main)
+  --registry    Push images to the local registry and let pods pull them (default)
+  --kind-load   Load local images directly into the Kind nodes
 EOF
   exit 1
 }
@@ -20,6 +22,27 @@ cluster_name="shop-kind"
 mode="all"
 base_ref="$(default_base_ref)"
 cluster_name_set=false
+transport="${SHOP_LOCAL_IMAGE_TRANSPORT:-registry}"
+
+sync_module() {
+  local module="$1"
+  local local_ref registry_ref
+  local_ref="$(module_local_image_ref "${module}")"
+  registry_ref="$(module_registry_image_ref "${module}")"
+
+  docker image inspect "${local_ref}" >/dev/null 2>&1 || {
+    echo "error: local image ${local_ref} is missing. Run ./scripts/build-images.sh first." >&2
+    return 1
+  }
+
+  if [[ "${transport}" == "registry" ]]; then
+    bash "${script_dir}/setup-local-registry.sh" "${cluster_name}" >/dev/null
+    docker tag "${local_ref}" "${registry_ref}"
+    docker push "${registry_ref}"
+  else
+    kind load docker-image "${local_ref}" --name "${cluster_name}"
+  fi
+}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -35,6 +58,14 @@ while [[ $# -gt 0 ]]; do
       [[ $# -ge 2 ]] || usage
       base_ref="$2"
       shift 2
+      ;;
+    --registry)
+      transport="registry"
+      shift
+      ;;
+    --kind-load)
+      transport="kind-load"
+      shift
       ;;
     -h|--help)
       usage
@@ -63,21 +94,14 @@ else
 fi
 
 if [[ "${#modules[@]}" -eq 0 ]]; then
-  echo "No module changes detected and the Kind cluster already has the required images. No images to load."
+  echo "No module changes detected and the Kind cluster already has the required images. No images to sync."
   exit 0
 fi
 
-echo "Loading ${#modules[@]} image(s) into Kind cluster '${cluster_name}': ${modules[*]}"
+echo "Syncing ${#modules[@]} image(s) to Kind cluster '${cluster_name}' via ${transport}: ${modules[*]}"
 for module in "${modules[@]}"; do
-  local_image_ref="$(module_local_image_ref "${module}")"
-
-  if ! docker image inspect "${local_image_ref}" >/dev/null 2>&1; then
-    echo "error: local image ${local_image_ref} is missing. Run ./scripts/build-images.sh first." >&2
-    exit 1
-  fi
-
-  echo "==> Loading ${local_image_ref}"
-  kind load docker-image "${local_image_ref}" --name "${cluster_name}"
+  echo "==> Syncing $(module_local_image_ref "${module}")"
+  sync_module "${module}"
 done
 
-echo "Kind image loading completed."
+echo "Kind image sync completed."

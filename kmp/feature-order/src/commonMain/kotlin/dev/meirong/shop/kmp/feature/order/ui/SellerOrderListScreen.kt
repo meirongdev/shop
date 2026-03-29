@@ -32,12 +32,14 @@ import dev.meirong.shop.kmp.ui.components.formatPriceInCents
 fun SellerOrderListScreen(
     repository: SellerOrderRepository,
     sellerId: String,
-    onOrderSelected: (String) -> Unit
+    onOrderSelected: (String) -> Unit,
+    onE2eStateChanged: (String, String?) -> Unit = { _, _ -> }
 ) {
     var refreshKey by remember { mutableIntStateOf(0) }
     var uiState by remember { mutableStateOf(SellerOrdersUiState()) }
 
     LaunchedEffect(sellerId, refreshKey) {
+        onE2eStateChanged("loading", null)
         uiState = uiState.copy(isLoading = true, errorMessage = null)
         runCatching { repository.listOrders(sellerId) }
             .onSuccess { orders ->
@@ -46,12 +48,14 @@ fun SellerOrderListScreen(
                     orders = orders,
                     errorMessage = null
                 )
+                onE2eStateChanged("ready", null)
             }
             .onFailure { error ->
                 uiState = uiState.copy(
                     isLoading = false,
                     errorMessage = error.message ?: "Failed to load seller orders."
                 )
+                onE2eStateChanged("error", uiState.errorMessage)
             }
     }
 

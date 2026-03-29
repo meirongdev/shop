@@ -95,6 +95,6 @@ public class LoyaltyAccountService {
     }
 
     public Page<LoyaltyTransactionEntity> getTransactions(String buyerId, Pageable pageable) {
-        return transactionRepository.findByPlayerIdOrderByCreatedAtDesc(buyerId, pageable);
+        return transactionRepository.findByBuyerIdOrderByCreatedAtDesc(buyerId, pageable);
     }
 }

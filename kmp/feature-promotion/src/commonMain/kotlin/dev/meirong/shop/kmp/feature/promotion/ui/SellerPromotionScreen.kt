@@ -39,7 +39,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun SellerPromotionScreen(
     repository: SellerPromotionRepository,
-    sellerId: String
+    sellerId: String,
+    onE2eStateChanged: (String, String?) -> Unit = { _, _ -> }
 ) {
     var refreshKey by remember { mutableIntStateOf(0) }
     var uiState by remember { mutableStateOf(SellerPromotionsUiState()) }
@@ -48,6 +49,7 @@ fun SellerPromotionScreen(
     val scope = rememberCoroutineScope()
 
     suspend fun reloadWorkspace() {
+        onE2eStateChanged("loading", null)
         uiState = uiState.copy(isLoading = true, errorMessage = null)
         runCatching { repository.loadWorkspace(sellerId) }
             .onSuccess { workspace ->
@@ -56,12 +58,14 @@ fun SellerPromotionScreen(
                     workspace = workspace,
                     errorMessage = null
                 )
+                onE2eStateChanged("ready", null)
             }
             .onFailure { error ->
                 uiState = uiState.copy(
                     isLoading = false,
                     errorMessage = error.message ?: "Failed to load seller promotions."
                 )
+                onE2eStateChanged("error", uiState.errorMessage)
             }
     }
 

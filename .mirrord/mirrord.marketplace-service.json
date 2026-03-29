@@ -1,0 +1,6 @@
+{
+  "target": {
+    "path": "deployment/marketplace-service",
+    "namespace": "shop"
+  }
+}

@@ -20,6 +20,7 @@ jobs:
     outputs:
       maven: ${{ steps.filter.outputs.maven }}
       docs_site: ${{ steps.filter.outputs.docs_site }}
+      platform: ${{ steps.filter.outputs.platform }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,6 +54,37 @@ jobs:
               - 'docs-site/**'
               - 'Makefile'
               - '.github/workflows/**'
+            platform:
+              - 'k8s/**'
+              - 'kind/**'
+              - 'docker/**'
+              - 'scripts/**'
+              - '.mirrord/**'
+              - 'Tiltfile'
+              - 'Makefile'
+              - '.github/workflows/**'
+
+  platform-validate:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.platform == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.34.1'
+
+      - name: Validate platform assets
+        run: bash ./scripts/validate-platform-assets.sh
 
   maven-verify:
     needs: changes

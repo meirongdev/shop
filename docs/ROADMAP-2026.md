@@ -31,8 +31,9 @@
 - [x] 认证中心：JWT 登录（buyer / seller）
 - [x] 事件驱动：Outbox Pattern + Kafka（wallet-service、order-service）
 - [x] 可观测性：Prometheus + OpenTelemetry Collector（采集层）+ 结构化日志
-- [x] Kind/Kubernetes 部署 + mirrord 本地接入
+- [x] Kind/Kubernetes 部署 + mirrord 本地接入 + **本地 Registry & Tilt 内循环**
 - [x] API Gateway：YAML 路由 + Virtual Threads + Redis Lua 限流 + Canary 灰度 + Trusted Headers
+- [x] **Seller UI 现代化**：移除 Kotlin Thymeleaf SSR，全面采用 **KMP (Compose Multiplatform)** 覆盖 Web/Android/iOS
 
 **购物核心流程：**
 - [x] 商品目录：基础 CRUD + 多规格 SKU + 买家评价
@@ -184,8 +185,9 @@ Phase 1          Phase 2          Phase 3          Phase 4          Phase 5     
 > **已完成实现**：
 > - `kind/setup.sh` — 一键创建集群 + 构建镜像 + 部署全部服务
 > - `kind/teardown.sh` — 一键清理集群
-> - `kind/mirrord.json` — mirrord 配置文件（mirror 模式）
-> - `kind/mirrord-run.sh` — 本地运行服务接入集群
+> - `.mirrord/` — mirrord 示例目标配置
+> - `scripts/mirrord-debug.sh` — 本地运行服务接入集群
+> - `kind/mirrord-run.sh` — 兼容包装入口
 > - `kind/cluster-config.yaml` — 增强端口映射（8080/8025/9090）
 > - 部署所有 15 个服务（含 activity-service、loyalty-service、notification-service）
 > - 更新 local-deployment.md 文档

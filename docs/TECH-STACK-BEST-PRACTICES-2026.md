@@ -110,7 +110,7 @@
 
 ### 3.5 Feature Toggle 方案符合 2026 云原生实践
 
-- 使用 OpenFeature 保留供应商无关的 API 抽象
+- 使用 OpenFeature 保留 vendor 无关的 API 抽象
 - 第一阶段选择仓库内 property provider，而不是一开始就引入 `flagd` / Unleash 控制面
 - 用 ConfigMap 目录挂载 + Configuration Watcher + `/actuator/refresh` 处理热更新，符合 K8s 原生实践
 

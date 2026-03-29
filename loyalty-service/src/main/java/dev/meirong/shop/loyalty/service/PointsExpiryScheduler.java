@@ -29,13 +29,13 @@ public class PointsExpiryScheduler {
     @Scheduled(cron = "0 0 2 * * *")
     public void expirePoints() {
         LocalDate today = LocalDate.now();
-        List<String> playerIds = transactionRepository.findPlayerIdsWithExpirablePoints(today);
-        if (playerIds.isEmpty()) {
+        List<String> buyerIds = transactionRepository.findBuyerIdsWithExpirablePoints(today);
+        if (buyerIds.isEmpty()) {
             return;
         }
-        log.info("Points expiry: processing {} players", playerIds.size());
+        log.info("Points expiry: processing {} buyers", buyerIds.size());
         int totalExpired = 0;
-        for (String buyerId : playerIds) {
+        for (String buyerId : buyerIds) {
             totalExpired += expireForPlayer(buyerId, today);
         }
         log.info("Points expiry completed: {} transactions expired", totalExpired);
@@ -44,7 +44,7 @@ public class PointsExpiryScheduler {
     @Transactional
     public int expireForPlayer(String buyerId, LocalDate today) {
         List<LoyaltyTransactionEntity> expirable = transactionRepository
-                .findByPlayerIdAndTypeAndExpiredFalseAndExpireAtLessThanEqual(buyerId, "EARN", today);
+                .findByBuyerIdAndTypeAndExpiredFalseAndExpireAtLessThanEqual(buyerId, "EARN", today);
         if (expirable.isEmpty()) {
             return 0;
         }

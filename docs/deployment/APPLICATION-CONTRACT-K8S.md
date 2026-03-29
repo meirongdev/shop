@@ -110,7 +110,7 @@ Deployment 必须在 `8081` 端口配置探针：
 
 - [ ] 已在 root `pom.xml` / 模块结构中接入
 - [ ] 已提供 `application.yml` 默认值与环境变量映射
-- [ ] 已在 `k8s/apps/platform.yaml` 中声明 Deployment / Service
+- [ ] 已在 `k8s/apps/base/platform.yaml`（并通过 `k8s/apps/overlays/dev`）声明 Deployment / Service
 - [ ] 已声明 `8080` / `8081` 端口
 - [ ] 已配置 readiness / liveness probes
 - [ ] 已接入 metrics / tracing / structured logging
@@ -131,6 +131,8 @@ Deployment 必须在 `8081` 端口配置探针：
 推荐本地验证入口：
 
 ```bash
+make platform-validate
+./scripts/deploy-kind.sh dev
 kubectl -n shop port-forward svc/api-gateway 18080:8080
 ```
 

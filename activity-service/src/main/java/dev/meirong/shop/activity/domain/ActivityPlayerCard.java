@@ -17,7 +17,7 @@ public class ActivityPlayerCard {
     @Column(name = "game_id", nullable = false, length = 36)
     private String gameId;
 
-    @Column(name = "player_id", nullable = false, length = 64)
+    @Column(name = "buyer_id", nullable = false, length = 64)
     private String buyerId;
 
     @Column(name = "card_id", nullable = false, length = 36)

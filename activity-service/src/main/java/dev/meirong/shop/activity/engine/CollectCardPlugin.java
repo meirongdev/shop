@@ -69,8 +69,8 @@ public class CollectCardPlugin implements GamePlugin {
         }
 
         ActivityCollectCardDefinition drawn = weightedRandom(definitions);
-        long uniqueBefore = playerCardRepository.countDistinctCardIdByGameIdAndPlayerId(ctx.gameId(), ctx.buyerId());
-        boolean duplicate = playerCardRepository.countByGameIdAndPlayerIdAndCardId(
+        long uniqueBefore = playerCardRepository.countDistinctCardIdByGameIdAndBuyerId(ctx.gameId(), ctx.buyerId());
+        boolean duplicate = playerCardRepository.countByGameIdAndBuyerIdAndCardId(
                 ctx.gameId(), ctx.buyerId(), drawn.getId()) > 0;
 
         playerCardRepository.save(new ActivityPlayerCard(

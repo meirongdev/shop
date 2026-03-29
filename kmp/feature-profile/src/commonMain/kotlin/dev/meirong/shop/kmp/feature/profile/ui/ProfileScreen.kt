@@ -195,7 +195,8 @@ fun BuyerProfileScreen(
 @Composable
 fun SellerProfileScreen(
     repository: SellerProfileRepository,
-    sellerId: String
+    sellerId: String,
+    onE2eStateChanged: (String, String?) -> Unit = { _, _ -> }
 ) {
     var refreshKey by remember { mutableIntStateOf(0) }
     var uiState by remember { mutableStateOf(SellerProfileUiState()) }
@@ -207,6 +208,7 @@ fun SellerProfileScreen(
     val scope = rememberCoroutineScope()
 
     suspend fun loadProfile() {
+        onE2eStateChanged("loading", null)
         uiState = uiState.copy(isLoading = true, errorMessage = null)
         runCatching { repository.getProfile(sellerId) }
             .onSuccess { profile ->
@@ -217,12 +219,14 @@ fun SellerProfileScreen(
                 )
                 displayName = profile.displayName
                 email = profile.email
+                onE2eStateChanged("ready", null)
             }
             .onFailure { error ->
                 uiState = uiState.copy(
                     isLoading = false,
                     errorMessage = error.message ?: "Failed to load seller profile."
                 )
+                onE2eStateChanged("error", uiState.errorMessage)
             }
     }
 

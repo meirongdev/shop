@@ -33,12 +33,14 @@ import dev.meirong.shop.kmp.ui.components.formatPriceInCents
 @Composable
 fun SellerWalletScreen(
     repository: SellerWalletRepository,
-    sellerId: String
+    sellerId: String,
+    onE2eStateChanged: (String, String?) -> Unit = { _, _ -> }
 ) {
     var refreshKey by remember { mutableIntStateOf(0) }
     var uiState by remember { mutableStateOf(SellerWalletUiState()) }
 
     LaunchedEffect(sellerId, refreshKey) {
+        onE2eStateChanged("loading", null)
         uiState = uiState.copy(isLoading = true, errorMessage = null)
         runCatching { repository.getWallet(sellerId) }
             .onSuccess { wallet ->
@@ -47,12 +49,14 @@ fun SellerWalletScreen(
                     wallet = wallet,
                     errorMessage = null
                 )
+                onE2eStateChanged("ready", null)
             }
             .onFailure { error ->
                 uiState = uiState.copy(
                     isLoading = false,
                     errorMessage = error.message ?: "Failed to load seller wallet."
                 )
+                onE2eStateChanged("error", uiState.errorMessage)
             }
     }
 

@@ -69,6 +69,15 @@ make help
 - `make test`：全仓 Maven 测试
 - `make build`：全仓构建（跳过测试）
 - `make verify`：本地完整验证（Maven verify + docs-site build）
+- `make build-changed`：仅构建发生变化模块的本地镜像
+- `make load-changed`：仅向 Kind 加载发生变化模块的镜像
+- `make smoke-test`：对本地 gateway 入口执行轻量 smoke 校验
+- `make e2e`：建集群 / 增量构建 / 增量加载 / 部署 / smoke / buyer+seller UI 回归 一条龙
+- `make platform-validate`：只校验平台资产（shell / Kustomize / Tiltfile / mirrord / overlay 一致性）
+- `make registry`：启动 `localhost:5000` 本地 registry，优化 Kind / Tilt 镜像循环
+- `make tilt-up`：启动 Tilt，针对核心服务做内循环重建与重部署
+- `make mirrord-run MODULE=<service>`：把本地进程挂到 Kind 中对应 Deployment 上调试
+- `make argocd-bootstrap`：可选安装本地 ArgoCD，验证 GitOps 同步链路
 - `make arch-test`：仅跑架构测试
 - `make docs-install`：安装 docs-site 依赖
 - `make docs-build`：构建 docs-site
@@ -82,6 +91,8 @@ make help
 - `Makefile` 只封装仓库已经存在并已验证的命令
 - 不在 `Makefile` 中偷偷引入新的格式化器或 lint 工具
 - 对 docs-site 保持独立入口，不把 Node 工作流硬塞进 Maven
+- 平台资产（`k8s/`、`kind/`、`Tiltfile`、`.mirrord/`、相关脚本）应始终可由 `make platform-validate` 单独校验
+- **性能优先**：推荐在本地开发中使用 `make build-changed -j 4` 和 `Tilt live-update` 以最大化内循环效率。详见 `docs-site/docs/getting-started/local-deployment.md` 中的加速章节。
 
 ---
 
@@ -111,6 +122,8 @@ make install-hooks
 - 默认按 `origin/main` 以来的改动范围判断需要跑什么
 - Java / Maven / workflow / DX 相关改动会触发 Maven `verify`
 - `docs-site/` 改动会触发 docs-site build
+- `docker/`、`k8s/`、`kind/`、`Tiltfile`、`.mirrord/` 改动会额外触发 `make platform-validate`
+- 这类平台改动完成后，仍建议补跑 `make e2e`
 
 可通过环境变量覆盖模式：
 

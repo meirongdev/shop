@@ -30,12 +30,12 @@
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                            客户端层 (Client Layer)                            │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌───────────────────────────┐    │
-│  │  Buyer Portal   │  │  Seller Portal  │  │ Mobile / External Clients │    │
-│  │ Kotlin+Thymeleaf│  │ Kotlin+Thymeleaf│  │   (渐进接入，非统一基线)   │    │
-│  └────────┬────────┘  └────────┬────────┘  └────────────┬──────────────┘    │
-└───────────┼────────────────────┼───────────────────────┼──────────────────┘
-            └────────────────────┴───────────────────────┘
+│  ┌─────────────────┐  ┌───────────────────────┐  ┌───────────────────────────┐    │
+│  │  Buyer Portal   │  │    Seller App (KMP)   │  │ Mobile / External Clients │    │
+│  │ Kotlin+Thymeleaf│  │ Compose Multiplatform │  │   (渐进接入，非统一基线)   │    │
+│  └────────┬────────┘  └───────────┬───────────┘  └────────────┬──────────────┘    │
+└───────────┼───────────────────────┼───────────────────────────┼──────────────────┘
+            └───────────────────────┴───────────────────────────┘
                                  │ HTTPS
                                  ▼
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -142,6 +142,7 @@
 | `webhook-service` | 8093 | Java 25 | 开放平台 Webhook：事件订阅、HMAC 签名、重试推送 |
 | `subscription-service` | 8094 | Java 25 | 订阅计划管理、自动续费 |
 | `buyer-portal` | — | Kotlin | 买家门户 SSR（经 api-gateway 访问） |
+| `kmp/seller-app` | — | Kotlin | 卖家 Compose Multiplatform 应用 (WASM/Android/iOS) |
 
 > 端口为外部（host）映射端口，仅供开发直连。生产环境所有流量经 api-gateway (:8080) 统一入口。
 > 详细模块归属说明见 `docs/services/SERVICE-DEPENDENCY-MAP.md`
@@ -189,7 +190,7 @@ public-paths:
 ```
 外部请求
   → Gateway: 验证 JWT → 注入 Trusted Headers
-           (当前：X-Request-Id, X-Buyer-Id, X-Buyer-Id, X-Username, X-Roles, X-Portal, X-Internal-Token)
+           (当前：X-Request-Id, X-Buyer-Id, X-Username, X-Roles, X-Portal, X-Internal-Token)
            (Gateway 响应默认返回 X-Request-Id / X-Trace-Id 供客户端关联排障)
   → 各服务: 信任 Trusted Headers，拒绝无 X-Internal-Token 的直接调用
 

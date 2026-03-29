@@ -80,6 +80,6 @@ public class RedemptionService {
     }
 
     public Page<LoyaltyRedemptionEntity> getRedemptions(String buyerId, Pageable pageable) {
-        return redemptionRepository.findByPlayerIdOrderByCreatedAtDesc(buyerId, pageable);
+        return redemptionRepository.findByBuyerIdOrderByCreatedAtDesc(buyerId, pageable);
     }
 }

@@ -1,0 +1,31 @@
+# Ignore everything by default
+**
+
+# Allow all pom.xml files at any level
+!**/pom.xml
+
+# Allow all source directories
+!**/src/**
+
+# Allow shared infrastructure and contracts
+!shop-common/**
+!shop-contracts/**
+
+# Allow the Dockerfile itself
+!docker/Dockerfile.module
+!docker/Dockerfile.fast
+
+# Ignore build artifacts and IDE folders
+**/target/**
+**/build/
+.git
+.idea
+.vscode
+.gradle
+.tilt
+node_modules
+*.md
+
+# Allow host-built runtime jars for fast local Docker builds
+!**/target/
+!**/target/*.jar

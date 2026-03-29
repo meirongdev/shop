@@ -1,0 +1,8 @@
+# ArgoCD bootstrap namespace for local Kind usage.
+# The actual ArgoCD install manifest is applied by scripts/argocd-bootstrap.sh
+# so that we do not vendor the full upstream YAML into this repository.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd

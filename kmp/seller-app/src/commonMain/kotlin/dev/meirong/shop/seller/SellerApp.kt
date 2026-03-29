@@ -3,6 +3,7 @@ package dev.meirong.shop.seller
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,7 +37,7 @@ import dev.meirong.shop.kmp.ui.theme.ShopTheme
 import kotlinx.serialization.Serializable
 
 @Composable
-fun SellerApp() {
+fun SellerApp(e2e: SellerAppE2eConfig = SellerAppE2eConfig()) {
     ShopTheme {
         val navController = rememberNavController()
         val tokenStorage = remember { MutableTokenStorage() }
@@ -46,9 +47,36 @@ fun SellerApp() {
         val promotionRepository = remember { SellerPromotionRepository(tokenStorage = tokenStorage) }
         val walletRepository = remember { SellerWalletRepository(tokenStorage = tokenStorage) }
         val profileRepository = remember { SellerProfileRepository(tokenStorage = tokenStorage) }
-        var sellerSession by remember { mutableStateOf<AuthSession?>(null) }
+        var sellerSession by remember { mutableStateOf(e2e.session) }
+        var autoLoginAttempted by remember { mutableStateOf(false) }
+        val knownRoutes = remember { sellerDestinations.map { it.route }.toSet() }
+        val targetRoute = e2e.initialRoute?.takeIf { it in knownRoutes } ?: SellerRoutes.Marketplace
+        val startDestination = if (e2e.enabled && !e2e.autoLogin) targetRoute else sellerDestinations.first().route
         val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = navBackStackEntry?.destination?.route ?: sellerDestinations.first().route
+        val currentRoute = navBackStackEntry?.destination?.route ?: startDestination
+
+        fun navigateToRoute(route: String) {
+            navController.navigate(route) {
+                launchSingleTop = true
+                restoreState = true
+                popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }
+            }
+        }
+
+        fun reportE2e(route: String, status: String, message: String? = null) {
+            if (e2e.enabled) {
+                e2e.onStateChange(
+                    SellerAppE2eState(
+                        route = route,
+                        status = status,
+                        username = sellerSession?.username,
+                        message = message
+                    )
+                )
+            }
+        }
 
         DisposableEffect(authRepository, dashboardRepository, orderRepository, promotionRepository, walletRepository, profileRepository) {
             onDispose {
@@ -61,34 +89,77 @@ fun SellerApp() {
             }
         }
 
+        LaunchedEffect(e2e.session?.accessToken) {
+            val session = e2e.session ?: return@LaunchedEffect
+            sellerSession = session
+            tokenStorage.saveTokens(session.accessToken, session.accessToken)
+        }
+
+        LaunchedEffect(e2e.enabled, e2e.autoLogin, targetRoute) {
+            if (!e2e.enabled || !e2e.autoLogin || e2e.session != null || autoLoginAttempted || sellerSession != null) {
+                return@LaunchedEffect
+            }
+
+            autoLoginAttempted = true
+            reportE2e(SellerRoutes.Auth, "authenticating")
+            val result = runCatching { authRepository.login("seller.demo", "password", "seller") }
+            val session = result.getOrNull()
+            if (session != null) {
+                sellerSession = session
+                tokenStorage.saveTokens(session.accessToken, session.accessToken)
+                if (targetRoute != currentRoute) {
+                    navigateToRoute(targetRoute)
+                }
+            } else {
+                val error = result.exceptionOrNull()
+                reportE2e(SellerRoutes.Auth, "error", error?.message ?: "Seller sign-in failed.")
+            }
+        }
+
+        LaunchedEffect(e2e.enabled, e2e.autoLogin, targetRoute, currentRoute) {
+            if (e2e.enabled && !e2e.autoLogin && targetRoute != currentRoute) {
+                navigateToRoute(targetRoute)
+            }
+        }
+
+        LaunchedEffect(currentRoute, sellerSession?.username, e2e.enabled, e2e.autoLogin) {
+            if (!e2e.enabled) {
+                return@LaunchedEffect
+            }
+            if (currentRoute == SellerRoutes.Auth && (!e2e.autoLogin || sellerSession != null)) {
+                reportE2e(SellerRoutes.Auth, "ready")
+                return@LaunchedEffect
+            }
+            if (sellerSession != null && currentRoute in knownRoutes) {
+                reportE2e(currentRoute, "ready")
+            }
+        }
+
         ShopAppScaffold(
             appTitle = "Shop Seller",
             destinations = sellerDestinations,
             currentRoute = currentRoute,
             onDestinationSelected = { destination ->
-                navController.navigate(destination.route) {
-                    launchSingleTop = true
-                    restoreState = true
-                    popUpTo(navController.graph.findStartDestination().id) {
-                        saveState = true
-                    }
-                }
+                navigateToRoute(destination.route)
             }
         ) { padding ->
             NavHost(
                 navController = navController,
-                startDestination = sellerDestinations.first().route,
+                startDestination = startDestination,
                 modifier = Modifier.padding(padding)
             ) {
                 composable(SellerRoutes.Marketplace) {
                     sellerSession?.let { session ->
                         SellerInventoryScreen(
                             repository = dashboardRepository,
-                            sellerId = session.principalId
+                            sellerId = session.principalId,
+                            onE2eStateChanged = { status, message ->
+                                reportE2e(SellerRoutes.Marketplace, status, message)
+                            }
                         )
                     } ?: SellerAuthRequired(
                         onNavigateToAuth = {
-                            navController.navigate(SellerRoutes.Auth) { launchSingleTop = true }
+                            navigateToRoute(SellerRoutes.Auth)
                         }
                     )
                 }
@@ -99,11 +170,14 @@ fun SellerApp() {
                             sellerId = session.principalId,
                             onOrderSelected = { orderId ->
                                 navController.navigate(SellerOrderDetail(orderId))
+                            },
+                            onE2eStateChanged = { status, message ->
+                                reportE2e(SellerRoutes.Orders, status, message)
                             }
                         )
                     } ?: SellerAuthRequired(
                         onNavigateToAuth = {
-                            navController.navigate(SellerRoutes.Auth) { launchSingleTop = true }
+                            navigateToRoute(SellerRoutes.Auth)
                         }
                     )
                 }
@@ -112,7 +186,7 @@ fun SellerApp() {
                     if (session == null) {
                         SellerAuthRequired(
                             onNavigateToAuth = {
-                                navController.navigate(SellerRoutes.Auth) { launchSingleTop = true }
+                                navigateToRoute(SellerRoutes.Auth)
                             }
                         )
                     } else {
@@ -128,11 +202,14 @@ fun SellerApp() {
                     sellerSession?.let { session ->
                         SellerWalletScreen(
                             repository = walletRepository,
-                            sellerId = session.principalId
+                            sellerId = session.principalId,
+                            onE2eStateChanged = { status, message ->
+                                reportE2e(SellerRoutes.Wallet, status, message)
+                            }
                         )
                     } ?: SellerAuthRequired(
                         onNavigateToAuth = {
-                            navController.navigate(SellerRoutes.Auth) { launchSingleTop = true }
+                            navigateToRoute(SellerRoutes.Auth)
                         }
                     )
                 }
@@ -140,11 +217,14 @@ fun SellerApp() {
                     sellerSession?.let { session ->
                         SellerPromotionScreen(
                             repository = promotionRepository,
-                            sellerId = session.principalId
+                            sellerId = session.principalId,
+                            onE2eStateChanged = { status, message ->
+                                reportE2e(SellerRoutes.Promotions, status, message)
+                            }
                         )
                     } ?: SellerAuthRequired(
                         onNavigateToAuth = {
-                            navController.navigate(SellerRoutes.Auth) { launchSingleTop = true }
+                            navigateToRoute(SellerRoutes.Auth)
                         }
                     )
                 }
@@ -152,11 +232,14 @@ fun SellerApp() {
                     sellerSession?.let { session ->
                         SellerProfileScreen(
                             repository = profileRepository,
-                            sellerId = session.principalId
+                            sellerId = session.principalId,
+                            onE2eStateChanged = { status, message ->
+                                reportE2e(SellerRoutes.Profile, status, message)
+                            }
                         )
                     } ?: SellerAuthRequired(
                         onNavigateToAuth = {
-                            navController.navigate(SellerRoutes.Auth) { launchSingleTop = true }
+                            navigateToRoute(SellerRoutes.Auth)
                         }
                     )
                 }

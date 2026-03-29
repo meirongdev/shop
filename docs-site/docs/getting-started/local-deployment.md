@@ -37,8 +37,8 @@ title: 本地部署
 # 构建所有 Docker 镜像（镜像内部会完成 Maven 打包）
 ./scripts/build-images.sh
 
-# 或显式使用 fast path
-./scripts/build-images.sh --fast
+# 仅构建相对 origin/main（或 --base 指定基线）发生变化的模块
+./scripts/build-images.sh --changed -j 4
 
 # 创建 Kind 集群
 kind create cluster --name shop-kind --config kind/cluster-config.yaml
@@ -46,7 +46,12 @@ kind create cluster --name shop-kind --config kind/cluster-config.yaml
 # 加载镜像到集群（fast path：registry sync）
 ./scripts/load-images-kind.sh shop-kind --registry
 
-# 部署 dev overlay
+# 仅加载发生变化的模块镜像
+./scripts/load-images-kind.sh shop-kind --changed --registry
+
+# 部署 K8s 清单
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/infra/base.yaml
 ./scripts/deploy-kind.sh dev
 
 # 推荐本地链路
@@ -57,31 +62,187 @@ kind create cluster --name shop-kind --config kind/cluster-config.yaml
 
 # legacy 排障路径
 ./scripts/load-images-kind.sh shop-kind --kind-load
+
+# 只验证平台资产（shell / overlay / mirrord / Tiltfile）
+make platform-validate
 ```
+
+## 3.1 更快的镜像循环与内循环开发
+
+如果你频繁修改 `api-gateway`、`buyer-bff`、`marketplace-service`，可以启用本地 registry 与 Tilt：
+
+```bash
+# 首次启用 localhost:5000 mirror 后，建议删除并重建 Kind 集群
+make registry
+
+# 先安装 Tilt：brew install tilt
+make tilt-up
+```
+
+`Tiltfile` 会持续 watch 这三个核心服务及共享模块，并在 Kind 集群中自动重建/重部署。
+
+## 3.2 使用 mirrord 做本地调试
+
+当你不想 rebuild image / reload Pod，只想把**本地进程**挂到 Kind 集群里的现有 Deployment 上做断点调试时，可以用 mirrord。
+
+安装：
+
+```bash
+brew install metalbear-co/mirrord/mirrord
+```
+
+最简单的方式：
+
+```bash
+make mirrord-run MODULE=api-gateway
+```
+
+这会等价于：
+
+```bash
+./scripts/mirrord-debug.sh api-gateway
+```
+
+默认行为：
+
+- 目标是 `shop` namespace 下的 `deployment/<module>`
+- 本地启动命令是 `./mvnw -pl <module> -am spring-boot:run`
+- 如果仓库里存在 `.mirrord/mirrord.<module>.json`，脚本会自动带上该配置
+
+例如调试 `buyer-bff`：
+
+```bash
+./scripts/mirrord-debug.sh buyer-bff -- ./mvnw -pl buyer-bff -am spring-boot:run
+```
+
+如果你用 IntelliJ / VS Code 的 mirrord 插件，也可以直接复用仓库内的 `.mirrord/` 示例配置。
+
+## 3.3 可选：ArgoCD GitOps 验证
+
+如果你想在本地演练 declarative sync / drift detection：
+
+```bash
+make argocd-bootstrap
+```
+
+默认 Application 指向 `k8s/apps/overlays/dev`。如需切换仓库地址或 revision，可在执行前设置 `ARGOCD_REPO_URL`、`ARGOCD_TARGET_REVISION`。
+
+## 3.4 构建加速与内循环优化（2026 推荐）
+
+在微服务数量较多（16+ 模块）的情况下，全量构建非常耗时。以下是推荐的加速策略：
+
+### 1) 增量构建与并行化
+- **增量构建**：始终优先使用 `make build-changed`（或 `scripts/build-images.sh --changed`）。它通过 `git diff` 自动识别受影响的模块，避免重复构建未变动的镜像。
+- **并行 Docker 构建**：`build-images.sh` 默认支持 `-j` 参数。在多核机器上，推荐使用 `make build-changed -j 4` 以上（默认已配置为 4）。
+
+### 2) Docker BuildKit 缓存（已内置）
+- `docker/Dockerfile.module` 已启用 `RUN --mount=type=cache,target=/root/.m2`。
+- **效果**：即使 Docker 层失效，Maven 依赖也不会重新下载，`mvn package` 的速度会提升 3-5 倍。
+
+### 3) 迁移到 OrbStack (macOS 推荐)
+- 如果你还在使用 Docker Desktop，建议迁移到 **OrbStack**。
+- **优势**：文件系统同步速度极快，内存占用极低，且能原生支持 Kind 和本项目的所有 `make` 脚本。
+
+### 4) 扩展 Tilt Live Update
+- `Tiltfile` 默认只为 3 个核心服务开启了 `live_update`。
+- **进阶操作**：将你当前正在开发的模块（如 `order-service`）加入 `Tiltfile` 的 `TILT_SERVICES` 数组。
+- **效果**：修改代码后，Tilt 会直接同步编译后的 `.jar` 到运行中的容器并重启应用，**跳过镜像构建与推送**，热更新仅需几秒。
+
+### 5) 专注模式（Focus Mode）
+- 如果你只关注某个业务链路（如“活动参与”），可以临时修改 `k8s/apps/overlays/dev/kustomization.yaml`，注释掉不相关的服务。
+- **效果**：减少 Kind 的 CPU/内存压力，显著提升活跃服务的响应速度和构建效率。
+
+### 6) Maven 并行编译（针对多模块）
+- 在本地手动运行 Maven 时，使用 `-T` 参数（例如每核心一线程）：
+  ```bash
+  ./mvnw clean package -DskipTests -T 1C
+  ```
 
 ### 4. 访问与基本验证
 
-> `make e2e` 默认走 fast（host Maven build + registry push + selective deploy）；如需排障可切回 `make e2e-legacy`。
+已验证的稳定访问路径是先跑完整集群，再通过 `make local-access` 建立端口转发：
 
-- **Buyer Portal**: [http://localhost:8080/buyer/login](http://localhost:8080/buyer/login)
-- **Guest Checkout**: [http://localhost:8080/buyer/guest/track](http://localhost:8080/buyer/guest/track)
-- **Mailpit（邮件）**: [http://localhost:8025](http://localhost:8025)
-- **Prometheus**: [http://localhost:9090](http://localhost:9090)
+```bash
+# 终端 A
+make e2e
+
+# 终端 B（保持运行）
+make local-access
+```
+
+- **Buyer Portal**: [http://127.0.0.1:18080/buyer/login](http://127.0.0.1:18080/buyer/login)
+- **Guest Checkout**: [http://127.0.0.1:18080/buyer/guest/track](http://127.0.0.1:18080/buyer/guest/track)
+- **Gateway OpenAPI**: [http://127.0.0.1:18080/v3/api-docs/gateway](http://127.0.0.1:18080/v3/api-docs/gateway)
+- **Mailpit（邮件）**: [http://127.0.0.1:18025](http://127.0.0.1:18025)
+- **Prometheus**: [http://127.0.0.1:19090](http://127.0.0.1:19090)
+- **Seller 侧功能**：当前由 KMP `seller-app` 承担，不再通过 `seller-portal` SSR 页面或 `/seller/login` 暴露。`make ui-e2e` / `make e2e` 会自动构建 seller WASM bundle、启动本地代理并用 headless Chrome 校验 seller 页面。需要手工预览时，可按下文的 seller Web 代理步骤启动本地访问入口。
 
 ```bash
 kubectl -n shop get pods
 ```
 
-如果当前环境没有直接暴露 `localhost:8080`，可以通过端口转发稳定访问网关：
+`make smoke-test` 也已经和这条路径对齐：当 `localhost:8080` 无法稳定访问时，会自动临时 `port-forward` gateway，再执行 smoke。
+
+如果你只想手工转发某个入口，也可以直接使用：
 
 ```bash
 kubectl -n shop port-forward svc/api-gateway 18080:8080
+kubectl -n shop port-forward svc/mailpit 18025:8025
+kubectl -n shop port-forward svc/prometheus 19090:9090
 ```
 
+> 在 Kind + Cilium（尤其 macOS + OrbStack）环境下，NodePort/hostPort 映射可能能建立 TCP 连接，但并不一定稳定返回业务响应。因此本文档把 `make local-access` 作为权威访问方式，而不是继续依赖 `localhost:8080` / `8025` / `9090` 直连。
 > 通过网关访问 `buyer-bff`、`subscription-service`、`webhook-service` 等路由时，需要保留服务自身的基础路径，例如：`/api/buyer/v1/...`、`/api/subscription/v1/...`、`/api/webhook/v1/...`。Gateway 只会剥离最前面的 `/api` 段。
 > Redis 在 Kind 路径中仍然是必选基础设施：guest cart、限流、OTP、防作弊、Bloom Filter 幂等以及 Redisson 分布式锁都会依赖它。
+> 下文所有通过 gateway 的 `curl http://127.0.0.1:18080/...` 示例，都默认你已经在另一个终端运行了 `make local-access`。
+> `make e2e` 默认走 fast（host Maven build + registry push + selective deploy）；如需排障可切回 `make e2e-legacy`。`make ui-e2e` / `make e2e` 的 seller Web 校验需要本机存在可执行的 Chrome / Chromium；脚本会优先查找 `CHROME_BIN`、`google-chrome`、`chromium`，在 macOS 上也会自动尝试 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`。
 
-### 4.1 验证 Search Service Feature Toggle 热更新
+### 4.1 手工预览 Seller Web（KMP WASM）
+
+如果你想手工打开 seller Web，而不仅仅依赖自动化校验：
+
+```bash
+# 终端 A
+make local-access
+
+# 终端 B
+./gradlew :kmp:seller-app:wasmJsBrowserDevelopmentExecutableDistribution
+node ./scripts/seller-web-proxy.mjs \
+  kmp/seller-app/build/dist/wasmJs/developmentExecutable \
+  http://127.0.0.1:18080 \
+  18181
+```
+
+然后访问：
+
+- **Seller Web (KMP WASM)**: [http://127.0.0.1:18181/](http://127.0.0.1:18181/)
+- 使用演示账号 `seller.demo / password`
+
+### 4.2 Playwright E2E 自动化测试
+
+`e2e-tests/` 目录包含基于 Playwright 的浏览器自动化测试，覆盖 Buyer Portal 和 Seller App 的全部主要页面。
+
+```bash
+# 首次安装依赖（仅需一次）
+cd e2e-tests && npm install && npx playwright install chromium
+
+# 运行 Buyer Portal 测试（需 make local-access 保持运行）
+make local-access &
+make e2e-playwright          # 18 个测试：登录、访客模式、所有已认证页面
+
+# 运行 Seller App 测试（会自动构建 WASM 并启动代理）
+make e2e-playwright-seller   # 8 个测试：Auth Screen + 全部 5 条路由
+
+# 直接运行全部测试
+cd e2e-tests && npx playwright test
+
+# 查看 HTML 报告
+cd e2e-tests && npx playwright show-report
+```
+
+**Demo 账号**：`buyer.demo / password`（Buyer）、`seller.demo / password`（Seller）。
+
+### 4.2 验证 Search Service Feature Toggle 热更新
 
 
 当前仓库在 Kind 下使用：
@@ -307,11 +468,14 @@ curl http://127.0.0.1:18080/api/activity/v1/games/<FARM_GAME_ID>/my-history \
 # 安装 mirrord
 brew install metalbear-co/mirrord/mirrord
 
-# 在本地运行 order-service，拦截集群中的流量
-./kind/mirrord-run.sh order-service
+# 推荐：使用统一入口
+make mirrord-run MODULE=order-service
+
+# 或直接指定本地启动命令
+./scripts/mirrord-debug.sh order-service -- ./mvnw -pl order-service -am spring-boot:run
 ```
 
-mirrord 配置文件：`kind/mirrord.json`
+兼容入口 `./kind/mirrord-run.sh <service>` 仍保留，但内部已经委托给 `scripts/mirrord-debug.sh`。
 
 ### 6. 清理
 
@@ -321,26 +485,20 @@ mirrord 配置文件：`kind/mirrord.json`
 kind delete cluster --name shop-kind
 ```
 
-## 服务端口映射
+## 服务端口与推荐本地访问方式
 
-| 服务 | 应用端口 | 管理端口 | Kind 默认访问方式 |
+| 服务 | 应用端口 | 管理端口 | 已验证的本地访问方式 |
 |------|---------|---------|----------------------|
-| api-gateway | 8080 | 8081 | 8080 |
-| auth-server | 8080 | 8081 | 8090 |
-| loyalty-service | 8080 | 8081 | 8088 |
-| activity-service | 8080 | 8081 | 8089 |
-| search-service | 8080 | 8081 | 8091 |
-| notification-service | 8080 | 8081 | 8092 |
-| webhook-service | 8080 | 8081 | 8093 |
-| subscription-service | 8080 | 8081 | 8094 |
-| 其他服务 | 8080 | 8081 | 仅内部访问 |
-| MySQL | 3306 | - | 3306 |
-| Redis | 6379 | - | 6379 |
-| Kafka | 9092 | - | 9092 |
-| Meilisearch | 7700 | - | 7700 |
-| Mailpit (Web UI) | 8025 | - | 8025 |
-| Mailpit (SMTP) | 1025 | - | 1025 |
-| Prometheus | 9090 | - | 9090 |
+| api-gateway | 8080 | 8081 | `make local-access` → `127.0.0.1:18080` |
+| buyer-portal | 8080 | 8081 | 通过 gateway 访问：`127.0.0.1:18080/buyer/...` |
+| Mailpit (Web UI) | 8025 | - | `make local-access` → `127.0.0.1:18025` |
+| Prometheus | 9090 | - | `make local-access` → `127.0.0.1:19090` |
+| 其他 HTTP 服务 | 8080 | 8081 | `kubectl -n shop port-forward svc/<service> <local>:8080` |
+| MySQL | 3306 | - | 仅集群内；需要时自行 `kubectl port-forward` |
+| Redis | 6379 | - | 仅集群内；需要时自行 `kubectl port-forward` |
+| Kafka | 9092 | - | 仅集群内；需要时自行 `kubectl port-forward` |
+| Meilisearch | 7700 | - | 仅集群内；需要时自行 `kubectl port-forward` |
+| Mailpit (SMTP) | 1025 | - | 仅集群内；需要时自行 `kubectl port-forward` |
 
 ## 常见问题
 

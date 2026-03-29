@@ -26,6 +26,11 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableConfigurationProperties({AuthProperties.class, AuthOtpProperties.class, AuthSmsProperties.class})
 public class SecurityConfig {
 
+    private static final String DEMO_PASSWORD_HASH =
+            "{bcrypt}$2a$10$lV1eEiDHx.5RvAkc5xs0bOYeh22uCNkTqcwn/4D5jJJ/WjgiuEU0u";
+    private static final String LEGACY_DEMO_PASSWORD_HASH_PREFIX =
+            "{bcrypt}$2a$10$dummyhashnotusedfordemousers";
+
     @Bean
     PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
@@ -33,11 +38,10 @@ public class SecurityConfig {
 
     @Bean
     UserDetailsService userDetailsService(DemoUserDirectory userDirectory,
-                                         UserAccountRepository userAccountRepository,
-                                         PasswordEncoder passwordEncoder) {
+                                         UserAccountRepository userAccountRepository) {
         return username -> {
             UserAccountEntity account = userAccountRepository.findByUsername(username).orElse(null);
-            if (account != null && account.getPasswordHash() != null) {
+            if (account != null && hasUsablePasswordHash(account.getPasswordHash())) {
                 return User.withUsername(account.getUsername())
                         .password(account.getPasswordHash())
                         .authorities(account.getRoleList().toArray(String[]::new))
@@ -45,10 +49,16 @@ public class SecurityConfig {
             }
             DemoUserDirectory.UserProfile profile = userDirectory.requireProfile(username);
             return User.withUsername(profile.username())
-                    .password(passwordEncoder.encode("password"))
+                    .password(DEMO_PASSWORD_HASH)
                     .authorities(profile.roles().toArray(String[]::new))
                     .build();
         };
+    }
+
+    private static boolean hasUsablePasswordHash(String passwordHash) {
+        return passwordHash != null
+                && !passwordHash.isBlank()
+                && !passwordHash.startsWith(LEGACY_DEMO_PASSWORD_HASH_PREFIX);
     }
 
     @Bean

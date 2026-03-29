@@ -18,7 +18,7 @@ public class ActivityParticipation {
     @Enumerated(EnumType.STRING)
     private GameType gameType;
 
-    @Column(name = "player_id", length = 64)
+    @Column(name = "buyer_id", length = 64)
     private String buyerId;
 
     @Column(name = "session_id", length = 128)

@@ -11,14 +11,14 @@ public interface ActivityPlayerCardRepository extends JpaRepository<ActivityPlay
             FROM ActivityPlayerCard c
             WHERE c.gameId = :gameId AND c.buyerId = :buyerId
             """)
-    long countDistinctCardIdByGameIdAndPlayerId(String gameId, String buyerId);
+    long countDistinctCardIdByGameIdAndBuyerId(String gameId, String buyerId);
 
     @Query("""
             SELECT COUNT(c)
             FROM ActivityPlayerCard c
             WHERE c.gameId = :gameId AND c.buyerId = :buyerId AND c.cardId = :cardId
             """)
-    long countByGameIdAndPlayerIdAndCardId(String gameId, String buyerId, String cardId);
+    long countByGameIdAndBuyerIdAndCardId(String gameId, String buyerId, String cardId);
 
-    List<ActivityPlayerCard> findByGameIdAndPlayerIdOrderByCreatedAtAsc(String gameId, String buyerId);
+    List<ActivityPlayerCard> findByGameIdAndBuyerIdOrderByCreatedAtAsc(String gameId, String buyerId);
 }

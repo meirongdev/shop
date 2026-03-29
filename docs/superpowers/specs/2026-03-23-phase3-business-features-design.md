@@ -412,7 +412,7 @@ public class TwilioSmsGateway implements SmsGateway {
 }
 ```
 
-**多供应商切换策略（便于灾备）：**
+**多 vendor 切换策略（便于灾备）：**
 
 ```yaml
 # application.yml
@@ -470,10 +470,10 @@ async function sendOtp() {
 
 ### 4.1 wallet-service PaymentProvider SPI 扩展
 
-wallet-service 当前有 `StripeGateway` 接口（Stripe 专用）。扩展为通用 `PaymentProvider` SPI，支持多供应商：
+wallet-service 当前有 `StripeGateway` 接口（Stripe 专用）。扩展为通用 `PaymentProvider` SPI，支持多vendor：
 
 ```java
-// PaymentProvider.java — 通用支付供应商 SPI
+// PaymentProvider.java — 通用支付vendor SPI
 public interface PaymentProvider {
     String providerType();   // STRIPE / PAYPAL / KLARNA
 
@@ -493,7 +493,7 @@ public interface PaymentProvider {
     RefundResponse refund(String providerReference, BigDecimal amount);
 
     /**
-     * 验证 Webhook 签名（各供应商实现）。
+     * 验证 Webhook 签名（各vendor实现）。
      */
     WebhookEvent parseWebhook(String payload, Map<String, String> headers);
 }
@@ -738,13 +738,13 @@ CREATE TABLE referral_record (
 ```sql
 -- Flyway: V20260323_3__wallet_payment_method_extend.sql
 -- 原有 provider 字段为 VARCHAR(32)，无需 DDL 变更，直接支持新值
--- 新增 provider_data JSON 字段（存储各供应商专属数据）
+-- 新增 provider_data JSON 字段（存储各vendor专属数据）
 ALTER TABLE wallet_payment_method
-  ADD COLUMN provider_data JSON NULL COMMENT '供应商专属扩展数据（PayPal billing agreement ID / Klarna customer token 等）';
+  ADD COLUMN provider_data JSON NULL COMMENT 'vendor专属扩展数据（PayPal billing agreement ID / Klarna customer token 等）';
 
--- wallet_transaction 表扩展 provider 字段（记录支付供应商）
+-- wallet_transaction 表扩展 provider 字段（记录支付vendor）
 ALTER TABLE wallet_transaction
-  MODIFY COLUMN provider_reference VARCHAR(512) COMMENT '供应商侧交易 ID（Stripe charge_id / PayPal order_id / Klarna order_id）';
+  MODIFY COLUMN provider_reference VARCHAR(512) COMMENT 'vendor侧交易 ID（Stripe charge_id / PayPal order_id / Klarna order_id）';
 ```
 
 **支持的 provider 值：**

@@ -12,7 +12,7 @@ import java.time.Instant;
         name = "activity_virtual_farm",
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_activity_virtual_farm_game_player",
-                columnNames = {"game_id", "player_id"}
+                columnNames = {"game_id", "buyer_id"}
         )
 )
 public class ActivityVirtualFarm {
@@ -24,7 +24,7 @@ public class ActivityVirtualFarm {
     @Column(name = "game_id", nullable = false, length = 36)
     private String gameId;
 
-    @Column(name = "player_id", nullable = false, length = 64)
+    @Column(name = "buyer_id", nullable = false, length = 64)
     private String buyerId;
 
     @Column(nullable = false)

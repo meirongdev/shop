@@ -39,7 +39,7 @@ public class OnboardingTaskService {
 
         for (OnboardingTaskTemplateEntity template : templates) {
             Optional<OnboardingTaskProgressEntity> existing =
-                    progressRepository.findByPlayerIdAndTaskKey(buyerId, template.getTaskKey());
+                    progressRepository.findByBuyerIdAndTaskKey(buyerId, template.getTaskKey());
             if (existing.isEmpty()) {
                 OnboardingTaskProgressEntity progress =
                         OnboardingTaskProgressEntity.init(buyerId, template.getTaskKey(), expireAt);
@@ -52,7 +52,7 @@ public class OnboardingTaskService {
     @Transactional
     public OnboardingTaskProgressEntity completeTask(String buyerId, String taskKey) {
         OnboardingTaskProgressEntity progress = progressRepository
-                .findByPlayerIdAndTaskKey(buyerId, taskKey)
+                .findByBuyerIdAndTaskKey(buyerId, taskKey)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskKey));
 
         if (progress.isCompleted()) {
@@ -79,6 +79,6 @@ public class OnboardingTaskService {
     }
 
     public List<OnboardingTaskProgressEntity> getProgress(String buyerId) {
-        return progressRepository.findByPlayerId(buyerId);
+        return progressRepository.findByBuyerId(buyerId);
     }
 }

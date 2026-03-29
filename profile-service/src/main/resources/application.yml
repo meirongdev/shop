@@ -19,6 +19,7 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+    repair-on-migrate: true
 server:
   port: 8080
   shutdown: graceful

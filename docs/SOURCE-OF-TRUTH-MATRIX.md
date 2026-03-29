@@ -21,11 +21,11 @@
 | 平台工程基线、脚手架标准、质量门禁 | `docs/ENGINEERING-STANDARDS-2026.md` | `shop-archetypes/README.md` | 技术栈、模板标准、测试/质量基线变化 |
 | 技术栈选型、最佳实践与演进方向 | `docs/TECH-STACK-BEST-PRACTICES-2026.md` | `docs-site/docs/tech-stack/best-practices.md`、`docs-site/docs/engineering/standards.md` | 技术栈版本、平台能力现状、最佳实践判断、演进方向变化 |
 | 系统架构与服务拓扑 | `docs-site/docs/architecture/index.md` | `docs/ARCHITECTURE-DESIGN.md`、`docs/services/SERVICE-DEPENDENCY-MAP.md` | 新增服务、边界调整、网关路由变化 |
-| 本地开发、Kind/K8s 部署与 smoke 流程 | `docs-site/docs/getting-started/local-deployment.md` | `kind/setup.sh`、`kind/teardown.sh`、`k8s/**` | 部署步骤、环境变量、访问方式、端口或验证命令变化 |
+| 本地开发、Kind/K8s 部署、mirrord 调试与 smoke 流程 | `docs-site/docs/getting-started/local-deployment.md` | `kind/setup.sh`、`kind/teardown.sh`、`k8s/**`、`Tiltfile`、`.mirrord/**`、`docs/superpowers/specs/2026-03-28-local-cicd-concepts.md` | 部署步骤、环境变量、访问方式、端口、调试命令或验证命令变化 |
 | 可观测性基线（指标、追踪、SLO、告警） | `docs/OBSERVABILITY-ALERTING-SLO.md` | `docs-site/docs/engineering/observability.md`、`docs/ENGINEERING-STANDARDS-2026.md` | 新指标、Tracing 方案、Prometheus/OTLP 暴露方式变化 |
 | 安全边界（北南向 / 东西向） | `docs/SECURITY-BASELINE-2026.md` | `docs-site/docs/architecture/index.md`、`docs/ARCHITECTURE-DESIGN.md` | JWT、Trusted Headers、内部 token、安全边界变化 |
-| Feature Toggle 与配置热更新基线 | `docs/FEATURE-TOGGLE-AND-CONFIG-RELOAD.md` | `docs/ENGINEERING-STANDARDS-2026.md`、`docs-site/docs/getting-started/local-deployment.md`、`k8s/**` | 开关框架、ConfigMap 注入方式、refresh 链路、供应商选择变化 |
-| K8s 应用交付契约 | `docs/deployment/APPLICATION-CONTRACT-K8S.md` | `docs-site/docs/getting-started/local-deployment.md`、`k8s/apps/platform.yaml` | 新服务接入 K8s、探针、端口、配置注入方式变化 |
+| Feature Toggle 与配置热更新基线 | `docs/FEATURE-TOGGLE-AND-CONFIG-RELOAD.md` | `docs/ENGINEERING-STANDARDS-2026.md`、`docs-site/docs/getting-started/local-deployment.md`、`k8s/**` | 开关框架、ConfigMap 注入方式、refresh 链路、vendor 选择变化 |
+| K8s 应用交付契约 | `docs/deployment/APPLICATION-CONTRACT-K8S.md` | `docs-site/docs/getting-started/local-deployment.md`、`k8s/apps/base/platform.yaml`、`k8s/apps/overlays/dev` | 新服务接入 K8s、探针、端口、配置注入方式变化 |
 | 服务依赖关系 | `docs/services/SERVICE-DEPENDENCY-MAP.md` | `docs-site/docs/architecture/index.md` | 新增同步/异步调用、事件订阅关系变化 |
 | 服务级功能说明 | `docs/services/*.md`（对应服务文档） | `docs-site/docs/services/*.md` | 服务职责、接口、事件、数据流变化 |
 | 新用户增长链路 | `docs/services/new-user-onboarding.md` | `docs/services/loyalty-service.md`、`docs/services/promotion-service.md`、`docs/services/profile-service.md` | 注册赠礼、引导任务、欢迎券、欢迎邮件流程变化 |

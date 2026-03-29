@@ -1,0 +1,6 @@
+{
+  "target": {
+    "path": "deployment/buyer-bff",
+    "namespace": "shop"
+  }
+}

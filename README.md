@@ -22,18 +22,20 @@
 | `promotion-service` | 促销活动服务 |
 | `wallet-service` | 钱包服务 (Stripe + Outbox) |
 | `marketplace-service` | 商品市场服务 |
-| `buyer-portal` / `seller-portal` | Kotlin + Thymeleaf 门户 |
+| `buyer-portal` / `kmp/*` apps | Buyer SSR 门户 + Compose Multiplatform Buyer/Seller 应用 |
 
 ## 快速开始（Kind）
 
 ```bash
 ./kind/setup.sh
 
-# 访问
-# Buyer Portal: http://localhost:8080/buyer/login
-# Seller Portal: http://localhost:8080/seller/login
-# Mailpit:      http://localhost:8025
-# Prometheus:   http://localhost:9090
+# 另开一个终端，建立稳定的本地访问入口
+make local-access
+
+# Buyer Portal:  http://127.0.0.1:18080/buyer/login
+# Gateway docs:  http://127.0.0.1:18080/v3/api-docs/gateway
+# Mailpit:       http://127.0.0.1:18025
+# Prometheus:    http://127.0.0.1:19090
 ```
 
 清理环境：
@@ -49,9 +51,20 @@
 ## Kind/Kubernetes 部署
 
 ```bash
-./scripts/build-images.sh --fast
+./scripts/build-images.sh
+
+# 仅构建相对 origin/main（或 --base 指定基线）发生变化的模块
+./scripts/build-images.sh --changed -j 4
+
 kind create cluster --name shop-kind --config kind/cluster-config.yaml
+
 ./scripts/load-images-kind.sh shop-kind --registry
+
+# 仅加载发生变化的模块镜像
+./scripts/load-images-kind.sh shop-kind --changed --registry
+
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/infra/base.yaml
 ./scripts/deploy-kind.sh dev
 
 # 推荐本地链路
@@ -62,9 +75,54 @@ kind create cluster --name shop-kind --config kind/cluster-config.yaml
 
 # legacy 排障路径
 ./scripts/load-images-kind.sh shop-kind --kind-load
+
+# 只做平台资产校验（shell / Kustomize / Tiltfile / mirrord / overlay 一致性）
+make platform-validate
 ```
 
-> `make e2e` 默认走 fast（host Maven build + registry push + selective deploy）；如需排障可切回 `make e2e-legacy`。
+> 在 Kind + Cilium（尤其 macOS + OrbStack）环境下，`localhost:8080` / `8025` / `9090` 的直连映射不一定稳定。仓库当前**已验证**的访问路径是 `make local-access` 提供的 `18080` / `18025` / `19090` 端口。`make e2e` 默认走 fast（host Maven build + registry push + selective deploy），并继续执行 buyer SSR 页面与 seller KMP Web 页面回归；如需排障可切回 `make e2e-legacy`。其中 seller Web 校验依赖本机可用的 Chrome / Chromium。
+
+## Inner-loop 与 GitOps 可选增强
+
+```bash
+# 启动本地 registry（首次修改 kind mirror 配置后建议重建集群）
+make registry
+
+# 安装 Tilt（brew install tilt）后启动内循环开发
+make tilt-up
+
+# 安装 mirrord（brew install metalbear-co/mirrord/mirrord）后把本地进程接到远端 deployment 上调试
+make mirrord-run MODULE=api-gateway
+
+# 可选：在 Kind 中安装 ArgoCD 并接管 dev overlay
+make argocd-bootstrap
+```
+
+`make mirrord-run` 默认等价于：
+
+```bash
+./scripts/mirrord-debug.sh api-gateway
+```
+
+它会把本地 `spring-boot:run` 进程挂到 `shop` namespace 下的 `deployment/api-gateway`。如果你要调试其他服务或自定义命令，也可以直接运行：
+
+```bash
+./scripts/mirrord-debug.sh buyer-bff -- ./mvnw -pl buyer-bff -am spring-boot:run
+```
+
+## 本地 CI/CD 与多模块构建
+
+```bash
+# 仅构建/加载相对于基线发生变化的模块（极大提升开发效率）
+./scripts/build-images.sh --changed --fast
+./scripts/load-images-kind.sh shop-kind --changed --registry
+
+# 完整本地流水线
+make e2e
+
+# legacy 排障
+make e2e-legacy
+```
 
 ## 演示账号
 

@@ -7,11 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface LoyaltyCheckinRepository extends JpaRepository<LoyaltyCheckinEntity, String> {
 
-    Optional<LoyaltyCheckinEntity> findByPlayerIdAndCheckinDate(String buyerId, LocalDate date);
+    Optional<LoyaltyCheckinEntity> findByBuyerIdAndCheckinDate(String buyerId, LocalDate date);
 
-    List<LoyaltyCheckinEntity> findByPlayerIdAndCheckinDateBetweenOrderByCheckinDateAsc(
+    List<LoyaltyCheckinEntity> findByBuyerIdAndCheckinDateBetweenOrderByCheckinDateAsc(
             String buyerId, LocalDate startDate, LocalDate endDate);
 
-    long countByPlayerIdAndIsMakeupTrueAndCheckinDateBetween(
+    long countByBuyerIdAndIsMakeupTrueAndCheckinDateBetween(
             String buyerId, LocalDate monthStart, LocalDate monthEnd);
 }

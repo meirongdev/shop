@@ -47,15 +47,22 @@ fi
 
 run_maven=false
 run_docs=false
+k8s_changed=false
+run_platform=false
 
 for path in "${changed_files[@]}"; do
   case "${path}" in
     docs-site/*)
       run_docs=true
       ;;
+    docker/*|k8s/*|kind/*|Tiltfile|.mirrord/*)
+      k8s_changed=true
+      run_platform=true
+      ;;
     .github/workflows/*|Makefile|.editorconfig|.githooks/*|scripts/*)
       run_maven=true
       run_docs=true
+      run_platform=true
       ;;
     pom.xml|mvnw|mvnw.cmd|.mvn/*|*/pom.xml|*.java|*.kt|*.kts|*.xml|*.yml|*.yaml|*.properties)
       run_maven=true
@@ -65,9 +72,20 @@ done
 
 echo "Evaluating local checks in mode: ${mode}"
 
-if [[ "${run_maven}" == "false" && "${run_docs}" == "false" ]]; then
+if [[ "${run_maven}" == "false" && "${run_docs}" == "false" && "${run_platform}" == "false" ]]; then
+  if [[ "${k8s_changed}" == "true" ]]; then
+    echo ""
+    echo "Warning: Docker/Kubernetes changes detected."
+    echo "Consider running: make e2e"
+  fi
+
   echo "No Maven or docs-site checks required for the detected changes."
   exit 0
+fi
+
+if [[ "${run_platform}" == "true" ]]; then
+  echo "==> Validating platform assets"
+  bash ./scripts/validate-platform-assets.sh
 fi
 
 if [[ "${run_maven}" == "true" ]]; then
@@ -89,6 +107,12 @@ if [[ "${run_docs}" == "true" ]]; then
     cd docs-site
     npm run build
   )
+fi
+
+if [[ "${k8s_changed}" == "true" ]]; then
+  echo ""
+  echo "Docker/Kubernetes changes detected."
+  echo "Consider running: make e2e"
 fi
 
 echo "Local checks completed successfully."

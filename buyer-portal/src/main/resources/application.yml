@@ -60,3 +60,6 @@ shop:
     gateway-base-url: ${GATEWAY_BASE_URL:http://api-gateway:8080}
     apple-client-id: ${APPLE_OAUTH2_CLIENT_ID:placeholder-apple-client-id}
     apple-redirect-uri: ${BUYER_PORTAL_APPLE_REDIRECT_URI:http://localhost:8080/buyer/login}
+    http-version: ${BUYER_PORTAL_HTTP_VERSION:HTTP_1_1}
+    connect-timeout: ${BUYER_PORTAL_CONNECT_TIMEOUT:PT2S}
+    read-timeout: ${BUYER_PORTAL_READ_TIMEOUT:PT5S}

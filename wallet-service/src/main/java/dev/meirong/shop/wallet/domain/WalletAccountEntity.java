@@ -14,7 +14,7 @@ import java.time.Instant;
 public class WalletAccountEntity {
 
     @Id
-    @Column(name = "player_id", nullable = false, length = 64)
+    @Column(name = "buyer_id", nullable = false, length = 64)
     private String buyerId;
 
     @Column(nullable = false, precision = 19, scale = 2)

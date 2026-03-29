@@ -1,0 +1,17 @@
+{
+  "name": "shop-e2e-tests",
+  "version": "1.0.0",
+  "description": "Playwright end-to-end tests for the shop platform (buyer portal + seller app)",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:buyer": "playwright test --project=buyer",
+    "test:seller": "playwright test --project=seller",
+    "test:headed": "playwright test --headed",
+    "test:debug": "PWDEBUG=1 playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
+  }
+}

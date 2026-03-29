@@ -4,6 +4,7 @@ import dev.meirong.shop.authserver.config.AuthProperties;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -19,6 +20,7 @@ public class AppleTokenVerifier {
     private final AuthProperties properties;
     private final JwtDecoder appleJwtDecoder;
 
+    @Autowired
     public AppleTokenVerifier(AuthProperties properties) {
         this(properties, NimbusJwtDecoder.withJwkSetUri(APPLE_JWKS_URI).build());
     }

@@ -2,6 +2,7 @@ package dev.meirong.shop.authserver.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.authserver.config.SecurityConfig;
+import dev.meirong.shop.authserver.domain.UserAccountEntity;
 import dev.meirong.shop.authserver.domain.UserAccountRepository;
 import dev.meirong.shop.authserver.service.AuthenticationApplicationService;
 import dev.meirong.shop.authserver.service.BuyerAccountProvisioningService;
@@ -46,6 +47,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "shop.auth.user-registered-topic=buyer.registered.v1"
 })
 class AuthControllerTest {
+
+    private static final String DEMO_PASSWORD_HASH =
+            "{bcrypt}$2a$10$lV1eEiDHx.5RvAkc5xs0bOYeh22uCNkTqcwn/4D5jJJ/WjgiuEU0u";
 
     @Autowired
     private MockMvc mockMvc;
@@ -96,6 +100,27 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.data.displayName").value("Buyer Demo"))
                 .andExpect(jsonPath("$.data.principalId").value("player-1001"))
                 .andExpect(jsonPath("$.data.portal").value("buyer"));
+    }
+
+    @Test
+    void login_withSeededDemoAccountPasswordHash_returns200WithToken() throws Exception {
+        UserAccountEntity account = UserAccountEntity.createForBuyerRegistration(
+                "buyer.demo",
+                "buyer.demo@example.com",
+                "Buyer Demo",
+                DEMO_PASSWORD_HASH
+        );
+        when(userAccountRepository.findByUsername("buyer.demo")).thenReturn(Optional.of(account));
+
+        AuthApi.LoginRequest request = new AuthApi.LoginRequest("buyer.demo", "password", "buyer");
+
+        mockMvc.perform(post(AuthApi.LOGIN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SC_OK"))
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.username").value("buyer.demo"));
     }
 
     @Test

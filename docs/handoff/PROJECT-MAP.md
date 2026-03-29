@@ -204,6 +204,10 @@
 - `kind/cluster-config.yaml`
 - `k8s/infra/base.yaml`
 - `k8s/apps/platform.yaml`
+- `k8s/apps/base/platform.yaml`
+- `k8s/apps/overlays/dev/kustomization.yaml`
+- `Tiltfile`
+- `.mirrord/`
 
 ### 脚本
 
@@ -211,6 +215,10 @@
 - `scripts/load-images-kind.sh`
 - `scripts/kind-up.sh`
 - `scripts/deploy-kind.sh`
+- `scripts/validate-platform-assets.sh`
+- `scripts/mirrord-debug.sh`
+- `scripts/setup-local-registry.sh`
+- `scripts/argocd-bootstrap.sh`
 
 > `scripts/sync-into-target-repo.sh` 仍保留在仓库中，但它已不是当前常规开发路径的一部分。
 

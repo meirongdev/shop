@@ -136,7 +136,7 @@ class VirtualFarmPluginTest {
     }
 
     private void wireFarmRepository(ActivityVirtualFarmRepository farmRepository, List<ActivityVirtualFarm> farms) {
-        when(farmRepository.findByGameIdAndPlayerId(anyString(), anyString())).thenAnswer(invocation -> {
+        when(farmRepository.findByGameIdAndBuyerId(anyString(), anyString())).thenAnswer(invocation -> {
             String gameId = invocation.getArgument(0, String.class);
             String buyerId = invocation.getArgument(1, String.class);
             return farms.stream()

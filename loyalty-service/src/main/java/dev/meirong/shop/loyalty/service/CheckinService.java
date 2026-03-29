@@ -40,7 +40,7 @@ public class CheckinService {
         LocalDate today = LocalDate.now();
 
         // Already checked in today?
-        Optional<LoyaltyCheckinEntity> existing = checkinRepository.findByPlayerIdAndCheckinDate(buyerId, today);
+        Optional<LoyaltyCheckinEntity> existing = checkinRepository.findByBuyerIdAndCheckinDate(buyerId, today);
         if (existing.isPresent()) {
             return existing.get();
         }
@@ -67,13 +67,13 @@ public class CheckinService {
         if (ChronoUnit.DAYS.between(date, LocalDate.now()) > 7) {
             throw new IllegalArgumentException("Makeup date must be within last 7 days");
         }
-        if (checkinRepository.findByPlayerIdAndCheckinDate(buyerId, date).isPresent()) {
+        if (checkinRepository.findByBuyerIdAndCheckinDate(buyerId, date).isPresent()) {
             throw new IllegalStateException("Already checked in on " + date);
         }
 
         // Check monthly makeup limit
         YearMonth month = YearMonth.from(date);
-        long makeupCount = checkinRepository.countByPlayerIdAndIsMakeupTrueAndCheckinDateBetween(
+        long makeupCount = checkinRepository.countByBuyerIdAndIsMakeupTrueAndCheckinDateBetween(
                 buyerId, month.atDay(1), month.atEndOfMonth());
         if (makeupCount >= properties.maxMakeupPerMonth()) {
             throw new IllegalStateException("Monthly makeup limit reached (" + properties.maxMakeupPerMonth() + ")");
@@ -99,13 +99,13 @@ public class CheckinService {
 
     public List<LoyaltyCheckinEntity> getCalendar(String buyerId, int year, int month) {
         YearMonth ym = YearMonth.of(year, month);
-        return checkinRepository.findByPlayerIdAndCheckinDateBetweenOrderByCheckinDateAsc(
+        return checkinRepository.findByBuyerIdAndCheckinDateBetweenOrderByCheckinDateAsc(
                 buyerId, ym.atDay(1), ym.atEndOfMonth());
     }
 
     private int calculateStreak(String buyerId, LocalDate today) {
         Optional<LoyaltyCheckinEntity> yesterday = checkinRepository
-                .findByPlayerIdAndCheckinDate(buyerId, today.minusDays(1));
+                .findByBuyerIdAndCheckinDate(buyerId, today.minusDays(1));
         if (yesterday.isPresent()) {
             int prevStreak = yesterday.get().getStreakDay();
             return (prevStreak % STREAK_CYCLE) + 1;

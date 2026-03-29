@@ -1,6 +1,21 @@
 apiVersion: v1
 kind: Secret
 metadata:
+  name: shop-shared-secret
+  namespace: shop
+type: Opaque
+stringData:
+  SHOP_AUTH_JWT_SECRET: change-this-to-a-32-byte-demo-secret
+  SHOP_INTERNAL_TOKEN: local-dev-internal-token-change-me
+  MYSQL_USER: shop
+  MYSQL_PASSWORD: shop
+  MEILI_MASTER_KEY: masterKey1234567890
+  MEILISEARCH_ADMIN_KEY: masterKey1234567890
+  MEILISEARCH_SEARCH_KEY: masterKey1234567890
+---
+apiVersion: v1
+kind: Secret
+metadata:
   name: mysql-auth
   namespace: shop
 type: Opaque
@@ -139,6 +154,7 @@ spec:
           image: apache/kafka:3.9.0
           ports:
             - containerPort: 9092
+            - containerPort: 9093
           env:
             - name: KAFKA_NODE_ID
               value: "0"
@@ -152,6 +168,8 @@ spec:
               value: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
             - name: KAFKA_CONTROLLER_LISTENER_NAMES
               value: CONTROLLER
+            - name: KAFKA_INTER_BROKER_LISTENER_NAME
+              value: PLAINTEXT
             - name: KAFKA_ADVERTISED_LISTENERS
               value: PLAINTEXT://kafka:9092
             - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
@@ -168,8 +186,12 @@ spec:
   selector:
     app: kafka
   ports:
-    - port: 9092
+    - name: broker
+      port: 9092
       targetPort: 9092
+    - name: controller
+      port: 9093
+      targetPort: 9093
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -336,6 +358,49 @@ data:
           receivers: [otlp]
           processors: [memory_limiter, k8sattributes, batch]
           exporters: [otlphttp/loki]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: otel-collector
+  namespace: shop
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-collector
+rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+      - nodes
+      - pods
+      - services
+      - endpoints
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups: ["apps"]
+    resources:
+      - replicasets
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-collector
+subjects:
+  - kind: ServiceAccount
+    name: otel-collector
+    namespace: shop
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otel-collector
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -714,6 +779,69 @@ data:
             labels: {severity: warning, team: backend}
             annotations:
               summary: "Order failure rate > 10%"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-slo-rules
+  namespace: shop
+data:
+  slo-rules.yaml: |
+    groups:
+      - name: shop.slo.recording
+        interval: 30s
+        rules:
+          - record: shop:checkout_errors:ratio_rate5m
+            expr: |
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create",status=~"5.."}[5m]))
+              /
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create"}[5m]))
+
+          - record: shop:checkout_errors:ratio_rate30m
+            expr: |
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create",status=~"5.."}[30m]))
+              /
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create"}[30m]))
+
+          - record: shop:checkout_errors:ratio_rate1h
+            expr: |
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create",status=~"5.."}[1h]))
+              /
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create"}[1h]))
+
+          - record: shop:checkout_errors:ratio_rate6h
+            expr: |
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create",status=~"5.."}[6h]))
+              /
+              sum(rate(http_server_requests_seconds_count{instance=~"buyer-bff:.*",method="POST",uri="/buyer/v1/checkout/create"}[6h]))
+
+      - name: shop.slo.alerts
+        rules:
+          - alert: CheckoutSLOFastBurn
+            expr: |
+              shop:checkout_errors:ratio_rate5m > (14.4 * 0.001)
+              and
+              shop:checkout_errors:ratio_rate30m > (14.4 * 0.001)
+            for: 2m
+            labels:
+              severity: critical
+              slo: checkout-availability
+            annotations:
+              summary: "Checkout SLO fast burn — error budget depleting rapidly"
+              description: "5m checkout error rate {{ $value | humanizePercentage }} exceeds 14.4x budget (SLO 99.9%)"
+
+          - alert: CheckoutSLOSlowBurn
+            expr: |
+              shop:checkout_errors:ratio_rate30m > (6 * 0.001)
+              and
+              shop:checkout_errors:ratio_rate6h > (6 * 0.001)
+            for: 15m
+            labels:
+              severity: warning
+              slo: checkout-availability
+            annotations:
+              summary: "Checkout SLO slow burn — error budget steadily depleting"
+              description: "30m checkout error rate {{ $value | humanizePercentage }} exceeds 6x budget (SLO 99.9%)"
           - alert: PaymentFailureRateHigh
             expr: |
               rate(shop_payment_failed_total[5m])

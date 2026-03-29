@@ -13,6 +13,7 @@ import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.resilience.ResilienceHelper;
 import dev.meirong.shop.contracts.api.MarketplaceApi;
 import dev.meirong.shop.contracts.api.PromotionApi;
+import dev.meirong.shop.contracts.api.WalletApi;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import java.net.http.HttpClient;
 import java.math.BigDecimal;
@@ -160,5 +161,26 @@ class MarketplaceContractTest {
 
         assertThat(result.valid()).isTrue();
         assertThat(result.discountAmount()).isEqualByComparingTo("10.00");
+    }
+
+    @Test
+    void listPaymentMethods_usesGetAndDeserializesMethodsCorrectly() throws JsonProcessingException {
+        WalletApi.PaymentMethodInfo wallet = new WalletApi.PaymentMethodInfo(
+                "WALLET", "Wallet Balance", true, "INTERNAL");
+        WalletApi.PaymentMethodInfo stripe = new WalletApi.PaymentMethodInfo(
+                "STRIPE_CARD", "Credit/Debit Card", false, "STRIPE");
+        ApiResponse<List<WalletApi.PaymentMethodInfo>> apiResp = ApiResponse.success(List.of(wallet, stripe));
+
+        stubFor(get(urlEqualTo(WalletApi.PAYMENT_METHODS))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(objectMapper.writeValueAsString(apiResp))));
+
+        List<WalletApi.PaymentMethodInfo> result = aggregationService.listPaymentMethods();
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).method()).isEqualTo("WALLET");
+        assertThat(result.get(1).provider()).isEqualTo("STRIPE");
     }
 }

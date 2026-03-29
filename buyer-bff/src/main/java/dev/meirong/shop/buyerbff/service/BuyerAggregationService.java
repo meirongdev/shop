@@ -129,7 +129,7 @@ public class BuyerAggregationService {
 
     public List<WalletApi.PaymentMethodInfo> listPaymentMethods() {
         return call("walletService", false,
-                () -> post(properties.walletServiceUrl() + WalletApi.PAYMENT_METHODS, Map.of(),
+                () -> get(properties.walletServiceUrl() + WalletApi.PAYMENT_METHODS,
                         new ParameterizedTypeReference<ApiResponse<List<WalletApi.PaymentMethodInfo>>>() {}),
                 "Wallet service is temporarily unavailable");
     }

@@ -144,7 +144,7 @@ class CollectCardPluginTest {
             return card;
         });
 
-        when(playerCardRepository.countDistinctCardIdByGameIdAndPlayerId(anyString(), anyString())).thenAnswer(invocation -> {
+        when(playerCardRepository.countDistinctCardIdByGameIdAndBuyerId(anyString(), anyString())).thenAnswer(invocation -> {
             String gameId = invocation.getArgument(0, String.class);
             String buyerId = invocation.getArgument(1, String.class);
             return storedCards.stream()
@@ -154,7 +154,7 @@ class CollectCardPluginTest {
                     .count();
         });
 
-        when(playerCardRepository.countByGameIdAndPlayerIdAndCardId(anyString(), anyString(), anyString())).thenAnswer(invocation -> {
+        when(playerCardRepository.countByGameIdAndBuyerIdAndCardId(anyString(), anyString(), anyString())).thenAnswer(invocation -> {
             String gameId = invocation.getArgument(0, String.class);
             String buyerId = invocation.getArgument(1, String.class);
             String cardId = invocation.getArgument(2, String.class);

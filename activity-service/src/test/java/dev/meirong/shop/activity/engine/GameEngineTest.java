@@ -41,8 +41,8 @@ class GameEngineTest {
         ActivityGame game = new ActivityGame("game-1", GameType.RED_ENVELOPE, "Red Envelope");
         game.activate();
         when(gameRepository.findById("game-1")).thenReturn(Optional.of(game));
-        when(participationRepository.countByGameIdAndPlayerId("game-1", "player-1001")).thenReturn(0L);
-        when(participationRepository.countByGameIdAndPlayerIdSince(eq("game-1"), eq("player-1001"), any())).thenReturn(0L);
+        when(participationRepository.countByGameIdAndBuyerId("game-1", "player-1001")).thenReturn(0L);
+        when(participationRepository.countByGameIdAndBuyerIdSince(eq("game-1"), eq("player-1001"), any())).thenReturn(0L);
         when(pluginRegistry.requirePlugin(GameType.RED_ENVELOPE)).thenReturn(plugin);
         when(plugin.participate(any())).thenReturn(ParticipateResult.win(null, "Red Envelope",
                 dev.meirong.shop.activity.domain.PrizeType.POINTS, BigDecimal.ONE, "{\"amount\":\"1.00\"}"));
@@ -91,8 +91,8 @@ class GameEngineTest {
         ActivityGame game = new ActivityGame("game-card-1", GameType.COLLECT_CARD, "Collect Cards");
         game.activate();
         when(gameRepository.findById("game-card-1")).thenReturn(Optional.of(game));
-        when(participationRepository.countByGameIdAndPlayerId("game-card-1", "player-1001")).thenReturn(0L);
-        when(participationRepository.countByGameIdAndPlayerIdSince(eq("game-card-1"), eq("player-1001"), any())).thenReturn(0L);
+        when(participationRepository.countByGameIdAndBuyerId("game-card-1", "player-1001")).thenReturn(0L);
+        when(participationRepository.countByGameIdAndBuyerIdSince(eq("game-card-1"), eq("player-1001"), any())).thenReturn(0L);
         when(pluginRegistry.requirePlugin(GameType.COLLECT_CARD)).thenReturn(plugin);
         when(plugin.participate(any())).thenReturn(new ParticipateResult(
                 true, "card-dragon", "Dragon", PrizeType.CARD, null,
@@ -119,8 +119,8 @@ class GameEngineTest {
         ActivityGame game = new ActivityGame("game-farm-1", GameType.VIRTUAL_FARM, "Virtual Farm");
         game.activate();
         when(gameRepository.findById("game-farm-1")).thenReturn(Optional.of(game));
-        when(participationRepository.countByGameIdAndPlayerId("game-farm-1", "player-1001")).thenReturn(0L);
-        when(participationRepository.countByGameIdAndPlayerIdSince(eq("game-farm-1"), eq("player-1001"), any())).thenReturn(0L);
+        when(participationRepository.countByGameIdAndBuyerId("game-farm-1", "player-1001")).thenReturn(0L);
+        when(participationRepository.countByGameIdAndBuyerIdSince(eq("game-farm-1"), eq("player-1001"), any())).thenReturn(0L);
         when(pluginRegistry.requirePlugin(GameType.VIRTUAL_FARM)).thenReturn(plugin);
         when(plugin.participate(any())).thenReturn(new ParticipateResult(
                 true, null, "Virtual Farm", PrizeType.PROGRESS, null,
@@ -147,8 +147,8 @@ class GameEngineTest {
         ActivityGame game = new ActivityGame("game-farm-2", GameType.VIRTUAL_FARM, "Virtual Farm");
         game.activate();
         when(gameRepository.findById("game-farm-2")).thenReturn(Optional.of(game));
-        when(participationRepository.countByGameIdAndPlayerId("game-farm-2", "player-1001")).thenReturn(0L);
-        when(participationRepository.countByGameIdAndPlayerIdSince(eq("game-farm-2"), eq("player-1001"), any())).thenReturn(0L);
+        when(participationRepository.countByGameIdAndBuyerId("game-farm-2", "player-1001")).thenReturn(0L);
+        when(participationRepository.countByGameIdAndBuyerIdSince(eq("game-farm-2"), eq("player-1001"), any())).thenReturn(0L);
         when(pluginRegistry.requirePlugin(GameType.VIRTUAL_FARM)).thenReturn(plugin);
         when(plugin.participate(any())).thenReturn(new ParticipateResult(
                 true, "prize-points", "Farm Points", PrizeType.POINTS, BigDecimal.TEN,

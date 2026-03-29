@@ -26,7 +26,8 @@ import dev.meirong.shop.kmp.ui.components.LoadingIndicator
 @Composable
 fun SellerInventoryScreen(
     repository: SellerDashboardRepository,
-    sellerId: String
+    sellerId: String,
+    onE2eStateChanged: (String, String?) -> Unit = { _, _ -> }
 ) {
     var refreshKey by remember { mutableIntStateOf(0) }
     var dashboard by remember { mutableStateOf<SellerDashboard?>(null) }
@@ -34,16 +35,19 @@ fun SellerInventoryScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(sellerId, refreshKey) {
+        onE2eStateChanged("loading", null)
         isLoading = true
         errorMessage = null
         runCatching { repository.loadDashboard(sellerId) }
             .onSuccess {
                 dashboard = it
                 isLoading = false
+                onE2eStateChanged("ready", null)
             }
             .onFailure { error ->
                 errorMessage = error.message ?: "Failed to load seller inventory."
                 isLoading = false
+                onE2eStateChanged("error", errorMessage)
             }
     }
 

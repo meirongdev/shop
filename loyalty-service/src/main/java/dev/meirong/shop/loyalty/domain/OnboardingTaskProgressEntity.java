@@ -16,7 +16,7 @@ public class OnboardingTaskProgressEntity {
     @Column(nullable = false, length = 36)
     private String id;
 
-    @Column(name = "player_id", nullable = false, length = 64)
+    @Column(name = "buyer_id", nullable = false, length = 64)
     private String buyerId;
 
     @Column(name = "task_key", nullable = false, length = 64)

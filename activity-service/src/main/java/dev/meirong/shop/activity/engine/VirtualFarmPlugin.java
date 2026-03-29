@@ -51,7 +51,7 @@ public class VirtualFarmPlugin implements GamePlugin {
 
         FarmConfig config = parseConfig(ctx.gameConfig());
         FarmAction action = parseAction(ctx.payload());
-        ActivityVirtualFarm farm = farmRepository.findByGameIdAndPlayerId(ctx.gameId(), ctx.buyerId())
+        ActivityVirtualFarm farm = farmRepository.findByGameIdAndBuyerId(ctx.gameId(), ctx.buyerId())
                 .orElseGet(() -> new ActivityVirtualFarm(
                         UUID.randomUUID().toString(), ctx.gameId(), ctx.buyerId(),
                         config.maxStage(), config.stageProgress()));

@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface LoyaltyRedemptionRepository extends JpaRepository<LoyaltyRedemptionEntity, String> {
 
-    Page<LoyaltyRedemptionEntity> findByPlayerIdOrderByCreatedAtDesc(String buyerId, Pageable pageable);
+    Page<LoyaltyRedemptionEntity> findByBuyerIdOrderByCreatedAtDesc(String buyerId, Pageable pageable);
 }

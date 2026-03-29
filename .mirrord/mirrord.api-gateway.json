@@ -1,0 +1,6 @@
+{
+  "target": {
+    "path": "deployment/api-gateway",
+    "namespace": "shop"
+  }
+}

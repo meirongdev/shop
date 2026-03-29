@@ -17,7 +17,7 @@ public class LoyaltyRedemptionEntity {
     @Column(nullable = false, length = 36)
     private String id;
 
-    @Column(name = "player_id", nullable = false, length = 64)
+    @Column(name = "buyer_id", nullable = false, length = 64)
     private String buyerId;
 
     @Column(name = "reward_item_id", nullable = false, length = 36)

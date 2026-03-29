@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface OnboardingTaskProgressRepository extends JpaRepository<OnboardingTaskProgressEntity, String> {
 
-    List<OnboardingTaskProgressEntity> findByPlayerId(String buyerId);
+    List<OnboardingTaskProgressEntity> findByBuyerId(String buyerId);
 
-    Optional<OnboardingTaskProgressEntity> findByPlayerIdAndTaskKey(String buyerId, String taskKey);
+    Optional<OnboardingTaskProgressEntity> findByBuyerIdAndTaskKey(String buyerId, String taskKey);
 }

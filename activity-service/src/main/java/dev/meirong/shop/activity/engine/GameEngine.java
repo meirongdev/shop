@@ -100,14 +100,14 @@ public class GameEngine {
     private void validateLimits(ActivityGame game, String buyerId) {
         if (buyerId == null) return;
 
-        long totalCount = participationRepository.countByGameIdAndPlayerId(game.getId(), buyerId);
+        long totalCount = participationRepository.countByGameIdAndBuyerId(game.getId(), buyerId);
         if (game.getPerUserTotalLimit() > 0 && totalCount >= game.getPerUserTotalLimit()) {
             throw new BusinessException(CommonErrorCode.VALIDATION_ERROR,
                     "You have reached the total participation limit for this game");
         }
 
         Instant todayStart = LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant();
-        long dailyCount = participationRepository.countByGameIdAndPlayerIdSince(game.getId(), buyerId, todayStart);
+        long dailyCount = participationRepository.countByGameIdAndBuyerIdSince(game.getId(), buyerId, todayStart);
         if (game.getPerUserDailyLimit() > 0 && dailyCount >= game.getPerUserDailyLimit()) {
             throw new BusinessException(CommonErrorCode.VALIDATION_ERROR,
                     "You have reached the daily participation limit for this game");

@@ -19,7 +19,6 @@ import dev.meirong.shop.loyalty.service.LoyaltyAccountService;
 import dev.meirong.shop.loyalty.service.OnboardingTaskService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.dao.DataAccessException;
 import org.springframework.kafka.annotation.DltHandler;
@@ -33,7 +32,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 @Component
-@EnableConfigurationProperties(LoyaltyProperties.class)
 public class OrderEventListener {
 
     private static final Logger log = LoggerFactory.getLogger(OrderEventListener.class);

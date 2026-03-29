@@ -257,10 +257,11 @@
 
 #### 5.5.5 与当前仓库的落地点
 
-- `order-service`、`wallet-service` 已采用 Outbox Pattern，适合作为金融事务型与状态流转型规范样板
-- `notification-service`、`webhook-service` 适合作为通知 / 集成型重试样板
-- `search-service` 适合作为聚合 / 投影型回放样板
-- 后续新增 Kafka 消费者时，必须先声明其 consumer 类型，再决定 retry / DLQ / idempotency 策略
+- `order-service`、`wallet-service` 已采用 Outbox Pattern，适合作为金融事务型与状态流转型规范样板。
+- `wallet-service`、`promotion-service`、`loyalty-service` 已通过 `*IdempotencyConfiguration` 标准化了基于 Redis 的分布式幂等拦截（SET NX 模式）。
+- `notification-service`、`webhook-service` 适合作为通知 / 集成型重试样板。
+- `search-service` 适合作为聚合 / 投影型回放样板。
+- 后续新增 Kafka 消费者时，必须先声明其 consumer 类型，再决定 retry / DLQ / idempotency 策略。
 
 #### 5.5.6 当前仓库的实际异常处理落地（2026-03-23）
 

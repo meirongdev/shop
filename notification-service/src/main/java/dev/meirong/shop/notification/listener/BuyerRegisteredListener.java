@@ -42,7 +42,7 @@ public class BuyerRegisteredListener {
             autoCreateTopics = "true",
             exclude = NonRetryableKafkaConsumerException.class
     )
-    @KafkaListener(topics = "${shop.notification.user-registered-topic}",
+    @KafkaListener(topics = "${shop.notification.buyer-registered-topic}",
                    groupId = "${spring.application.name}")
     public void onBuyerRegistered(String payload) {
         try {

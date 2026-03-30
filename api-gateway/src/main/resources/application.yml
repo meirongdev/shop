@@ -49,6 +49,14 @@ spring:
               filters:
                 - PreserveHost
 
+            - id: seller-portal
+              uri: ${SELLER_PORTAL_URI:http://seller-portal:80}
+              predicates:
+                - Path=/seller/**
+              filters:
+                - StripPrefix=1
+                - PreserveHost
+
             - id: buyer-api
               uri: ${BUYER_BFF_URI:http://buyer-bff:8080}
               predicates:

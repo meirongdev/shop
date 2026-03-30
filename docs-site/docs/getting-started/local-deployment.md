@@ -233,11 +233,12 @@ make local-access
 ```
 
 - **Buyer Portal**: [http://127.0.0.1:18080/buyer/login](http://127.0.0.1:18080/buyer/login)
+- **Seller Portal (KMP WASM)**: [http://127.0.0.1:18080/seller/](http://127.0.0.1:18080/seller/)
 - **Guest Checkout**: [http://127.0.0.1:18080/buyer/guest/track](http://127.0.0.1:18080/buyer/guest/track)
 - **Gateway OpenAPI**: [http://127.0.0.1:18080/v3/api-docs/gateway](http://127.0.0.1:18080/v3/api-docs/gateway)
 - **Mailpit（邮件）**: [http://127.0.0.1:18025](http://127.0.0.1:18025)
 - **Prometheus**: [http://127.0.0.1:19090](http://127.0.0.1:19090)
-- **Seller 侧功能**：当前由 KMP `seller-app` 承担，不再通过 `seller-portal` SSR 页面或 `/seller/login` 暴露。`make ui-e2e` / `make e2e` 会自动构建 seller WASM bundle、启动本地代理并用 headless Chrome 校验 seller 页面。需要手工预览时，可按下文的 seller Web 代理步骤启动本地访问入口。
+- **Grafana**: [http://127.0.0.1:13000](http://127.0.0.1:13000)（Logs / Traces / Metrics 统一看板）
 
 ```bash
 kubectl -n shop get pods

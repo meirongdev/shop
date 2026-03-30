@@ -7,7 +7,7 @@ gateway_port="${LOCAL_GATEWAY_PORT:-18080}"
 mailpit_port="${LOCAL_MAILPIT_PORT:-18025}"
 prometheus_port="${LOCAL_PROMETHEUS_PORT:-19090}"
 
-if [[ -z "${context}" ]]; then
+grafana_port="${LOCAL_GRAFANA_PORT:-13000}"
   echo "error: unable to determine kubectl context; set KUBECTL_CONTEXT explicitly." >&2
   exit 1
 fi
@@ -60,12 +60,15 @@ trap cleanup EXIT INT TERM
 start_port_forward "api-gateway" "${gateway_port}" 8080
 start_port_forward "mailpit" "${mailpit_port}" 8025
 start_port_forward "prometheus" "${prometheus_port}" 9090
+start_port_forward "grafana" "${grafana_port}" 3000
 
 echo "Local access ready via kubectl port-forward on context '${context}'."
 echo "  Gateway:    http://127.0.0.1:${gateway_port}"
 echo "  Buyer SSR:  http://127.0.0.1:${gateway_port}/buyer/login"
+echo "  Seller App: http://127.0.0.1:${gateway_port}/seller/"
 echo "  Mailpit:    http://127.0.0.1:${mailpit_port}"
 echo "  Prometheus: http://127.0.0.1:${prometheus_port}"
+echo "  Grafana:    http://127.0.0.1:${grafana_port}"
 echo ""
 echo "Press Ctrl-C to stop forwarding."
 

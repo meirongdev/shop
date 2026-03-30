@@ -43,27 +43,70 @@ if [[ "${#deployments[@]}" -eq 0 || "${deploy_mode}" == "legacy" ]]; then
   deployments=("${ALL_MODULES[@]}")
 fi
 
-if [[ "${deploy_mode}" == "fast" ]]; then
-  for deployment_name in "${deployments[@]}"; do
-    kubectl --context "${context_name}" -n shop rollout restart "deployment/${deployment_name}"
+# Wave-based restart reduces peak CPU contention on single-node Kind clusters.
+# Wave 1: domain/auth services (DB-dependent; init containers ensure MySQL is ready)
+# Wave 2: BFFs, search, notification, portal (no direct DB; can overlap with wave 1 tail)
+# Wave 3: api-gateway (depends on auth-server being healthy for first-request JWT validation)
+WAVE1=(auth-server profile-service promotion-service wallet-service marketplace-service
+       order-service loyalty-service activity-service webhook-service subscription-service)
+WAVE2=(buyer-bff seller-bff search-service notification-service buyer-portal seller-portal)
+WAVE3=(api-gateway)
+
+rollout_wait() {
+  local timeout="${1}"; shift
+  local deps=("$@")
+  local pids=() failed=()
+  for d in "${deps[@]}"; do
+    kubectl --context "${context_name}" -n shop rollout status \
+      "deployment/${d}" --timeout="${timeout}" &
+    pids+=($!)
   done
+  for i in "${!pids[@]}"; do
+    if ! wait "${pids[$i]}"; then
+      failed+=("${deps[$i]}")
+    fi
+  done
+  if [[ "${#failed[@]}" -gt 0 ]]; then
+    echo "error: rollout timed out for: ${failed[*]}" >&2
+    return 1
+  fi
+}
+
+restart_deployments() {
+  local deps=("$@")
+  for d in "${deps[@]}"; do
+    if array_contains "${d}" "${deployments[@]}"; then
+      kubectl --context "${context_name}" -n shop rollout restart "deployment/${d}"
+    fi
+  done
+}
+
+wait_wave() {
+  local timeout="${1}"; shift
+  local deps=("$@")
+  local filtered=()
+  for d in "${deps[@]}"; do
+    if array_contains "${d}" "${deployments[@]}"; then
+      filtered+=("${d}")
+    fi
+  done
+  if [[ "${#filtered[@]}" -gt 0 ]]; then
+    echo "  ↳ waiting for: ${filtered[*]}"
+    rollout_wait "${timeout}" "${filtered[@]}"
+  fi
+}
+
+if [[ "${deploy_mode}" == "fast" ]]; then
+  # Stagger restarts: let wave-1 JVMs claim CPU before subsequent waves start.
+  restart_deployments "${WAVE1[@]}"
+  if [[ "${#deployments[@]}" -gt 5 ]]; then
+    sleep 20  # Only stagger on full restarts (>5 services at once)
+  fi
+  restart_deployments "${WAVE2[@]}"
+  restart_deployments "${WAVE3[@]}"
 fi
 
-# Wait for all rollouts in parallel — much faster than sequential polling.
-echo "Waiting for ${#deployments[@]} deployment(s) to roll out…"
-pids=()
-failed=()
-for deployment_name in "${deployments[@]}"; do
-  kubectl --context "${context_name}" -n shop rollout status \
-    "deployment/${deployment_name}" --timeout=600s &
-  pids+=($!)
-done
-for i in "${!pids[@]}"; do
-  if ! wait "${pids[$i]}"; then
-    failed+=("${deployments[$i]}")
-  fi
-done
-if [[ "${#failed[@]}" -gt 0 ]]; then
-  echo "error: rollout timed out for: ${failed[*]}" >&2
-  exit 1
-fi
+echo "Waiting for ${#deployments[@]} deployment(s) to roll out (3-wave schedule)…"
+wait_wave 240s "${WAVE1[@]}"
+wait_wave 180s "${WAVE2[@]}"
+wait_wave 120s "${WAVE3[@]}"

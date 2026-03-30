@@ -78,8 +78,15 @@ ensure_repo_root
 
 build_host_jars() {
   local modules_csv
+  local maven_modules=()
 
-  modules_csv="$(IFS=,; printf '%s' "${modules[*]}")"
+  for m in "${modules[@]}"; do
+    [[ "${m}" != "seller-portal" ]] && maven_modules+=("${m}")
+  done
+
+  [[ "${#maven_modules[@]}" -eq 0 ]] && return 0
+
+  modules_csv="$(IFS=,; printf '%s' "${maven_modules[*]}")"
   # Include 'clean' so renamed/deleted resource files never ghost into the JAR.
   ./mvnw -q --no-transfer-progress -T 1C -pl "${modules_csv}" -am -DskipTests clean package
 }
@@ -87,6 +94,11 @@ build_host_jars() {
 build_fast_module() {
   local module="$1"
   local jar_file
+
+  if [[ "${module}" == "seller-portal" ]]; then
+    build_seller_portal
+    return
+  fi
 
   jar_file="$(module_jar_path "${module}")"
   [[ -f "${jar_file}" ]] || {
@@ -102,6 +114,22 @@ build_fast_module() {
     .
 }
 
+build_seller_portal() {
+  local dist_dir="kmp/seller-app/build/dist/wasmJs/productionExecutable"
+
+  if [[ ! -d "${dist_dir}" ]]; then
+    echo "==> Building seller-portal WASM (first time, may take several minutes)..."
+    (cd kmp && ./gradlew :seller-app:wasmJsBrowserProductionWebpack --no-daemon -q)
+  fi
+
+  echo "==> Building $(module_local_image_ref "seller-portal") with docker/Dockerfile.seller-portal"
+  docker build \
+    --build-arg "DIST_DIR=${dist_dir}" \
+    -f docker/Dockerfile.seller-portal \
+    -t "$(module_local_image_ref "seller-portal")" \
+    .
+}
+
 build_legacy_module() {
   local module="$1"
 
@@ -114,7 +142,7 @@ build_legacy_module() {
 }
 
 export LOCAL_IMAGE_TAG LOCAL_REGISTRY
-export -f module_local_image_ref module_jar_path build_host_jars build_fast_module build_legacy_module
+export -f module_local_image_ref module_jar_path build_host_jars build_fast_module build_seller_portal build_legacy_module
 
 if [[ "${mode}" == "changed" ]]; then
   modules=()

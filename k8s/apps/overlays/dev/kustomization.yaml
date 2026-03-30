@@ -51,6 +51,9 @@ images:
   - name: shop/buyer-portal
     newName: localhost:5000/shop/buyer-portal
     newTag: dev
+  - name: shop/seller-portal
+    newName: localhost:5000/shop/seller-portal
+    newTag: dev
 patches:
   - target:
       kind: Deployment
@@ -62,3 +65,6 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/imagePullPolicy
         value: Always
+      - op: add
+        path: /spec/progressDeadlineSeconds
+        value: 300

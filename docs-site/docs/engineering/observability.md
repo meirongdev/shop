@@ -4,6 +4,25 @@ title: 可观测性
 
 # 可观测性
 
+## 本地访问
+
+启动集群后，通过 `make local-access` 开启端口转发：
+
+```bash
+make local-access &
+```
+
+| 工具 | 地址 | 用途 |
+|------|------|------|
+| Grafana | http://127.0.0.1:13000 | 日志、指标、链路追踪统一看板 |
+| Prometheus | http://127.0.0.1:19090 | 原始指标查询 |
+
+Grafana 预置了以下数据源（无需额外配置）：
+- **Prometheus** — `http://prometheus:9090`
+- **Loki** — `http://loki:3100`
+- **Tempo** — `http://tempo:3200`
+- **Pyroscope** — `http://pyroscope:4040`
+
 ## 当前已落地的观测栈
 
 | 组件 | 作用 | 当前状态 |

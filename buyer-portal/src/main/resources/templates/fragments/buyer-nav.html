@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<div th:fragment="nav" class="topbar">
+<th:block th:fragment="nav">
+<style>.nav-links a.active{color:#3b82f6;border-bottom-color:#3b82f6}</style>
+<div class="topbar">
     <h1>Shop Platform <span style="color:#6b7280;font-weight:400;font-size:14px">/ Buyer</span></h1>
     <nav class="nav-links">
-        <a th:href="@{/buyer/home}">Home</a>
-        <a th:href="@{/buyer/cart}" class="cart-link">Cart<span th:if="${cartCount != null && cartCount > 0}" class="badge" th:text="${cartCount}"></span></a>
-        <a th:href="@{/buyer/activities}">Activities</a>
-        <a th:href="${sessionUser.guest} ? @{/buyer/login} : @{/buyer/welcome}">Welcome</a>
-        <a th:href="${sessionUser.guest} ? @{/buyer/login} : @{/buyer/invite}">Invite</a>
-        <a th:href="${sessionUser.guest} ? @{/buyer/login} : @{/buyer/loyalty}">Loyalty</a>
-        <a th:href="${sessionUser.guest} ? @{/buyer/login} : @{/buyer/orders}">Orders</a>
-        <a th:href="${sessionUser.guest} ? @{/buyer/login} : @{/buyer/wallet}">Wallet</a>
-        <a th:href="${sessionUser.guest} ? @{/buyer/login} : @{/buyer/profile}">Profile</a>
+        <a th:href="@{/buyer/home}" th:classappend="${#strings.startsWith(#request.requestURI, '/buyer/home') ? 'active' : ''}">Home</a>
+        <a th:href="@{/buyer/cart}" class="cart-link" th:classappend="${#strings.startsWith(#request.requestURI, '/buyer/cart') ? 'active' : ''}">Cart<span th:if="${cartCount != null && cartCount > 0}" class="badge" th:text="${cartCount}"></span></a>
+        <a th:href="@{/buyer/activities}" th:classappend="${#strings.startsWith(#request.requestURI, '/buyer/activit') ? 'active' : ''}">Activities</a>
+        <a th:href="${sessionUser.guest} ? @{/buyer/login} : @{/buyer/welcome}" th:classappend="${#strings.startsWith(#request.requestURI, '/buyer/welcome') ? 'active' : ''}">Welcome</a>
+        <a th:href="${sessionUser.guest} ? @{/buyer/login} : @{/buyer/invite}" th:classappend="${#strings.startsWith(#request.requestURI, '/buyer/invite') ? 'active' : ''}">Invite</a>
+        <a th:href="${sessionUser.guest} ? @{/buyer/login} : @{/buyer/loyalty}" th:classappend="${#strings.startsWith(#request.requestURI, '/buyer/loyalty') ? 'active' : ''}">Loyalty</a>
+        <a th:href="${sessionUser.guest} ? @{/buyer/login} : @{/buyer/orders}" th:classappend="${#strings.startsWith(#request.requestURI, '/buyer/order') ? 'active' : ''}">Orders</a>
+        <a th:href="${sessionUser.guest} ? @{/buyer/login} : @{/buyer/wallet}" th:classappend="${#strings.startsWith(#request.requestURI, '/buyer/wallet') ? 'active' : ''}">Wallet</a>
+        <a th:href="${sessionUser.guest} ? @{/buyer/login} : @{/buyer/profile}" th:classappend="${#strings.startsWith(#request.requestURI, '/buyer/profile') ? 'active' : ''}">Profile</a>
     </nav>
     <div class="user-info">
         <span th:text="${sessionUser.guest ? 'Guest buyer' : sessionUser.displayName}"></span>
@@ -20,5 +22,6 @@
         <a th:unless="${sessionUser.guest}" th:href="@{/buyer/logout}">Logout</a>
     </div>
 </div>
+</th:block>
 </body>
 </html>

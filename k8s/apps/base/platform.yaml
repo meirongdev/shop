@@ -46,6 +46,10 @@ spec:
         app: auth-server
         tier: app
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command: ['sh', '-c', 'until nc -z -w 2 mysql 3306; do sleep 2; done']
       containers:
         - name: auth-server
           image: shop/auth-server:dev
@@ -77,8 +81,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -141,8 +146,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -204,8 +210,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -251,6 +258,10 @@ spec:
         app: profile-service
         tier: app
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command: ['sh', '-c', 'until nc -z -w 2 mysql 3306; do sleep 2; done']
       containers:
         - name: profile-service
           image: shop/profile-service:dev
@@ -270,8 +281,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -317,6 +329,10 @@ spec:
         app: promotion-service
         tier: app
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command: ['sh', '-c', 'until nc -z -w 2 mysql 3306; do sleep 2; done']
       containers:
         - name: promotion-service
           image: shop/promotion-service:dev
@@ -336,8 +352,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -383,6 +400,10 @@ spec:
         app: wallet-service
         tier: app
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command: ['sh', '-c', 'until nc -z -w 2 mysql 3306; do sleep 2; done']
       containers:
         - name: wallet-service
           image: shop/wallet-service:dev
@@ -402,8 +423,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -449,6 +471,10 @@ spec:
         app: marketplace-service
         tier: app
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command: ['sh', '-c', 'until nc -z -w 2 mysql 3306; do sleep 2; done']
       containers:
         - name: marketplace-service
           image: shop/marketplace-service:dev
@@ -468,8 +494,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -536,8 +563,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -608,6 +636,10 @@ spec:
         app: notification-service
         tier: app
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command: ['sh', '-c', 'until nc -z -w 2 mysql 3306; do sleep 2; done']
       containers:
         - name: notification-service
           image: shop/notification-service:dev
@@ -641,8 +673,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -688,6 +721,10 @@ spec:
         app: loyalty-service
         tier: app
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command: ['sh', '-c', 'until nc -z -w 2 mysql 3306; do sleep 2; done']
       containers:
         - name: loyalty-service
           image: shop/loyalty-service:dev
@@ -717,8 +754,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -764,6 +802,10 @@ spec:
         app: activity-service
         tier: app
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command: ['sh', '-c', 'until nc -z -w 2 mysql 3306; do sleep 2; done']
       containers:
         - name: activity-service
           image: shop/activity-service:dev
@@ -795,8 +837,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -842,6 +885,10 @@ spec:
         app: webhook-service
         tier: app
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command: ['sh', '-c', 'until nc -z -w 2 mysql 3306; do sleep 2; done']
       containers:
         - name: webhook-service
           image: shop/webhook-service:dev
@@ -871,8 +918,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -918,6 +966,10 @@ spec:
         app: subscription-service
         tier: app
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command: ['sh', '-c', 'until nc -z -w 2 mysql 3306; do sleep 2; done']
       containers:
         - name: subscription-service
           image: shop/subscription-service:dev
@@ -949,8 +1001,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -1015,8 +1068,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -1045,6 +1099,55 @@ spec:
     - name: management
       port: 8081
       targetPort: 8081
+---
+# ── Seller Portal (nginx serving KMP/WASM static files) ─────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seller-portal
+  namespace: shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: seller-portal
+  template:
+    metadata:
+      labels:
+        app: seller-portal
+        tier: app
+    spec:
+      containers:
+        - name: seller-portal
+          image: shop/seller-portal:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seller-portal
+  namespace: shop
+spec:
+  selector:
+    app: seller-portal
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -1079,8 +1182,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -1129,6 +1233,10 @@ spec:
         app: order-service
         tier: app
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.35
+          command: ['sh', '-c', 'until nc -z -w 2 mysql 3306; do sleep 2; done']
       containers:
         - name: order-service
           image: shop/order-service:dev
@@ -1158,8 +1266,9 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
-            failureThreshold: 30
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            failureThreshold: 24
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness

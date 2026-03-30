@@ -20,6 +20,7 @@ ALL_MODULES=(
   webhook-service
   subscription-service
   buyer-portal
+  seller-portal
 )
 
 SHARED_PATHS=(

@@ -29,8 +29,8 @@ Grafana 预置了以下数据源（无需额外配置）：
 |---|---|---|
 | Prometheus | 指标抓取、SLI/SLO、告警规则 | 已启用 exemplar storage |
 | OpenTelemetry Collector | 接收 OTLP traces / logs、补充 k8s 属性、过滤健康噪音 | 已在 `k8s/infra/base.yaml` 中落地 |
-| Tempo | Trace 存储与查询 | 已部署，接 Garage S3 |
-| Loki | 日志聚合与查询 | 已通过 OTLP 原生接入，替代 Promtail 路线 |
+| Tempo | Trace 存储与查询 | 已部署，本地 filesystem 存储（开发环境） |
+| Loki | 日志聚合与查询 | 已通过 OTLP 原生接入，filesystem 存储（开发环境） |
 | Grafana | 统一看板与跨信号跳转 | 已预置 Prometheus / Loki / Tempo / Pyroscope datasource |
 | Pyroscope | 持续性能分析 | 已接入 Grafana |
 | Kafka Exporter | consumer lag 指标 | 已纳入观测清单 |

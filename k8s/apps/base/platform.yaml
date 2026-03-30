@@ -1300,7 +1300,7 @@ spec:
       targetPort: 8081
 ---
 # ── NetworkPolicies (Cilium) ──────────────────────────────────────────────────
-# ② api-gateway → all app Pods (port 8080 only)
+# ② api-gateway → all app Pods (port 8080 for Spring Boot; port 80 for nginx seller-portal)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -1322,6 +1322,7 @@ spec:
               app: api-gateway
       ports:
         - port: 8080
+        - port: 80
   policyTypes: [Ingress]
 ---
 # ③ buyer-bff → domain services (port 8080 only)

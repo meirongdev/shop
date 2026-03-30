@@ -46,7 +46,11 @@ make e2e
 ### 2. 清理环境
 
 ```bash
-./kind/teardown.sh
+# 删除 Kind 集群（保留本地 Docker 镜像缓存）
+make kind-teardown
+
+# 删除集群 + 清理所有本地 shop/* 开发镜像
+make clean-all
 ```
 
 ### 3. 分步部署

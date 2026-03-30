@@ -37,17 +37,11 @@ data:
 
     storage:
       trace:
-        backend: s3
+        backend: local
+        local:
+          path: /tmp/tempo/blocks
         wal:
           path: /tmp/tempo/wal
-        s3:
-          bucket: tempo-traces
-          endpoint: garage.shop.svc.cluster.local:3900
-          access_key: garageshop
-          secret_key: garageshopsecret2026
-          insecure: true
-          forcepathstyle: true
-          region: garage
 
     overrides:
       defaults:

@@ -68,3 +68,11 @@ patches:
       - op: add
         path: /spec/progressDeadlineSeconds
         value: 300
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            memory: "256Mi"
+            cpu: "50m"
+          limits:
+            memory: "512Mi"

@@ -552,7 +552,7 @@ spec:
     matchExpressions:
       - key: app
         operator: In
-        values: [mysql, kafka, redis, meilisearch, mailpit, otel-collector]
+        values: [mysql, kafka, redis, meilisearch, mailpit, otel-collector, garage]
   ingress:
     - from:
         - namespaceSelector:

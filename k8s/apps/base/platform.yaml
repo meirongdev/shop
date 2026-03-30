@@ -29,6 +29,7 @@ data:
   SEARCH_SERVICE_URL: http://search-service:8080
   MARKETPLACE_PRODUCT_TOPIC: marketplace.product.events.v1
   SHOP_SECURITY_INTERNAL_ENABLED: "false"
+  JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=60 -XX:InitialRAMPercentage=30"
 ---
 apiVersion: apps/v1
 kind: Deployment

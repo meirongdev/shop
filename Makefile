@@ -10,7 +10,7 @@ OVERLAY ?= dev
 TILT_REGISTRY ?= localhost:5000
 ARCHETYPE_MODULES := shop-common,shop-contracts,shop-archetypes/gateway-service-archetype,shop-archetypes/auth-service-archetype,shop-archetypes/bff-service-archetype,shop-archetypes/domain-service-archetype,shop-archetypes/event-worker-archetype,shop-archetypes/portal-service-archetype
 
-.PHONY: help test build verify arch-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed redeploy smoke-test ui-e2e e2e-playwright e2e-playwright-seller local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap
+.PHONY: help test build verify arch-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed redeploy smoke-test ui-e2e e2e-playwright e2e-playwright-seller local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap kind-teardown clean-images clean-all
 
 help: ## Show available developer commands
 	@awk 'BEGIN {FS = ":.*## "; printf "\nUsage:\n  make <target>\n\nTargets:\n"} /^[a-zA-Z0-9_.-]+:.*## / { printf "  %-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -124,3 +124,12 @@ mirrord-run: ## Run a local module through mirrord (usage: make mirrord-run MODU
 
 argocd-bootstrap: ## Install ArgoCD (non-HA) and apply the shop-platform Application
 	./scripts/argocd-bootstrap.sh
+
+kind-teardown: ## Delete the Kind cluster and remove its kubeconfig context
+	./kind/teardown.sh $(CLUSTER)
+
+clean-images: ## Remove all local shop/* dev Docker images
+	docker images --format '{{.Repository}}:{{.Tag}}' | grep '^localhost:5000/shop/' | xargs -r docker rmi --force || true
+	docker images --format '{{.Repository}}:{{.Tag}}' | grep '^shop/' | xargs -r docker rmi --force || true
+
+clean-all: kind-teardown clean-images ## Destroy the Kind cluster and delete all local dev images

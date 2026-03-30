@@ -6,6 +6,7 @@ spring:
       enabled: true
   thymeleaf:
     cache: false
+    use-request-attributes: true
   jackson:
     serialization:
       write-dates-as-timestamps: false

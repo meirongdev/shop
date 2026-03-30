@@ -31,6 +31,11 @@ spec:
                 secretKeyRef:
                   name: garage-secret
                   key: admin-token
+            - name: GARAGE_RPC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: garage-secret
+                  key: rpc-secret
           volumeMounts:
             - name: config
               mountPath: /etc/garage.toml
@@ -48,9 +53,6 @@ spec:
             httpGet:
               path: /health
               port: 3903
-              httpHeaders:
-                - name: Authorization
-                  value: Bearer $(GARAGE_ADMIN_TOKEN)
             initialDelaySeconds: 10
             periodSeconds: 10
       volumes:

@@ -14,6 +14,8 @@
 # Allow the Dockerfile itself
 !docker/Dockerfile.module
 !docker/Dockerfile.fast
+!docker/Dockerfile.seller-portal
+!docker/nginx-seller.conf
 
 # Ignore build artifacts and IDE folders
 **/target/**
@@ -29,3 +31,6 @@ node_modules
 # Allow host-built runtime jars for fast local Docker builds
 !**/target/
 !**/target/*.jar
+
+# Allow KMP WASM build outputs for seller-portal image
+!kmp/seller-app/build/dist/**

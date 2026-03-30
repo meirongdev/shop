@@ -38,6 +38,9 @@ else
 fi
 
 phase_start "Smoke tests"
+# Brief stabilisation window — allows any JVM that finished rollout to
+# fully warm up before we probe it (guards against false-positive 502s).
+sleep 15
 bash "${repo_root}/scripts/smoke-test.sh"
 phase_done
 
@@ -56,7 +59,9 @@ echo "✅ Local e2e flow completed in $(( $(date +%s) - _t0 ))s."
 echo "   For stable local browser/curl access, run in another terminal:"
 echo "     make local-access"
 echo "   Then use:"
-echo "     Gateway:    http://127.0.0.1:18080"
-echo "     Buyer SSR:  http://127.0.0.1:18080/buyer/login"
-echo "     Mailpit:    http://127.0.0.1:18025"
-echo "     Prometheus: http://127.0.0.1:19090"
+echo "     Gateway:       http://127.0.0.1:18080"
+echo "     Buyer SSR:     http://127.0.0.1:18080/buyer/login"
+echo "     Seller Portal: http://127.0.0.1:18080/seller/"
+echo "     Mailpit:       http://127.0.0.1:18025"
+echo "     Prometheus:    http://127.0.0.1:19090"
+echo "     Grafana:       http://127.0.0.1:13000  (admin/admin)"

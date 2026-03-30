@@ -1150,6 +1150,55 @@ spec:
       port: 80
       targetPort: 80
 ---
+# ── Buyer App (nginx serving KMP/WASM static files) ─────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: buyer-app
+  namespace: shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: buyer-app
+  template:
+    metadata:
+      labels:
+        app: buyer-app
+        tier: app
+    spec:
+      containers:
+        - name: buyer-app
+          image: shop/buyer-app:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /index.html
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: buyer-app
+  namespace: shop
+spec:
+  selector:
+    app: buyer-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1300,7 +1349,7 @@ spec:
       targetPort: 8081
 ---
 # ── NetworkPolicies (Cilium) ──────────────────────────────────────────────────
-# ② api-gateway → all app Pods (port 8080 for Spring Boot; port 80 for nginx seller-portal)
+# ② api-gateway → all app Pods (port 8080 for Spring Boot; port 80 for nginx seller-portal / buyer-app)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

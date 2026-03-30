@@ -126,6 +126,8 @@ check "Gateway OpenAPI endpoint" "GET" "/v3/api-docs/gateway" "200"
 check "Auth login validation" "POST" "/auth/v1/token/login" "400" "{}" "application/json"
 check "Buyer public marketplace" "POST" "/public/buyer/v1/marketplace/list" "200"
 check "Seller API requires authentication" "POST" "/api/seller/v1/dashboard/get" "401" "{}" "application/json"
+check "Seller portal SPA shell" "GET" "/seller/" "200"
+check "Buyer KMP app SPA shell" "GET" "/buyer-app/" "200"
 echo ""
 
 if (( failures > 0 )); then

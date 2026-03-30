@@ -57,6 +57,14 @@ spring:
                 - StripPrefix=1
                 - PreserveHost
 
+            - id: buyer-app
+              uri: ${BUYER_APP_URI:http://buyer-app:80}
+              predicates:
+                - Path=/buyer-app/**
+              filters:
+                - StripPrefix=1
+                - PreserveHost
+
             - id: buyer-api
               uri: ${BUYER_BFF_URI:http://buyer-bff:8080}
               predicates:

@@ -133,3 +133,30 @@ test.describe('Seller app - authenticated routes', () => {
     expect(errMsg ?? '').toBe('');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Seller portal via gateway — verify the k8s-deployed nginx SPA shell
+// (uses GATEWAY_URL from playwright.config.ts seller project baseURL override)
+// ---------------------------------------------------------------------------
+
+test.describe('Seller portal SPA shell via gateway', () => {
+  test('seller portal index is served from gateway', async ({ request }) => {
+    const resp = await request.get(`${GATEWAY_URL}/seller/`);
+    expect(resp.status()).toBe(200);
+    const body = await resp.text();
+    expect(body).toContain('<!DOCTYPE html');
+    expect(body).toContain('seller-app.js');
+  });
+
+  test('seller portal JS bundle is served', async ({ request }) => {
+    const resp = await request.get(`${GATEWAY_URL}/seller/seller-app.js`);
+    expect(resp.status()).toBe(200);
+  });
+
+  test('seller portal SPA fallback serves index.html for unknown routes', async ({ request }) => {
+    const resp = await request.get(`${GATEWAY_URL}/seller/some/deep/route`);
+    expect(resp.status()).toBe(200);
+    const body = await resp.text();
+    expect(body).toContain('<!DOCTYPE html');
+  });
+});

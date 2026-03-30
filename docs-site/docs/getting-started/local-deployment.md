@@ -236,7 +236,8 @@ make e2e
 make local-access
 ```
 
-- **Buyer Portal**: [http://127.0.0.1:18080/buyer/login](http://127.0.0.1:18080/buyer/login)
+- **Buyer Portal (SSR)**: [http://127.0.0.1:18080/buyer/login](http://127.0.0.1:18080/buyer/login)
+- **Buyer App (KMP WASM)**: [http://127.0.0.1:18080/buyer-app/](http://127.0.0.1:18080/buyer-app/)
 - **Seller Portal (KMP WASM)**: [http://127.0.0.1:18080/seller/](http://127.0.0.1:18080/seller/)
 - **Guest Checkout**: [http://127.0.0.1:18080/buyer/guest/track](http://127.0.0.1:18080/buyer/guest/track)
 - **Gateway OpenAPI**: [http://127.0.0.1:18080/v3/api-docs/gateway](http://127.0.0.1:18080/v3/api-docs/gateway)
@@ -287,18 +288,20 @@ node ./scripts/seller-web-proxy.mjs \
 
 ### 4.2 Playwright E2E 自动化测试
 
-`e2e-tests/` 目录包含基于 Playwright 的浏览器自动化测试，覆盖 Buyer Portal 和 Seller App 的全部主要页面。
+`e2e-tests/` 目录包含基于 Playwright 的浏览器自动化测试，覆盖 Buyer Portal、Buyer App (KMP WASM) 和 Seller App 的主要页面。
 
 ```bash
 # 首次安装依赖（仅需一次）
 cd e2e-tests && npm install && npx playwright install chromium
 
-# 运行 Buyer Portal 测试（需 make local-access 保持运行）
+# 运行 Buyer 测试（需 make local-access 保持运行）
+# 包含：SSR 登录/访客/认证页面 + Buyer App WASM SPA shell 验证
 make local-access &
-make e2e-playwright          # 18 个测试：登录、访客模式、所有已认证页面
+make e2e-playwright
 
-# 运行 Seller App 测试（会自动构建 WASM 并启动代理）
-make e2e-playwright-seller   # 8 个测试：Auth Screen + 全部 5 条路由
+# 运行 Seller 测试（自动构建 WASM 并启动代理）
+# 包含：Seller App 交互测试 + Seller Portal 网关 SPA shell 验证
+make e2e-playwright-seller
 
 # 直接运行全部测试
 cd e2e-tests && npx playwright test
@@ -307,7 +310,7 @@ cd e2e-tests && npx playwright test
 cd e2e-tests && npx playwright show-report
 ```
 
-**Demo 账号**：`buyer.demo / password`（Buyer）、`seller.demo / password`（Seller）。
+**Demo 账号**：`buyer.demo / password`（Buyer）、`seller.demo / password`（Seller）.
 
 ### 4.2 验证 Search Service Feature Toggle 热更新
 
@@ -557,7 +560,9 @@ kind delete cluster --name shop-kind
 | 服务 | 应用端口 | 管理端口 | 已验证的本地访问方式 |
 |------|---------|---------|----------------------|
 | api-gateway | 8080 | 8081 | `make local-access` → `127.0.0.1:18080` |
-| buyer-portal | 8080 | 8081 | 通过 gateway 访问：`127.0.0.1:18080/buyer/...` |
+| buyer-portal (SSR) | 8080 | 8081 | 通过 gateway 访问：`127.0.0.1:18080/buyer/...` |
+| buyer-app (KMP WASM) | 80 | - | 通过 gateway 访问：`127.0.0.1:18080/buyer-app/` |
+| seller-portal (KMP WASM) | 80 | - | 通过 gateway 访问：`127.0.0.1:18080/seller/` |
 | Mailpit (Web UI) | 8025 | - | `make local-access` → `127.0.0.1:18025` |
 | Prometheus | 9090 | - | `make local-access` → `127.0.0.1:19090` |
 | 其他 HTTP 服务 | 8080 | 8081 | `kubectl -n shop port-forward svc/<service> <local>:8080` |

@@ -13,7 +13,6 @@ resources:
   # Log aggregation
   - loki/loki-configmap.yaml
   - loki/loki-deployment.yaml
-  - otel-collector/otel-collector-rbac.yaml
   # Distributed tracing
   - tempo/tempo-configmap.yaml
   - tempo/tempo-deployment.yaml

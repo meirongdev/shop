@@ -10,7 +10,7 @@ OVERLAY ?= dev
 TILT_REGISTRY ?= localhost:5000
 ARCHETYPE_MODULES := shop-common,shop-contracts,shop-archetypes/gateway-service-archetype,shop-archetypes/auth-service-archetype,shop-archetypes/bff-service-archetype,shop-archetypes/domain-service-archetype,shop-archetypes/event-worker-archetype,shop-archetypes/portal-service-archetype
 
-.PHONY: help test build verify arch-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed redeploy smoke-test ui-e2e e2e-playwright e2e-playwright-seller local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap kind-teardown clean-images clean-all
+.PHONY: help test build verify arch-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed redeploy smoke-test verify-observability ui-e2e e2e-playwright e2e-playwright-seller local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap kind-teardown clean-images clean-all
 
 help: ## Show available developer commands
 	@awk 'BEGIN {FS = ":.*## "; printf "\nUsage:\n  make <target>\n\nTargets:\n"} /^[a-zA-Z0-9_.-]+:.*## / { printf "  %-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -90,7 +90,10 @@ redeploy: ## Rebuild, reload, and restart a single MODULE (usage: make redeploy 
 smoke-test: ## Run smoke tests against the local gateway entrypoint
 	./scripts/smoke-test.sh
 
-ui-e2e: ## Run buyer SSR and seller KMP page automation checks
+verify-observability: ## Verify Grafana, Prometheus, Loki, and Tempo are healthy
+	./scripts/verify-observability.sh
+
+ui-e2e: ## Run buyer SSR and seller/buyer KMP page automation checks
 	bash ./scripts/ui-e2e.sh
 
 e2e-playwright: ## Run Playwright buyer tests (requires: make local-access running)

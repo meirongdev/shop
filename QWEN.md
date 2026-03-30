@@ -11,6 +11,8 @@ Client
   └→ api-gateway:8080 (Spring Cloud Gateway MVC, JWT validation, rate limiting)
        ├→ /auth/**             → auth-server
        ├→ /buyer/**            → buyer-portal (Kotlin + Thymeleaf SSR)
+       ├→ /buyer-app/**        → buyer-app (KMP WASM SPA)
+       ├→ /seller/**           → seller-portal (KMP WASM SPA)
        ├→ /api/buyer/**        → buyer-bff (aggregates domain services)
        ├→ /api/seller/**       → seller-bff (aggregates domain services)
        ├→ /api/loyalty/**      → loyalty-service
@@ -43,7 +45,9 @@ Client
 | `auth-server` | JWT authentication service |
 | `api-gateway` | Unified routing, JWT validation, trusted headers injection |
 | `buyer-bff` / `seller-bff` | Backend-for-Frontend aggregation layer |
-| `buyer-portal` | Kotlin SSR portal (Thymeleaf) |
+| `buyer-portal` | Kotlin SSR portal (Thymeleaf) — SEO/guest-mode buyer pages |
+| `buyer-app` | Buyer KMP WASM SPA — interactive shopping experience (`/buyer-app/`) |
+| `seller-portal` | Seller KMP WASM SPA — seller management app (`/seller/`) |
 | `kmp/*` | Compose Multiplatform buyer/seller apps (WASM, Android, iOS) |
 | Domain Services | `profile`, `promotion`, `wallet`, `marketplace`, `order`, `search`, `notification`, `loyalty`, `activity`, `subscription`, `webhook` |
 
@@ -68,10 +72,13 @@ make e2e
 make local-access
 
 # Default entry points after e2e:
-# - Buyer Portal: http://127.0.0.1:18080/buyer/login
+# - Buyer Portal (SSR):  http://127.0.0.1:18080/buyer/login
+# - Buyer App (KMP):     http://127.0.0.1:18080/buyer-app/
+# - Seller Portal (KMP): http://127.0.0.1:18080/seller/
 # - Gateway docs: http://127.0.0.1:18080/v3/api-docs/gateway
 # - Mailpit:      http://127.0.0.1:18025
 # - Prometheus:   http://127.0.0.1:19090
+# - Grafana:      http://127.0.0.1:13000
 ```
 
 ### Common Development Workflows
@@ -140,8 +147,8 @@ Gateway injects trusted headers on every request:
   - No `System.out/err`
   - Kafka listeners must be idempotent
 - **Playwright E2E tests** in `e2e-tests/`:
-  - `buyer` project: 18 tests for buyer portal
-  - `seller` project: 8 tests for KMP/WASM seller app
+  - `buyer` project: tests for buyer portal (SSR) + buyer-app (KMP WASM) shell
+  - `seller` project: tests for KMP/WASM seller app + seller portal gateway shell
 
 ### Async/Event-Driven Architecture
 

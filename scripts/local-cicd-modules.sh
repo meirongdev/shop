@@ -21,6 +21,7 @@ ALL_MODULES=(
   subscription-service
   buyer-portal
   seller-portal
+  buyer-app
 )
 
 SHARED_PATHS=(
@@ -30,6 +31,20 @@ SHARED_PATHS=(
   docker/Dockerfile.module
   docker/Dockerfile.fast
 )
+
+# Returns space-separated extra source paths for KMP modules whose source
+# lives outside the conventional <module>/ directory.
+module_extra_paths() {
+  local module="$1"
+  case "${module}" in
+    seller-portal)
+      echo "kmp/seller-app docker/Dockerfile.seller-portal docker/nginx-seller.conf"
+      ;;
+    buyer-app)
+      echo "kmp/buyer-app docker/Dockerfile.buyer-app docker/nginx-buyer.conf"
+      ;;
+  esac
+}
 
 module_local_image_ref() {
   local module="$1"
@@ -221,6 +236,17 @@ detect_changed_modules() {
       if path_matches_target "${path}" "${module}"; then
         matched=true
         break
+      fi
+      # Check module-specific extra source paths (e.g. kmp/seller-app for seller-portal)
+      local extra_paths
+      extra_paths=$(module_extra_paths "${module}")
+      if [[ -n "${extra_paths}" ]]; then
+        for extra_path in ${extra_paths}; do
+          if path_matches_target "${path}" "${extra_path}"; then
+            matched=true
+            break 2
+          fi
+        done
       fi
     done
 

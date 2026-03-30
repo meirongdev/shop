@@ -17,11 +17,12 @@ make arch-test                      # Architecture tests (ArchUnit, 19 rules)
 ./mvnw -pl auth-server -am -Dtest=AuthControllerTest#me_withValidJwt_returnsUserInfo test  # Single test method
 
 # Playwright E2E tests (e2e-tests/ directory, requires running cluster + port-forward)
-make local-access &                 # Port-forward gateway→18080 (keep running)
-make e2e-playwright                 # Run buyer portal Playwright tests (18 tests)
-make e2e-playwright-seller          # Build seller WASM + run seller Playwright tests (8 tests)
+make local-access &                 # Port-forward gateway→18080, Grafana→13000 (keep running)
+make e2e-playwright                 # Run buyer portal Playwright tests (includes buyer-app WASM checks)
+make e2e-playwright-seller          # Build seller WASM + run seller Playwright tests (includes gateway SPA checks)
 cd e2e-tests && npx playwright test # Run all Playwright tests
 cd e2e-tests && npx playwright show-report  # Open HTML test report
+make verify-observability           # Verify Grafana/Prometheus/Loki/Tempo are healthy
 
 # Code quality (no dedicated lint plugin; ArchUnit enforces rules)
 make local-checks                   # Path-aware pre-PR checks (vs origin/main)
@@ -50,6 +51,8 @@ Client
   └→ api-gateway:8080  (Spring Cloud Gateway MVC, JWT validation, rate limiting)
        ├→ /auth/**             → auth-server
        ├→ /buyer/**            → buyer-portal  (Kotlin + Thymeleaf SSR)
+       ├→ /buyer-app/**        → buyer-app     (KMP/Compose WASM — nginx static)
+       ├→ /seller/**           → seller-portal (KMP/Compose WASM — nginx static)
        ├→ /api/buyer/**        → buyer-bff     (aggregates: marketplace, order, wallet, promotion, loyalty, activity, search)
        ├→ /api/seller/**       → seller-bff    (aggregates: profile, marketplace, order, promotion, subscription)
        ├→ /api/loyalty/**      → loyalty-service
@@ -74,7 +77,7 @@ Each domain service owns its MySQL schema and Flyway migrations (`src/main/resou
 ### Language Split
 - **Java**: `api-gateway`, `auth-server`, BFFs, all domain services, `shop-common`, `shop-contracts`
 - **Kotlin**: `buyer-portal` (Spring Boot + Thymeleaf SSR)
-- **Kotlin Multiplatform / Compose Multiplatform**: `kmp/seller-app` (Web WASM / Android / iOS), `kmp/buyer-app` (WASM), `kmp/buyer-android-app`, plus shared `kmp/core`, `kmp/ui-shared`, and six `kmp/feature-*` modules
+- **Kotlin Multiplatform / Compose Multiplatform**: `kmp/seller-app` (Web WASM / Android / iOS → served at `/seller/**`), `kmp/buyer-app` (Web WASM → served at `/buyer-app/**`), `kmp/buyer-android-app`, plus shared `kmp/core`, `kmp/ui-shared`, and six `kmp/feature-*` modules
 
 ## Key Conventions
 
@@ -100,9 +103,10 @@ Each domain service owns its MySQL schema and Flyway migrations (`src/main/resou
 - HTTP client stubs use WireMock.
 - Architecture rules are enforced via ArchUnit (`architecture-tests` module, 19 rules). Notable rules: no field injection, no `RestTemplate`, no `System.out/err`, Kafka listeners must be idempotent.
 - **Playwright E2E tests** live in `e2e-tests/` (Node.js, `@playwright/test`). Two projects:
-  - `buyer` — 18 tests covering the buyer portal (login, guest mode, all authenticated pages).
-  - `seller` — 8 tests covering the KMP/WASM seller app via e2e token injection.
+  - `buyer` — tests covering the buyer portal SSR (login, guest mode, all authenticated pages) **plus buyer-app WASM SPA shell checks** at `/buyer-app/`.
+  - `seller` — tests covering the KMP/WASM seller app via e2e token injection, **plus seller portal gateway SPA shell checks** at `/seller/`.
   - Requires gateway on port 18080 (`make local-access &`) and seller proxy on 18181 for seller tests.
+- **`scripts/verify-observability.sh`** — automated validation of Grafana, Prometheus, Loki, and Tempo health and datasource connectivity. Run with `make verify-observability`.
 
 ### K8s / Deployment Notes
 - All deployments include a `startupProbe` (failureThreshold=30, periodSeconds=10 → 5-minute startup budget) to prevent liveness probe kills during slow JVM/WASM startup.

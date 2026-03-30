@@ -15,6 +15,7 @@ title: 入口与聚合服务
 | `buyer-bff` | 买家聚合、guest cart、结账编排、订单/积分入口 | RestClient、Virtual Threads、Resilience4j、Redis | 下游客户端注册、聚合编排、guest cart 策略、timeout / circuit breaker |
 | `seller-bff` | 卖家聚合、商品/订单/促销后台接口 | RestClient、Virtual Threads | 新增下游客户端、聚合查询模型、timeout 配置 |
 | `buyer-portal` | 买家 SSR 门户，SEO 友好的商品与购物页面 | Kotlin、Spring Boot、Thymeleaf | API client、Controller、模板与条件渲染 |
+| KMP `buyer-app` | 买家端 SPA（Web WASM），交互式购物体验 | Kotlin Multiplatform、Compose Multiplatform | feature 模块、`buyer-bff` 后端 |
 | KMP `seller-app` | 卖家管理端（Web WASM / Android / iOS） | Kotlin Multiplatform、Compose Multiplatform | feature 模块、`SellerApi` 契约、`seller-bff` 后端 |
 
 ## api-gateway
@@ -74,6 +75,15 @@ title: 入口与聚合服务
 - 页面模板和组件片段（`templates/fragments/`）。
 - Controller / API client 的调用编排。
 - 与特性开关联动的 UI 展示。
+
+## Buyer App（KMP WASM）
+
+买家 SPA 由 `kmp/buyer-app` 承载，采用 **Kotlin Multiplatform + Compose Multiplatform**，面向需要更丰富交互体验的买家场景（Cart、结账、订单追踪、积分等）：
+
+- Web WASM 目标，通过网关 `/buyer-app/**` 路由访问。
+- 后端对接 `buyer-bff`（`/api/buyer/**`），认证走 `auth-server` JWT。
+- 与 `buyer-portal`（SSR）互补：SSR 负责 SEO 和访客浏览，buyer-app 负责登录后的完整交互流程。
+- 共享 `kmp/core`、`kmp/ui-shared` 以及 `kmp/feature-*` 功能模块。
 
 ## Seller App（KMP）
 

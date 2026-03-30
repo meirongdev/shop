@@ -29,8 +29,9 @@ make local-access
 
 | 服务 | 地址 |
 |------|------|
-| Buyer Portal | http://127.0.0.1:18080/buyer/login |
-| **Seller Portal** | **http://127.0.0.1:18080/seller/** |
+| Buyer Portal (SSR) | http://127.0.0.1:18080/buyer/login |
+| **Buyer App (KMP WASM)** | **http://127.0.0.1:18080/buyer-app/** |
+| **Seller Portal (KMP WASM)** | **http://127.0.0.1:18080/seller/** |
 | Gateway OpenAPI | http://127.0.0.1:18080/v3/api-docs/gateway |
 | Mailpit（邮件） | http://127.0.0.1:18025 |
 | Prometheus | http://127.0.0.1:19090 |

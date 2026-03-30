@@ -81,7 +81,7 @@ build_host_jars() {
   local maven_modules=()
 
   for m in "${modules[@]}"; do
-    [[ "${m}" != "seller-portal" ]] && maven_modules+=("${m}")
+    [[ "${m}" != "seller-portal" && "${m}" != "buyer-app" ]] && maven_modules+=("${m}")
   done
 
   [[ "${#maven_modules[@]}" -eq 0 ]] && return 0
@@ -97,6 +97,11 @@ build_fast_module() {
 
   if [[ "${module}" == "seller-portal" ]]; then
     build_seller_portal
+    return
+  fi
+
+  if [[ "${module}" == "buyer-app" ]]; then
+    build_buyer_app
     return
   fi
 
@@ -130,6 +135,22 @@ build_seller_portal() {
     .
 }
 
+build_buyer_app() {
+  local dist_dir="kmp/buyer-app/build/dist/wasmJs/productionExecutable"
+
+  if [[ ! -d "${dist_dir}" ]]; then
+    echo "==> Building buyer-app WASM (first time, may take several minutes)..."
+    (cd kmp && ./gradlew :buyer-app:wasmJsBrowserProductionWebpack --no-daemon -q)
+  fi
+
+  echo "==> Building $(module_local_image_ref "buyer-app") with docker/Dockerfile.buyer-app"
+  docker build \
+    --build-arg "DIST_DIR=${dist_dir}" \
+    -f docker/Dockerfile.buyer-app \
+    -t "$(module_local_image_ref "buyer-app")" \
+    .
+}
+
 build_legacy_module() {
   local module="$1"
 
@@ -142,7 +163,7 @@ build_legacy_module() {
 }
 
 export LOCAL_IMAGE_TAG LOCAL_REGISTRY
-export -f module_local_image_ref module_jar_path build_host_jars build_fast_module build_seller_portal build_legacy_module
+export -f module_local_image_ref module_jar_path build_host_jars build_fast_module build_seller_portal build_buyer_app build_legacy_module
 
 if [[ "${mode}" == "changed" ]]; then
   modules=()

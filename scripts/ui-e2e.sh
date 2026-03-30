@@ -311,8 +311,12 @@ check_buyer_page "Buyer login page renders demo entrypoints" "${GATEWAY_URL}/buy
 check_buyer_page "Buyer guest home renders" "${GATEWAY_URL}/buyer/home" "Guest buyer"
 check_buyer_login_flow
 
+# Verify KMP portal SPA shells are served via gateway (HTTP 200 + HTML content)
+check_buyer_page "Seller portal SPA shell served via gateway" "${GATEWAY_URL}/seller/" "<!DOCTYPE html"
+check_buyer_page "Buyer KMP app SPA shell served via gateway" "${GATEWAY_URL}/buyer-app/" "<!DOCTYPE html"
+
 if [[ "${buyer_only}" == "true" ]]; then
-  echo "(Seller WASM checks skipped in buyer-only mode)"
+  echo "(Seller WASM interactive checks skipped in buyer-only mode)"
 else
   CHROME_BIN="$(detect_chrome || true)"
   if [[ -z "${CHROME_BIN}" ]]; then

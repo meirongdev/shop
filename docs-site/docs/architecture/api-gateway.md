@@ -12,7 +12,9 @@ title: API Gateway
 | 路径模式 | 目标服务 | 认证要求 |
 |---------|---------|---------|
 | `/auth/**` | auth-server | 无 |
-| `/buyer/**` | buyer-portal | 无 |
+| `/buyer/**` | buyer-portal (SSR) | 无 |
+| `/buyer-app/**` | buyer-app (KMP WASM nginx) | 无 |
+| `/seller/**` | seller-portal (KMP WASM nginx) | 无 |
 | `/api/buyer/**` | buyer-bff | JWT |
 | `/api/seller/**` | seller-bff | JWT |
 | `/api/loyalty/**` | loyalty-service | JWT |
@@ -44,7 +46,7 @@ Gateway 对 `/api/**` 路径的已认证请求注入以下头：
 
 ## 安全策略
 
-- `/actuator/**`, `/auth/**`, `/buyer/**`, `/seller/**`, `/public/**` — 公开访问
+- `/actuator/**`, `/auth/**`, `/buyer/**`, `/buyer-app/**`, `/seller/**`, `/public/**` — 公开访问
 - `/api/**` — 需要有效 JWT
 - Gateway 会移除外部请求伪造的 Trusted Headers，再按 JWT 重新注入
 - 更细粒度的角色 / guest 约束由 BFF 和领域服务继续执行

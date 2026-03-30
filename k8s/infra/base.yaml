@@ -487,6 +487,13 @@ data:
         static_configs:
           - targets:
               - kafka-exporter:9308
+      - job_name: observability
+        static_configs:
+          - targets:
+              - tempo:3200
+              - loki:3100
+              - grafana:3000
+              - pyroscope:4040
 ---
 apiVersion: apps/v1
 kind: Deployment

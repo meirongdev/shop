@@ -40,7 +40,7 @@ import dev.meirong.shop.kmp.ui.theme.ShopTheme
 import kotlinx.serialization.Serializable
 
 @Composable
-fun BuyerApp() {
+fun BuyerApp(e2e: BuyerAppE2eConfig = BuyerAppE2eConfig()) {
     ShopTheme {
         val navController = rememberNavController()
         val tokenStorage = remember { MutableTokenStorage() }
@@ -51,15 +51,42 @@ fun BuyerApp() {
         val walletRepository = remember { BuyerWalletRepository(tokenStorage = tokenStorage) }
         val profileRepository = remember { BuyerProfileRepository(tokenStorage = tokenStorage) }
         val promotionRepository = remember { BuyerPromotionRepository(tokenStorage = tokenStorage) }
-        var buyerSession by remember { mutableStateOf<AuthSession?>(null) }
+        var buyerSession by remember { mutableStateOf(e2e.session) }
+        var autoLoginAttempted by remember { mutableStateOf(false) }
+        val knownRoutes = remember { buyerDestinations.map { it.route }.toSet() }
+        val targetRoute = e2e.initialRoute?.takeIf { it in knownRoutes } ?: BuyerRoutes.Marketplace
+        val startDestination = if (e2e.enabled && !e2e.autoLogin && !e2e.guestLogin) targetRoute else buyerDestinations.first().route
         val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = navBackStackEntry?.destination?.route ?: buyerDestinations.first().route
+        val currentRoute = navBackStackEntry?.destination?.route ?: startDestination
         val signedInBuyerSession = buyerSession?.takeUnless { it.isGuestBuyer() }
         val visibleDestinations = remember(buyerSession) {
             if (buyerSession.isGuestBuyer()) {
                 buyerDestinations.filterNot { it.route in buyerGuestRestrictedRoutes }
             } else {
                 buyerDestinations
+            }
+        }
+
+        fun navigateToRoute(route: String) {
+            navController.navigate(route) {
+                launchSingleTop = true
+                restoreState = true
+                popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }
+            }
+        }
+
+        fun reportE2e(route: String, status: String, message: String? = null) {
+            if (e2e.enabled) {
+                e2e.onStateChange(
+                    BuyerAppE2eState(
+                        route = route,
+                        status = status,
+                        username = buyerSession?.username,
+                        message = message
+                    )
+                )
             }
         }
 
@@ -72,6 +99,56 @@ fun BuyerApp() {
                 walletRepository.close()
                 profileRepository.close()
                 promotionRepository.close()
+            }
+        }
+
+        LaunchedEffect(e2e.session?.accessToken) {
+            val session = e2e.session ?: return@LaunchedEffect
+            buyerSession = session
+            tokenStorage.saveTokens(session.accessToken, session.accessToken)
+        }
+
+        LaunchedEffect(e2e.enabled, e2e.autoLogin, e2e.guestLogin, targetRoute) {
+            if (!e2e.enabled || (!e2e.autoLogin && !e2e.guestLogin) || e2e.session != null || autoLoginAttempted || buyerSession != null) {
+                return@LaunchedEffect
+            }
+
+            autoLoginAttempted = true
+            reportE2e(BuyerRoutes.Auth, "authenticating")
+            val result = if (e2e.guestLogin) {
+                runCatching { authRepository.loginGuest("buyer") }
+            } else {
+                runCatching { authRepository.login("buyer.demo", "password", "buyer") }
+            }
+            val session = result.getOrNull()
+            if (session != null) {
+                buyerSession = session
+                tokenStorage.saveTokens(session.accessToken, session.accessToken)
+                if (targetRoute != currentRoute) {
+                    navigateToRoute(targetRoute)
+                }
+            } else {
+                val error = result.exceptionOrNull()
+                reportE2e(BuyerRoutes.Auth, "error", error?.message ?: "Buyer sign-in failed.")
+            }
+        }
+
+        LaunchedEffect(e2e.enabled, e2e.autoLogin, e2e.guestLogin, targetRoute, currentRoute) {
+            if (e2e.enabled && !e2e.autoLogin && !e2e.guestLogin && targetRoute != currentRoute) {
+                navigateToRoute(targetRoute)
+            }
+        }
+
+        LaunchedEffect(currentRoute, buyerSession?.username, e2e.enabled, e2e.autoLogin, e2e.guestLogin) {
+            if (!e2e.enabled) {
+                return@LaunchedEffect
+            }
+            if (currentRoute == BuyerRoutes.Auth && (!e2e.autoLogin && !e2e.guestLogin || buyerSession != null)) {
+                reportE2e(BuyerRoutes.Auth, "ready")
+                return@LaunchedEffect
+            }
+            if (buyerSession != null && currentRoute in knownRoutes) {
+                reportE2e(currentRoute, "ready")
             }
         }
 
@@ -91,13 +168,7 @@ fun BuyerApp() {
             destinations = visibleDestinations,
             currentRoute = currentRoute,
             onDestinationSelected = { destination ->
-                navController.navigate(destination.route) {
-                    launchSingleTop = true
-                    restoreState = true
-                    popUpTo(navController.graph.findStartDestination().id) {
-                        saveState = true
-                    }
-                }
+                navigateToRoute(destination.route)
             }
         ) { padding ->
             NavHost(

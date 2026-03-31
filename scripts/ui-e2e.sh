@@ -10,6 +10,10 @@ SELLER_WASM_BUILD_TASK="${SELLER_WASM_BUILD_TASK:-:kmp:seller-app:wasmJsBrowserD
 SELLER_WASM_DIST_DIR="${SELLER_WASM_DIST_DIR:-kmp/seller-app/build/dist/wasmJs/developmentExecutable}"
 SELLER_WEB_PORT="${SELLER_WEB_PORT:-18181}"
 SELLER_CHROME_VIRTUAL_TIME_BUDGET_MS="${SELLER_CHROME_VIRTUAL_TIME_BUDGET_MS:-20000}"
+BUYER_APP_WASM_BUILD_TASK="${BUYER_APP_WASM_BUILD_TASK:-:kmp:buyer-app:wasmJsBrowserDevelopmentExecutableDistribution}"
+BUYER_APP_WASM_DIST_DIR="${BUYER_APP_WASM_DIST_DIR:-kmp/buyer-app/build/dist/wasmJs/developmentExecutable}"
+BUYER_APP_WEB_PORT="${BUYER_APP_WEB_PORT:-18182}"
+BUYER_APP_CHROME_VIRTUAL_TIME_BUDGET_MS="${BUYER_APP_CHROME_VIRTUAL_TIME_BUDGET_MS:-20000}"
 
 # --buyer-only skips the Gradle/WASM seller build and seller UI checks.
 # Enabled by default in make e2e (fast mode). Use make ui-e2e for full checks.
@@ -24,6 +28,9 @@ port_forward_log=""
 seller_proxy_pid=""
 seller_proxy_log=""
 seller_session_query=""
+buyer_app_proxy_pid=""
+buyer_app_proxy_log=""
+buyer_app_session_query=""
 
 request_status() {
   local method="$1"
@@ -50,6 +57,10 @@ request_status() {
 }
 
 cleanup() {
+  if [[ -n "${buyer_app_proxy_pid}" ]]; then
+    kill "${buyer_app_proxy_pid}" >/dev/null 2>&1 || true
+    wait "${buyer_app_proxy_pid}" >/dev/null 2>&1 || true
+  fi
   if [[ -n "${seller_proxy_pid}" ]]; then
     kill "${seller_proxy_pid}" >/dev/null 2>&1 || true
     wait "${seller_proxy_pid}" >/dev/null 2>&1 || true
@@ -58,7 +69,7 @@ cleanup() {
     kill "${port_forward_pid}" >/dev/null 2>&1 || true
     wait "${port_forward_pid}" >/dev/null 2>&1 || true
   fi
-  rm -f "${seller_proxy_log:-}" "${port_forward_log:-}"
+  rm -f "${buyer_app_proxy_log:-}" "${seller_proxy_log:-}" "${port_forward_log:-}"
 }
 
 trap cleanup EXIT
@@ -300,6 +311,106 @@ check_seller_route() {
   rm -f "${output}"
 }
 
+start_buyer_app_proxy() {
+  buyer_app_proxy_log="$(mktemp "${TMPDIR:-/tmp}/shop-ui-e2e-buyer-app-proxy.XXXXXX")"
+  node ./scripts/seller-web-proxy.mjs "${BUYER_APP_WASM_DIST_DIR}" "${GATEWAY_URL}" "${BUYER_APP_WEB_PORT}" >"${buyer_app_proxy_log}" 2>&1 &
+  buyer_app_proxy_pid=$!
+
+  for _ in $(seq 1 20); do
+    if ! kill -0 "${buyer_app_proxy_pid}" >/dev/null 2>&1; then
+      cat "${buyer_app_proxy_log}" >&2
+      return 1
+    fi
+
+    if [[ "$(request_status GET "http://127.0.0.1:${BUYER_APP_WEB_PORT}/")" == "200" ]]; then
+      return 0
+    fi
+
+    sleep 1
+  done
+
+  cat "${buyer_app_proxy_log}" >&2
+  return 1
+}
+
+run_buyer_app_dump() {
+  local route="$1"
+  local login_mode="${2:-auto}"
+  local output="$3"
+  local chrome_profile
+  local extra_query=""
+  chrome_profile="$(mktemp -d "${TMPDIR:-/tmp}/shop-ui-e2e-chrome.XXXXXX")"
+
+  if [[ "${login_mode}" == "auto" && -n "${buyer_app_session_query}" ]]; then
+    extra_query="&${buyer_app_session_query}"
+  elif [[ "${login_mode}" == "guest" ]]; then
+    extra_query="&e2eGuestLogin=1"
+  elif [[ "${login_mode}" == "auto" ]]; then
+    extra_query="&e2eAutoLogin=1"
+  fi
+
+  "${CHROME_BIN}" \
+    --headless=new \
+    --disable-gpu \
+    --no-first-run \
+    --user-data-dir="${chrome_profile}" \
+    --run-all-compositor-stages-before-draw \
+    --virtual-time-budget="${BUYER_APP_CHROME_VIRTUAL_TIME_BUDGET_MS}" \
+    --dump-dom \
+    "http://127.0.0.1:${BUYER_APP_WEB_PORT}/?e2e=1&e2eRoute=${route}${extra_query}" \
+    >"${output}" 2>/dev/null || true
+
+  rm -rf "${chrome_profile}"
+}
+
+prepare_buyer_app_session() {
+  local auth_response
+  auth_response="$(curl -sS -H 'Content-Type: application/json' -X POST "${GATEWAY_URL}/auth/v1/token/login" \
+    --data '{"username":"buyer.demo","password":"password","portal":"buyer"}')"
+
+  buyer_app_session_query="$(
+    AUTH_RESPONSE="${auth_response}" python3 - <<'PY'
+import json
+import os
+import urllib.parse
+
+payload = json.loads(os.environ["AUTH_RESPONSE"])
+data = payload["data"]
+params = {
+    "e2eAccessToken": data["accessToken"],
+    "e2eUsername": data["username"],
+    "e2ePrincipalId": data["principalId"],
+    "e2eDisplayName": data["displayName"],
+}
+print("&".join(f"{key}={urllib.parse.quote(str(value), safe='')}" for key, value in params.items()))
+PY
+  )"
+}
+
+check_buyer_app_route() {
+  local name="$1"
+  local route="$2"
+  local login_mode="${3:-auto}"
+  local output
+  output="$(mktemp "${TMPDIR:-/tmp}/shop-ui-e2e-buyer-app.XXXXXX.html")"
+
+  run_buyer_app_dump "${route}" "${login_mode}" "${output}"
+
+  if ! grep -q 'id="buyer-app-e2e"' "${output}"; then
+    fail "${name}" "missing buyer-app e2e marker"
+  elif ! grep -q "data-route=\"${route}\"" "${output}"; then
+    fail "${name}" "marker route mismatch"
+  elif ! grep -q 'data-status="ready"' "${output}"; then
+    fail "${name}" "buyer-app route did not become ready"
+  elif [[ "${login_mode}" == "auto" ]] && ! grep -q 'data-user="buyer.demo"' "${output}"; then
+    fail "${name}" "buyer-app auto-login did not complete"
+  else
+    pass "${name}"
+  fi
+
+  rm -f "${output}"
+}
+
 if [[ "$(request_status GET "${GATEWAY_URL}/v3/api-docs/gateway")" != "200" ]]; then
   start_gateway_port_forward
 fi
@@ -316,19 +427,23 @@ check_buyer_page "Seller portal SPA shell served via gateway" "${GATEWAY_URL}/se
 check_buyer_page "Buyer KMP app SPA shell served via gateway" "${GATEWAY_URL}/buyer-app/" "<!DOCTYPE html"
 
 if [[ "${buyer_only}" == "true" ]]; then
-  echo "(Seller WASM interactive checks skipped in buyer-only mode)"
+  echo "(KMP WASM interactive checks skipped in buyer-only mode)"
 else
   CHROME_BIN="$(detect_chrome || true)"
   if [[ -z "${CHROME_BIN}" ]]; then
-    echo "error: could not find a Chrome/Chromium binary for seller UI automation." >&2
+    echo "error: could not find a Chrome/Chromium binary for KMP UI automation." >&2
     exit 1
   fi
 
-  echo "==> Building seller web bundle with ${SELLER_WASM_BUILD_TASK}"
-  ./gradlew -q "${SELLER_WASM_BUILD_TASK}"
+  echo "==> Building KMP web bundles with Gradle"
+  ./gradlew -q "${SELLER_WASM_BUILD_TASK}" "${BUYER_APP_WASM_BUILD_TASK}"
 
   if [[ ! -f "${SELLER_WASM_DIST_DIR}/index.html" ]]; then
     echo "error: seller web dist was not generated at ${SELLER_WASM_DIST_DIR}" >&2
+    exit 1
+  fi
+  if [[ ! -f "${BUYER_APP_WASM_DIST_DIR}/index.html" ]]; then
+    echo "error: buyer-app web dist was not generated at ${BUYER_APP_WASM_DIST_DIR}" >&2
     exit 1
   fi
 
@@ -337,6 +452,16 @@ else
   check_seller_route "Seller auth screen renders" "auth" "0"
   for route in marketplace orders wallet promotions profile; do
     check_seller_route "Seller route ${route} loads" "${route}" "1"
+  done
+
+  start_buyer_app_proxy
+  prepare_buyer_app_session
+  check_buyer_app_route "Buyer-app auth screen renders" "auth" "none"
+  for route in marketplace cart promotions; do
+    check_buyer_app_route "Buyer-app route ${route} loads" "${route}" "auto"
+  done
+  for route in orders wallet profile; do
+    check_buyer_app_route "Buyer-app signed-in route ${route} loads" "${route}" "auto"
   done
 fi
 

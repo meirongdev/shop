@@ -192,33 +192,4 @@ test.describe('Authenticated buyer pages', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Buyer KMP App (WASM) — served via gateway at /buyer-app/**
-// ---------------------------------------------------------------------------
 
-test.describe('Buyer KMP app (WASM) via gateway', () => {
-  test('SPA shell is served with correct HTML', async ({ page }) => {
-    const response = await page.goto('/buyer-app/');
-    expect(response?.status()).toBe(200);
-    await expect(page.locator('html')).toBeDefined();
-    // The WASM app shell must include the buyer-app root div and JS entrypoint
-    const content = await page.content();
-    expect(content).toContain('buyerApp');
-    expect(content).toContain('buyer-app.js');
-  });
-
-  test('WASM JavaScript bundle is served with correct MIME type', async ({ page }) => {
-    const jsRequests: string[] = [];
-    page.on('response', (resp) => {
-      if (resp.url().includes('buyer-app.js')) {
-        jsRequests.push(resp.headers()['content-type'] ?? '');
-      }
-    });
-    await page.goto('/buyer-app/');
-    // Wait for scripts to load
-    await page.waitForLoadState('domcontentloaded');
-    // The JS entrypoint must be served (may not have content-type in all cases)
-    const jsResp = await page.request.get('/buyer-app/buyer-app.js');
-    expect(jsResp.status()).toBe(200);
-  });
-});

@@ -10,7 +10,7 @@ OVERLAY ?= dev
 TILT_REGISTRY ?= localhost:5000
 ARCHETYPE_MODULES := shop-common,shop-contracts,shop-archetypes/gateway-service-archetype,shop-archetypes/auth-service-archetype,shop-archetypes/bff-service-archetype,shop-archetypes/domain-service-archetype,shop-archetypes/event-worker-archetype,shop-archetypes/portal-service-archetype
 
-.PHONY: help test build verify arch-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed redeploy smoke-test verify-observability ui-e2e e2e-playwright e2e-playwright-seller local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap kind-teardown clean-images clean-all
+.PHONY: help test build verify arch-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed redeploy smoke-test verify-observability ui-e2e e2e-playwright e2e-playwright-seller e2e-playwright-buyer-app e2e-playwright-kmp local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap kind-teardown clean-images clean-all
 
 help: ## Show available developer commands
 	@awk 'BEGIN {FS = ":.*## "; printf "\nUsage:\n  make <target>\n\nTargets:\n"} /^[a-zA-Z0-9_.-]+:.*## / { printf "  %-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -100,9 +100,13 @@ e2e-playwright: ## Run Playwright buyer tests (requires: make local-access runni
 	cd e2e-tests && npx playwright test --project=buyer
 
 e2e-playwright-seller: ## Build seller WASM, start proxy, run Playwright seller tests
-	cd kmp && ./gradlew :seller-app:wasmJsBrowserDevelopmentExecutableDistribution
-	node scripts/seller-web-proxy.mjs kmp/seller-app/build/dist/wasmJs/developmentExecutable http://127.0.0.1:18080 18181 &
-	cd e2e-tests && npx playwright test --project=seller
+	bash ./scripts/kmp-e2e.sh --seller
+
+e2e-playwright-buyer-app: ## Build buyer-app WASM, start proxy, run Playwright buyer-app tests
+	bash ./scripts/kmp-e2e.sh --buyer-app
+
+e2e-playwright-kmp: ## Build all KMP WASM, start proxies, run all KMP Playwright tests
+	bash ./scripts/kmp-e2e.sh
 
 local-access: ## Open stable local access to gateway, Mailpit, and Prometheus via port-forward
 	./scripts/local-access.sh

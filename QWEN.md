@@ -96,6 +96,8 @@ make local-access
 | Tilt inner-loop dev | `make tilt-up` |
 | Run Playwright E2E (buyer) | `make e2e-playwright` |
 | Run Playwright E2E (seller) | `make e2e-playwright-seller` |
+| Run Playwright E2E (buyer-app) | `make e2e-playwright-buyer-app` |
+| Run Playwright E2E (all KMP) | `make e2e-playwright-kmp` |
 
 ### Kubernetes Deployment
 

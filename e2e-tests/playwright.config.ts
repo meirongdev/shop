@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const GATEWAY_URL = process.env.GATEWAY_URL || 'http://127.0.0.1:18080';
 const SELLER_PROXY_URL = process.env.SELLER_PROXY_URL || 'http://127.0.0.1:18181';
+const BUYER_APP_PROXY_URL = process.env.BUYER_APP_PROXY_URL || 'http://127.0.0.1:18182';
 
 export default defineConfig({
   testDir: './tests',
@@ -32,6 +33,14 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         baseURL: SELLER_PROXY_URL,
+      },
+    },
+    {
+      name: 'buyer-app',
+      testMatch: '**/buyer-app/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: BUYER_APP_PROXY_URL,
       },
     },
   ],

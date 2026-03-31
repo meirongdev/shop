@@ -18,8 +18,10 @@ make arch-test                      # Architecture tests (ArchUnit, 19 rules)
 
 # Playwright E2E tests (e2e-tests/ directory, requires running cluster + port-forward)
 make local-access &                 # Port-forward gateway→18080, Grafana→13000 (keep running)
-make e2e-playwright                 # Run buyer portal Playwright tests (includes buyer-app WASM checks)
-make e2e-playwright-seller          # Build seller WASM + run seller Playwright tests (includes gateway SPA checks)
+make e2e-playwright                 # Run buyer portal Playwright tests
+make e2e-playwright-seller          # Build seller WASM + run seller Playwright tests
+make e2e-playwright-buyer-app       # Build buyer-app WASM + run buyer-app Playwright tests
+make e2e-playwright-kmp             # Build all KMP WASM + run all KMP Playwright tests
 cd e2e-tests && npx playwright test # Run all Playwright tests
 cd e2e-tests && npx playwright show-report  # Open HTML test report
 make verify-observability           # Verify Grafana/Prometheus/Loki/Tempo are healthy
@@ -102,9 +104,10 @@ Each domain service owns its MySQL schema and Flyway migrations (`src/main/resou
 - Integration tests extend `AbstractMySqlIntegrationTest` (Testcontainers `@ServiceConnection`).
 - HTTP client stubs use WireMock.
 - Architecture rules are enforced via ArchUnit (`architecture-tests` module, 19 rules). Notable rules: no field injection, no `RestTemplate`, no `System.out/err`, Kafka listeners must be idempotent.
-- **Playwright E2E tests** live in `e2e-tests/` (Node.js, `@playwright/test`). Two projects:
-  - `buyer` — tests covering the buyer portal SSR (login, guest mode, all authenticated pages) **plus buyer-app WASM SPA shell checks** at `/buyer-app/`.
+- **Playwright E2E tests** live in `e2e-tests/` (Node.js, `@playwright/test`). Three projects:
+  - `buyer` — tests covering the buyer portal SSR (login, guest mode, all authenticated pages).
   - `seller` — tests covering the KMP/WASM seller app via e2e token injection, **plus seller portal gateway SPA shell checks** at `/seller/`.
+  - `buyer-app` — tests covering the KMP/WASM buyer app via e2e token injection (auth, guest, routes), **plus buyer-app gateway SPA shell checks** at `/buyer-app/`.
   - Requires gateway on port 18080 (`make local-access &`) and seller proxy on 18181 for seller tests.
 - **`scripts/verify-observability.sh`** — automated validation of Grafana, Prometheus, Loki, and Tempo health and datasource connectivity. Run with `make verify-observability`.
 

@@ -583,6 +583,47 @@ spec:
         - port: 8081
   policyTypes: [Ingress]
 ---
+# ⑧ Observability inter-component traffic (Grafana→datasources, OTEL→backends,
+#    Tempo→Prometheus remote_write, Prometheus→observability metrics endpoints)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-observability-internal
+  namespace: shop
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: [prometheus, grafana, loki, tempo, pyroscope, otel-collector, kafka-exporter]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values: [prometheus, grafana, loki, tempo, pyroscope, otel-collector, kafka-exporter]
+  policyTypes: [Ingress]
+---
+# ⑨ App services → Pyroscope (continuous profiling data)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-apps-to-pyroscope
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: pyroscope
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              tier: app
+      ports:
+        - port: 4040
+  policyTypes: [Ingress]
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

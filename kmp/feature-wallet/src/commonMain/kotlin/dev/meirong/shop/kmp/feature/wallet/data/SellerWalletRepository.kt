@@ -43,8 +43,8 @@ class SellerWalletRepository(
         val response = client.post("$baseUrl$sellerWalletWithdrawPath") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             setBody(
-                WithdrawRequestDto(
-                    sellerId = sellerId,
+                SellerWithdrawRequestDto(
+                    buyerId = sellerId,
                     amount = amountInCents.toDouble() / 100.0,
                     currency = currency
                 )
@@ -91,8 +91,8 @@ private data class SellerContextRequestDto(
 )
 
 @Serializable
-private data class WithdrawRequestDto(
-    val sellerId: String,
+private data class SellerWithdrawRequestDto(
+    val buyerId: String,
     val amount: Double,
     val currency: String
 )

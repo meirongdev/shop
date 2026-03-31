@@ -53,6 +53,13 @@ data:
             datasourceUid: prometheus
           nodeGraph:
             enabled: true
+          tracesToMetrics:
+            datasourceUid: prometheus
+            spanStartTimeShift: "-1m"
+            spanEndTimeShift: "1m"
+            tags:
+              - key: service.name
+                value: service_name
           tracesToProfilesV2:
             datasourceUid: pyroscope
             profileTypeId: process_cpu:cpu:nanoseconds:cpu:nanoseconds

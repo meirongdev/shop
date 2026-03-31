@@ -21,11 +21,13 @@ import dev.meirong.shop.kmp.feature.auth.data.AuthRepository
 import dev.meirong.shop.kmp.feature.auth.ui.AuthScreen
 import dev.meirong.shop.kmp.feature.marketplace.data.SellerDashboardRepository
 import dev.meirong.shop.kmp.feature.marketplace.ui.SellerInventoryScreen
+import dev.meirong.shop.kmp.feature.marketplace.ui.SellerProductFormScreen
 import dev.meirong.shop.kmp.feature.order.data.SellerOrderRepository
 import dev.meirong.shop.kmp.feature.order.ui.SellerOrderDetailScreen
 import dev.meirong.shop.kmp.feature.order.ui.SellerOrderListScreen
 import dev.meirong.shop.kmp.feature.profile.data.SellerProfileRepository
 import dev.meirong.shop.kmp.feature.profile.ui.SellerProfileScreen
+import dev.meirong.shop.kmp.feature.profile.ui.SellerShopScreen
 import dev.meirong.shop.kmp.feature.promotion.data.SellerPromotionRepository
 import dev.meirong.shop.kmp.feature.promotion.ui.SellerPromotionScreen
 import dev.meirong.shop.kmp.feature.wallet.data.SellerWalletRepository
@@ -155,6 +157,23 @@ fun SellerApp(e2e: SellerAppE2eConfig = SellerAppE2eConfig()) {
                         SellerInventoryScreen(
                             repository = dashboardRepository,
                             sellerId = session.principalId,
+                            onCreateProduct = {
+                                navController.navigate(SellerProductCreate())
+                            },
+                            onEditProduct = { product ->
+                                navController.navigate(
+                                    SellerProductEdit(
+                                        productId = product.id,
+                                        sellerId = product.sellerId,
+                                        sku = product.sku,
+                                        name = product.name,
+                                        description = product.description,
+                                        priceInCents = product.priceInCents,
+                                        inventory = product.inventory,
+                                        published = product.published
+                                    )
+                                )
+                            },
                             onE2eStateChanged = { status, message ->
                                 reportE2e(SellerRoutes.Marketplace, status, message)
                             }
@@ -163,6 +182,42 @@ fun SellerApp(e2e: SellerAppE2eConfig = SellerAppE2eConfig()) {
                         onNavigateToAuth = {
                             navigateToRoute(SellerRoutes.Auth)
                         }
+                    )
+                }
+                composable<SellerProductCreate> {
+                    sellerSession?.let { session ->
+                        SellerProductFormScreen(
+                            repository = dashboardRepository,
+                            sellerId = session.principalId,
+                            onBack = { navController.popBackStack() },
+                            onSaved = { navController.popBackStack() }
+                        )
+                    } ?: SellerAuthRequired(
+                        onNavigateToAuth = { navigateToRoute(SellerRoutes.Auth) }
+                    )
+                }
+                composable<SellerProductEdit> { backStackEntry ->
+                    sellerSession?.let { session ->
+                        val route = backStackEntry.toRoute<SellerProductEdit>()
+                        val editProduct = dev.meirong.shop.kmp.core.model.Product(
+                            id = route.productId,
+                            sellerId = route.sellerId,
+                            sku = route.sku,
+                            name = route.name,
+                            description = route.description,
+                            priceInCents = route.priceInCents,
+                            inventory = route.inventory,
+                            published = route.published
+                        )
+                        SellerProductFormScreen(
+                            repository = dashboardRepository,
+                            sellerId = session.principalId,
+                            editProduct = editProduct,
+                            onBack = { navController.popBackStack() },
+                            onSaved = { navController.popBackStack() }
+                        )
+                    } ?: SellerAuthRequired(
+                        onNavigateToAuth = { navigateToRoute(SellerRoutes.Auth) }
                     )
                 }
                 composable(SellerRoutes.Orders) {
@@ -245,6 +300,21 @@ fun SellerApp(e2e: SellerAppE2eConfig = SellerAppE2eConfig()) {
                         }
                     )
                 }
+                composable(SellerRoutes.Shop) {
+                    sellerSession?.let { session ->
+                        SellerShopScreen(
+                            repository = profileRepository,
+                            sellerId = session.principalId,
+                            onE2eStateChanged = { status, message ->
+                                reportE2e(SellerRoutes.Shop, status, message)
+                            }
+                        )
+                    } ?: SellerAuthRequired(
+                        onNavigateToAuth = {
+                            navigateToRoute(SellerRoutes.Auth)
+                        }
+                    )
+                }
                 composable(SellerRoutes.Auth) {
                     AuthScreen(
                         title = "Seller Sign In",
@@ -275,12 +345,28 @@ private object SellerRoutes {
     const val Orders = "orders"
     const val Wallet = "wallet"
     const val Promotions = "promotions"
+    const val Shop = "shop"
     const val Profile = "profile"
     const val Auth = "auth"
 }
 
 @Serializable
 private data class SellerOrderDetail(val orderId: String)
+
+@Serializable
+private data class SellerProductCreate(val placeholder: String = "")
+
+@Serializable
+private data class SellerProductEdit(
+    val productId: String,
+    val sellerId: String,
+    val sku: String,
+    val name: String,
+    val description: String,
+    val priceInCents: Long,
+    val inventory: Int,
+    val published: Boolean
+)
 
 @Composable
 private fun SellerAuthRequired(
@@ -314,6 +400,11 @@ private val sellerDestinations = listOf(
         route = SellerRoutes.Promotions,
         label = "Promotions",
         summary = "Reach campaign management and statistics shells."
+    ),
+    ShopAppDestination(
+        route = SellerRoutes.Shop,
+        label = "Shop",
+        summary = "Manage shop storefront: name, description, logo, banner."
     ),
     ShopAppDestination(
         route = SellerRoutes.Profile,

@@ -2,9 +2,11 @@ package dev.meirong.shop.kmp.feature.marketplace.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -18,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.meirong.shop.kmp.core.model.Product
 import dev.meirong.shop.kmp.core.model.SellerDashboard
 import dev.meirong.shop.kmp.feature.marketplace.data.SellerDashboardRepository
 import dev.meirong.shop.kmp.ui.components.ErrorScreen
@@ -27,6 +30,8 @@ import dev.meirong.shop.kmp.ui.components.LoadingIndicator
 fun SellerInventoryScreen(
     repository: SellerDashboardRepository,
     sellerId: String,
+    onCreateProduct: () -> Unit = {},
+    onEditProduct: (Product) -> Unit = {},
     onE2eStateChanged: (String, String?) -> Unit = { _, _ -> }
 ) {
     var refreshKey by remember { mutableIntStateOf(0) }
@@ -71,14 +76,19 @@ fun SellerInventoryScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(
-            text = "Seller Inventory",
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Text(
-            text = "Live seller inventory now comes from the existing seller dashboard aggregation.",
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Seller Inventory",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Button(onClick = onCreateProduct) {
+                Text("+ New Product")
+            }
+        }
         if (isLoading) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
@@ -109,9 +119,10 @@ fun SellerInventoryScreen(
         }
         MarketplaceHomeScreen(
             title = "Inventory Catalog",
-            subtitle = "Search and inspect the seller-owned catalog snapshot already returned by the BFF.",
+            subtitle = "Manage your product catalog. Tap a product to edit.",
             products = currentDashboard.products,
-            emptyStateMessage = "No seller inventory items match your current filter.",
+            emptyStateMessage = "No products yet. Tap '+ New Product' to create your first listing.",
+            onProductClick = { product -> onEditProduct(product) },
             productCaption = { product ->
                 "SKU: ${product.sku} | Inventory: ${product.inventory} | Status: ${product.status}"
             }

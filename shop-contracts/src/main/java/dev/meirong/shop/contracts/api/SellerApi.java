@@ -16,7 +16,9 @@ public final class SellerApi {
     public static final String ORDER_GET = BASE_PATH + "/order/get";
     public static final String ORDER_SHIP = BASE_PATH + "/order/ship";
     public static final String ORDER_DELIVER = BASE_PATH + "/order/deliver";
+    public static final String ORDER_CANCEL = BASE_PATH + "/order/cancel";
     public static final String WALLET_GET = BASE_PATH + "/wallet/get";
+    public static final String WALLET_WITHDRAW = BASE_PATH + "/wallet/withdraw";
     public static final String PROFILE_GET = BASE_PATH + "/profile/get";
     public static final String PROFILE_UPDATE = BASE_PATH + "/profile/update";
     public static final String COUPON_CREATE = BASE_PATH + "/coupon/create";

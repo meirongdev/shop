@@ -18,6 +18,8 @@ import kotlin.math.roundToLong
 import kotlinx.serialization.Serializable
 
 private const val sellerDashboardPath = "/seller/v1/dashboard/get"
+private const val productCreatePath = "/seller/v1/product/create"
+private const val productUpdatePath = "/seller/v1/product/update"
 
 class SellerDashboardRepository(
     tokenStorage: TokenStorage = NoOpTokenStorage,
@@ -34,9 +36,65 @@ class SellerDashboardRepository(
         return response.requireDashboard().toModel()
     }
 
+    suspend fun createProduct(
+        sellerId: String,
+        sku: String,
+        name: String,
+        description: String,
+        price: Double,
+        inventory: Int,
+        published: Boolean
+    ): Product {
+        val response = client.post("$baseUrl$productCreatePath") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(UpsertProductRequestDto(
+                sellerId = sellerId,
+                sku = sku,
+                name = name,
+                description = description,
+                price = price,
+                inventory = inventory,
+                published = published
+            ))
+        }.body<ApiResponse<ProductDto>>()
+
+        return response.requireProduct().toModel()
+    }
+
+    suspend fun updateProduct(
+        productId: String,
+        sellerId: String,
+        sku: String,
+        name: String,
+        description: String,
+        price: Double,
+        inventory: Int,
+        published: Boolean
+    ): Product {
+        val response = client.post("$baseUrl$productUpdatePath") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(UpsertProductRequestDto(
+                productId = productId,
+                sellerId = sellerId,
+                sku = sku,
+                name = name,
+                description = description,
+                price = price,
+                inventory = inventory,
+                published = published
+            ))
+        }.body<ApiResponse<ProductDto>>()
+
+        return response.requireProduct().toModel()
+    }
+
     fun close() {
         client.close()
     }
+}
+
+private fun ApiResponse<ProductDto>.requireProduct(): ProductDto {
+    return data ?: error(message.ifBlank { "Product response did not include data." })
 }
 
 private fun ApiResponse<SellerDashboardDto>.requireDashboard(): SellerDashboardDto {
@@ -74,6 +132,18 @@ private data class SellerDashboardDto(
     val productCount: Long,
     val activePromotionCount: Long,
     val products: List<ProductDto> = emptyList()
+)
+
+@Serializable
+private data class UpsertProductRequestDto(
+    val productId: String? = null,
+    val sellerId: String,
+    val sku: String,
+    val name: String,
+    val description: String,
+    val price: Double,
+    val inventory: Int,
+    val published: Boolean
 )
 
 @Serializable

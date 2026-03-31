@@ -86,10 +86,22 @@ public class SellerController {
         return ApiResponse.success(service.deliverOrder(request.orderId()));
     }
 
+    @PostMapping("/order/cancel")
+    public ApiResponse<OrderApi.OrderResponse> cancelOrder(@Valid @RequestBody OrderApi.CancelOrderRequest request) {
+        return ApiResponse.success(service.cancelOrder(request.orderId(), request.reason()));
+    }
+
     @PostMapping("/wallet/get")
     public ApiResponse<WalletApi.WalletAccountResponse> wallet(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
                                                                @Valid @RequestBody SellerApi.SellerContextRequest request) {
         return ApiResponse.success(service.getWallet(resolveSellerId(headerSellerId, request.sellerId())));
+    }
+
+    @PostMapping("/wallet/withdraw")
+    public ApiResponse<WalletApi.TransactionResponse> withdraw(@RequestHeader(value = "X-Buyer-Id", required = false) String headerSellerId,
+                                                                @Valid @RequestBody WalletApi.WithdrawRequest request) {
+        String sellerId = resolveSellerId(headerSellerId, request.buyerId());
+        return ApiResponse.success(service.withdrawWallet(new WalletApi.WithdrawRequest(sellerId, request.amount(), request.currency())));
     }
 
     @PostMapping("/profile/get")

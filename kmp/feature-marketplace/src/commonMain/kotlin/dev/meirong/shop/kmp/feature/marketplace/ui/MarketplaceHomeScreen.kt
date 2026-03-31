@@ -28,6 +28,7 @@ fun MarketplaceHomeScreen(
     products: List<Product>,
     highlights: List<String> = emptyList(),
     emptyStateMessage: String = "No products match your current search.",
+    onProductClick: (Product) -> Unit = {},
     productCaption: (Product) -> String? = { it.categoryName }
 ) {
     var query by remember { mutableStateOf("") }
@@ -82,7 +83,7 @@ fun MarketplaceHomeScreen(
                         name = product.name,
                         price = formatPriceInCents(product.priceInCents),
                         imageUrl = product.imageUrl,
-                        onClick = {}
+                        onClick = { onProductClick(product) }
                     )
                     productCaption(product)?.takeIf { it.isNotBlank() }?.let { caption ->
                         Text(

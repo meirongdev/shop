@@ -116,11 +116,27 @@ public class SellerAggregationService {
                 "Order service is temporarily unavailable");
     }
 
+    public OrderApi.OrderResponse cancelOrder(String orderId, String reason) {
+        return call("orderService", false,
+                () -> post(properties.orderServiceUrl() + OrderApi.ORDER_CANCEL,
+                        new OrderApi.CancelOrderRequest(orderId, reason),
+                        new ParameterizedTypeReference<ApiResponse<OrderApi.OrderResponse>>() {}),
+                "Order service is temporarily unavailable");
+    }
+
     public WalletApi.WalletAccountResponse getWallet(String sellerId) {
         return call("walletService", false,
                 () -> post(properties.walletServiceUrl() + WalletApi.GET,
                         new WalletApi.GetWalletRequest(sellerId),
                         new ParameterizedTypeReference<ApiResponse<WalletApi.WalletAccountResponse>>() {}),
+                "Wallet service is temporarily unavailable");
+    }
+
+    public WalletApi.TransactionResponse withdrawWallet(WalletApi.WithdrawRequest request) {
+        return call("walletService", false,
+                () -> post(properties.walletServiceUrl() + WalletApi.WITHDRAW,
+                        request,
+                        new ParameterizedTypeReference<ApiResponse<WalletApi.TransactionResponse>>() {}),
                 "Wallet service is temporarily unavailable");
     }
 

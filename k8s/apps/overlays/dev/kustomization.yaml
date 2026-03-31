@@ -54,6 +54,9 @@ images:
   - name: shop/seller-portal
     newName: localhost:5000/shop/seller-portal
     newTag: dev
+  - name: shop/buyer-app
+    newName: localhost:5000/shop/buyer-app
+    newTag: dev
 patches:
   - target:
       kind: Deployment

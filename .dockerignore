@@ -15,7 +15,9 @@
 !docker/Dockerfile.module
 !docker/Dockerfile.fast
 !docker/Dockerfile.seller-portal
+!docker/Dockerfile.buyer-app
 !docker/nginx-seller.conf
+!docker/nginx-buyer.conf
 
 # Ignore build artifacts and IDE folders
 **/target/**
@@ -32,5 +34,6 @@ node_modules
 !**/target/
 !**/target/*.jar
 
-# Allow KMP WASM build outputs for seller-portal image
+# Allow KMP WASM build outputs for seller-portal and buyer-app images
 !kmp/seller-app/build/dist/**
+!kmp/buyer-app/build/dist/**

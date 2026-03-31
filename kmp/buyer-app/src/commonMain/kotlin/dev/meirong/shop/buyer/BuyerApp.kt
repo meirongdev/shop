@@ -108,6 +108,17 @@ fun BuyerApp(e2e: BuyerAppE2eConfig = BuyerAppE2eConfig()) {
             tokenStorage.saveTokens(session.accessToken, session.accessToken)
         }
 
+        // Auto-login as guest on startup so the marketplace is immediately browsable.
+        LaunchedEffect(Unit) {
+            if (e2e.enabled || autoLoginAttempted || buyerSession != null) return@LaunchedEffect
+            autoLoginAttempted = true
+            val result = runCatching { authRepository.loginGuest("buyer") }
+            result.getOrNull()?.let { session ->
+                buyerSession = session
+                tokenStorage.saveTokens(session.accessToken, session.accessToken)
+            }
+        }
+
         LaunchedEffect(e2e.enabled, e2e.autoLogin, e2e.guestLogin, targetRoute) {
             if (!e2e.enabled || (!e2e.autoLogin && !e2e.guestLogin) || e2e.session != null || autoLoginAttempted || buyerSession != null) {
                 return@LaunchedEffect

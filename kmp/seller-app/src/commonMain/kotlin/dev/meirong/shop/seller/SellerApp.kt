@@ -51,7 +51,9 @@ fun SellerApp(e2e: SellerAppE2eConfig = SellerAppE2eConfig()) {
         var autoLoginAttempted by remember { mutableStateOf(false) }
         val knownRoutes = remember { sellerDestinations.map { it.route }.toSet() }
         val targetRoute = e2e.initialRoute?.takeIf { it in knownRoutes } ?: SellerRoutes.Marketplace
-        val startDestination = if (e2e.enabled && !e2e.autoLogin) targetRoute else sellerDestinations.first().route
+        // Start on the Auth screen so the seller immediately sees the sign-in form;
+        // E2E mode may override to a specific route.
+        val startDestination = if (e2e.enabled && !e2e.autoLogin) targetRoute else SellerRoutes.Auth
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route ?: startDestination
 

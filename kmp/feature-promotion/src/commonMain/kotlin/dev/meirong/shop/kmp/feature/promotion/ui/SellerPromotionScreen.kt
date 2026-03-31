@@ -457,7 +457,7 @@ private fun OfferListCard(offers: List<SellerOffer>) {
 
 private fun couponValueLabel(coupon: SellerCoupon): String {
     return if (coupon.discountType == "PERCENTAGE") {
-        "${(coupon.discountValueInCents / 100.0).roundToLong()}%"
+        "${coupon.discountValueInCents / 100.0}%"
     } else {
         "$${formatPriceInCents(coupon.discountValueInCents)}"
     }

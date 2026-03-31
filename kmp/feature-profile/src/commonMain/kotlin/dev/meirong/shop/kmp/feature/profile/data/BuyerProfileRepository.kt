@@ -27,7 +27,7 @@ class BuyerProfileRepository(
     suspend fun getProfile(buyerId: String): BuyerProfile {
         val response = client.post("$baseUrl$buyerProfileGetPath") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-            setBody(BuyerProfileContextRequestDto(playerId = buyerId))
+            setBody(BuyerProfileContextRequestDto(buyerId = buyerId))
         }.body<ApiResponse<BuyerProfileDto>>()
 
         return response.requireProfile().toModel()
@@ -43,7 +43,7 @@ class BuyerProfileRepository(
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             setBody(
                 BuyerUpdateProfileRequestDto(
-                    playerId = buyerId,
+                    buyerId = buyerId,
                     displayName = displayName,
                     email = email,
                     tier = tier
@@ -64,7 +64,7 @@ private fun ApiResponse<BuyerProfileDto>.requireProfile(): BuyerProfileDto {
 }
 
 private fun BuyerProfileDto.toModel(): BuyerProfile = BuyerProfile(
-    buyerId = playerId,
+    buyerId = buyerId,
     username = username,
     displayName = displayName,
     email = email,
@@ -75,12 +75,12 @@ private fun BuyerProfileDto.toModel(): BuyerProfile = BuyerProfile(
 
 @Serializable
 private data class BuyerProfileContextRequestDto(
-    val playerId: String
+    val buyerId: String
 )
 
 @Serializable
 private data class BuyerUpdateProfileRequestDto(
-    val playerId: String,
+    val buyerId: String,
     val displayName: String,
     val email: String,
     val tier: String
@@ -88,7 +88,7 @@ private data class BuyerUpdateProfileRequestDto(
 
 @Serializable
 private data class BuyerProfileDto(
-    val playerId: String,
+    val buyerId: String,
     val username: String,
     val displayName: String,
     val email: String,

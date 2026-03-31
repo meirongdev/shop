@@ -30,7 +30,6 @@ import dev.meirong.shop.kmp.ui.components.ErrorScreen
 import dev.meirong.shop.kmp.ui.components.FeaturePlaceholderScreen
 import dev.meirong.shop.kmp.ui.components.LoadingIndicator
 import dev.meirong.shop.kmp.ui.components.formatPriceInCents
-import kotlin.math.roundToLong
 
 @Composable
 fun PromotionScreen(
@@ -240,7 +239,7 @@ private fun BuyerOfferListCard(offers: List<BuyerOffer>) {
 
 private fun buyerCouponValueLabel(coupon: BuyerCoupon): String {
     return if (coupon.discountType == "PERCENTAGE") {
-        "${(coupon.discountValueInCents / 100.0).roundToLong()}%"
+        "${coupon.discountValueInCents / 100.0}%"
     } else {
         "$${formatPriceInCents(coupon.discountValueInCents)}"
     }

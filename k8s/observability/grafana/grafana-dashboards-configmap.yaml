@@ -99,7 +99,7 @@ data:
           "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
           "targets": [{
             "datasource": {"type": "prometheus", "uid": "prometheus"},
-            "expr": "rate(shop_payment_success_total[5m]) / (rate(shop_payment_success_total[5m]) + rate(shop_payment_failed_total[5m]))",
+            "expr": "clamp_min(rate(shop_payment_success_total[5m]), 0) / clamp_min(rate(shop_payment_success_total[5m]) + rate(shop_payment_confirm_total{result=~\"failure|rejected\"}[5m]), 1)",
             "legendFormat": "success rate"
           }],
           "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1}}
@@ -118,13 +118,13 @@ data:
         },
         {
           "id": 4,
-          "title": "Coupons Redeemed",
+          "title": "Coupon Validations",
           "type": "timeseries",
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
           "targets": [{
             "datasource": {"type": "prometheus", "uid": "prometheus"},
-            "expr": "rate(shop_coupon_redeemed_total[5m])",
-            "legendFormat": "redeemed/s"
+            "expr": "rate(shop_coupon_validation_total{result=\"success\"}[5m])",
+            "legendFormat": "validated/s"
           }]
         },
         {

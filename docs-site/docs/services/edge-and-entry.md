@@ -102,3 +102,120 @@ KMP 模块结构：
 | `kmp/feature-*` | 功能模块（auth、marketplace、cart、order、wallet、profile、promotion） |
 | `kmp/seller-app` | Web WASM 入口 |
 | `kmp/seller-android-app` | Android 入口 |
+
+## KMP 与后端交互详解
+
+本节详细说明 KMP 客户端（buyer-app / seller-app）如何与后端服务进行通信。
+
+### 整体数据流
+
+```
+┌─────────────────┐    HTTPS      ┌─────────────┐   HTTP   ┌───────────┐   HTTP   ┌──────────────┐
+│  KMP buyer-app  │ ─────────────→│ api-gateway  │────────→│ buyer-bff │────────→│ 领域服务      │
+│  (WASM/Android) │ Bearer JWT    │  :8080       │         │           │         │ (order/wallet │
+└─────────────────┘               └─────────────┘         └───────────┘         │  /profile...) │
+                                       │                                        └──────────────┘
+┌─────────────────┐    HTTPS      │  路由分发 +    │   HTTP   ┌───────────┐
+│  KMP seller-app │ ─────────────→│  JWT 校验 +    │────────→│ seller-bff│
+│  (WASM/Android) │ Bearer JWT    │  Trusted Headers│        └───────────┘
+└─────────────────┘               └─────────────┘
+```
+
+### 认证流程
+
+1. **登录**：KMP `AuthRepository` 调用 `/auth/v1/token/login`（不经过 `/api` 前缀），Gateway 路由到 `auth-server`。
+2. **Token 存储**：登录成功后，`AccessToken` + `RefreshToken` 保存到共享的 `MutableTokenStorage`。
+3. **自动注入**：Ktor Auth 插件从 `tokenStorage.loadTokens()` 读取 token，每次 API 请求自动加 `Authorization: Bearer <token>` 头。
+4. **Token 刷新**：当 API 返回 401 时，Auth 插件自动调用 `/auth/v1/token/refresh` 刷新 token，刷新后重试原请求。
+
+代码关键路径：
+
+```
+kmp/core/session/TokenStorage.kt          → Token 存储接口
+kmp/core/network/HttpClientFactory.kt      → 创建带 Auth 插件的 HttpClient
+kmp/feature-auth/data/AuthRepository.kt    → 登录/注册（使用 NoOpTokenStorage）
+kmp/buyer-app/BuyerApp.kt                  → 创建共享 MutableTokenStorage
+kmp/seller-app/SellerApp.kt                → 创建共享 MutableTokenStorage
+```
+
+### URL 路由规则
+
+KMP 应用通过 `gatewayApiBaseUrl()` 获取基础 URL：
+
+| 环境 | `gatewayApiBaseUrl()` 返回值 | 说明 |
+|------|------------------------------|------|
+| WASM（浏览器） | `""` (空字符串) | 相对路径，浏览器自动使用当前域名 |
+| Android/iOS | `"http://10.0.2.2:8080/api"` | 模拟器访问宿主机 |
+
+请求 URL 构建示例：
+
+```
+# Buyer 获取购物车
+baseUrl + "/buyer/v1/cart/list"
+→ WASM: "/api/buyer/v1/cart/list"（相对路径）
+→ Gateway 匹配 /api/buyer/** → StripPrefix=1 → buyer-bff 收到 "/buyer/v1/cart/list"
+
+# 登录
+authBaseUrl + "/auth/v1/token/login"
+→ WASM: "/auth/v1/token/login"（相对路径）
+→ Gateway 匹配 /auth/** → auth-server 收到 "/auth/v1/token/login"
+
+# Seller 获取商品列表
+baseUrl + "/seller/v1/marketplace/products"
+→ WASM: "/api/seller/v1/marketplace/products"（相对路径）
+→ Gateway 匹配 /api/seller/** → StripPrefix=1 → seller-bff 收到 "/seller/v1/marketplace/products"
+```
+
+### Gateway 路由 StripPrefix 规则
+
+| Gateway 路径 | StripPrefix | 后端服务 | 后端收到的路径 |
+|---|---|---|---|
+| `/auth/**` | 无 | auth-server | `/auth/**` |
+| `/buyer/**` | 无 | buyer-portal | `/buyer/**` |
+| `/buyer-app/**` | 1 | buyer-app (nginx) | `/**` |
+| `/seller/**` | 1 | seller-portal (nginx) | `/**` |
+| `/api/buyer/**` | 1 | buyer-bff | `/buyer/**` |
+| `/api/seller/**` | 1 | seller-bff | `/seller/**` |
+| `/api/loyalty/**` | 1 | loyalty-service | `/loyalty/**` |
+| `/api/activity/**` | 1 | activity-service | `/activity/**` |
+
+### KMP 模块与后端 API 对应关系
+
+| KMP Feature 模块 | 调用的 BFF/Service | 核心 API 路径 |
+|---|---|---|
+| `feature-auth` | auth-server | `/auth/v1/token/login`, `/auth/v1/token/refresh`, `/auth/v1/register` |
+| `feature-marketplace` | buyer-bff / seller-bff | `/buyer/v1/marketplace/**`, `/seller/v1/marketplace/**` |
+| `feature-cart` | buyer-bff | `/buyer/v1/cart/list`, `/buyer/v1/cart/add`, `/buyer/v1/cart/checkout` |
+| `feature-order` | buyer-bff / seller-bff | `/buyer/v1/orders/**`, `/seller/v1/orders/**` |
+| `feature-wallet` | buyer-bff / seller-bff | `/buyer/v1/wallet/**`, `/seller/v1/wallet/**` |
+| `feature-profile` | buyer-bff / seller-bff | `/buyer/v1/profile/**`, `/seller/v1/profile/**` |
+| `feature-promotion` | buyer-bff / seller-bff | `/buyer/v1/promotion/**`, `/seller/v1/promotion/**` |
+
+### 请求/响应契约
+
+- **请求 DTO**：KMP 端在各 Repository 中定义 `@Serializable` 私有 DTO（如 `BuyerContextRequestDto`），字段名必须与 `shop-contracts` 中 Java DTO 的 JSON 字段名一致。
+- **响应包装**：所有后端 API 返回 `ApiResponse<T>` 结构，包含 `success`、`data`、`message` 字段。
+- **错误处理**：`ApiResponse.success == false` 时，KMP 端从 `message` 字段提取错误信息显示给用户。
+- **JSON 解析**：使用 `kotlinx.serialization`，配置 `ignoreUnknownKeys = true`，允许后端新增字段而不影响客户端。
+
+### BFF 聚合模式
+
+BFF 在 KMP 与领域服务之间起到聚合、适配和容错的作用：
+
+```
+KMP buyer-app → buyer-bff → marketplace-service  (商品信息)
+                           → order-service        (订单操作)
+                           → wallet-service       (支付/钱包)
+                           → promotion-service    (优惠券)
+                           → loyalty-service      (积分)
+                           → activity-service     (活动)
+
+KMP seller-app → seller-bff → marketplace-service (商品管理)
+                             → order-service       (订单管理)
+                             → promotion-service   (促销管理)
+                             → profile-service     (店铺资料)
+                             → subscription-service(订阅管理)
+```
+
+- **非核心依赖降级**：buyer-bff 对 promotion/loyalty 使用 Resilience4j CircuitBreaker，降级时返回空/默认值。
+- **核心依赖快速失败**：marketplace/order 调用失败直接抛异常，KMP 端展示错误。

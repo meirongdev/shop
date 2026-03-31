@@ -43,7 +43,7 @@ class SellerProfileRepository(
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             setBody(
                 SellerUpdateProfileRequestDto(
-                    playerId = sellerId,
+                    buyerId = sellerId,
                     displayName = displayName,
                     email = email,
                     tier = tier
@@ -64,7 +64,7 @@ private fun ApiResponse<SellerProfileDto>.requireProfile(): SellerProfileDto {
 }
 
 private fun SellerProfileDto.toModel(): SellerProfile = SellerProfile(
-    sellerId = playerId,
+    sellerId = buyerId,
     username = username,
     displayName = displayName,
     email = email,
@@ -80,7 +80,7 @@ private data class SellerProfileContextRequestDto(
 
 @Serializable
 private data class SellerUpdateProfileRequestDto(
-    val playerId: String,
+    val buyerId: String,
     val displayName: String,
     val email: String,
     val tier: String
@@ -88,7 +88,7 @@ private data class SellerUpdateProfileRequestDto(
 
 @Serializable
 private data class SellerProfileDto(
-    val playerId: String,
+    val buyerId: String,
     val username: String,
     val displayName: String,
     val email: String,

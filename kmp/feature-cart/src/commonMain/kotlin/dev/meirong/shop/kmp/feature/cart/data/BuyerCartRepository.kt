@@ -36,7 +36,7 @@ class BuyerCartRepository(
     suspend fun listCart(buyerId: String): ShoppingCart {
         val response = client.post("$baseUrl$buyerCartListPath") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-            setBody(BuyerContextRequestDto(playerId = buyerId))
+            setBody(BuyerContextRequestDto(buyerId = buyerId))
         }.body<ApiResponse<CartViewDto>>()
 
         return response.requireData().toModel()
@@ -93,7 +93,7 @@ class BuyerCartRepository(
     ): CheckoutResult {
         val response = client.post("$baseUrl$buyerCheckoutPath") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-            setBody(CheckoutRequestDto(playerId = buyerId, couponCode = couponCode))
+            setBody(CheckoutRequestDto(buyerId = buyerId, couponCode = couponCode))
         }.body<ApiResponse<CheckoutResponseDto>>()
 
         return response.requireCheckout().toModel()
@@ -165,7 +165,7 @@ private fun OrderItemDto.toModel(): OrderLineItem = OrderLineItem(
 
 @Serializable
 private data class BuyerContextRequestDto(
-    val playerId: String
+    val buyerId: String
 )
 
 @Serializable
@@ -193,7 +193,7 @@ private data class RemoveCartRequestDto(
 
 @Serializable
 private data class CheckoutRequestDto(
-    val playerId: String,
+    val buyerId: String,
     val couponCode: String? = null
 )
 

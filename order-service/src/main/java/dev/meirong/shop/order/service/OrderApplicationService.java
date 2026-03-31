@@ -76,6 +76,10 @@ public class OrderApplicationService {
         itemRepository.saveAll(items);
 
         publishOutboxEvent(order, "order.created.v1", items);
+        Counter.builder("shop_order_created_total")
+                .description("Total number of orders created")
+                .tag("service", "order-service")
+                .register(meterRegistry).increment();
         return toResponse(order, items);
     }
 

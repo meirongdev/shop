@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WalletAccount(
-    val playerId: String,
+    val buyerId: String,
     val balanceInCents: Long,
     val updatedAt: String,
     val recentTransactions: List<WalletTransaction>
@@ -13,7 +13,7 @@ data class WalletAccount(
 @Serializable
 data class WalletTransaction(
     val transactionId: String,
-    val playerId: String,
+    val buyerId: String,
     val type: String,
     val amountInCents: Long,
     val currency: String,

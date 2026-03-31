@@ -44,7 +44,7 @@ private fun ApiResponse<SellerWalletAccountDto>.requireWallet(): SellerWalletAcc
 }
 
 private fun SellerWalletAccountDto.toModel(): WalletAccount = WalletAccount(
-    playerId = playerId,
+    buyerId = buyerId,
     balanceInCents = (balance * 100.0).roundToLong(),
     updatedAt = updatedAt,
     recentTransactions = recentTransactions.map { it.toModel() }
@@ -52,7 +52,7 @@ private fun SellerWalletAccountDto.toModel(): WalletAccount = WalletAccount(
 
 private fun SellerWalletTransactionDto.toModel(): WalletTransaction = WalletTransaction(
     transactionId = transactionId,
-    playerId = playerId,
+    buyerId = buyerId,
     type = type,
     amountInCents = (amount * 100.0).roundToLong(),
     currency = currency,
@@ -68,7 +68,7 @@ private data class SellerContextRequestDto(
 
 @Serializable
 private data class SellerWalletAccountDto(
-    val playerId: String,
+    val buyerId: String,
     val balance: Double,
     val updatedAt: String,
     val recentTransactions: List<SellerWalletTransactionDto> = emptyList()
@@ -77,7 +77,7 @@ private data class SellerWalletAccountDto(
 @Serializable
 private data class SellerWalletTransactionDto(
     val transactionId: String,
-    val playerId: String,
+    val buyerId: String,
     val type: String,
     val amount: Double,
     val currency: String,

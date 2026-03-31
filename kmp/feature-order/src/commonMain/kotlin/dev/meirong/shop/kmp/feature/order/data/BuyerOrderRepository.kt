@@ -30,7 +30,7 @@ class BuyerOrderRepository(
     suspend fun listOrders(buyerId: String): List<ShopOrder> {
         val response = client.post("$baseUrl$buyerOrderListPath") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-            setBody(BuyerContextRequestDto(playerId = buyerId))
+            setBody(BuyerContextRequestDto(buyerId = buyerId))
         }.body<ApiResponse<List<OrderDto>>>()
 
         return response.requireOrders().map { it.toModel() }
@@ -51,8 +51,7 @@ class BuyerOrderRepository(
     ): ShopOrder {
         val response = client.post("$baseUrl$buyerOrderCancelPath") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-            header("X-Player-Id", buyerId)
-            setBody(UpdateOrderStatusRequestDto(orderId = orderId, status = "CANCELLED"))
+            setBody(CancelOrderRequestDto(orderId = orderId))
         }.body<ApiResponse<OrderDto>>()
 
         return response.requireOrder().toModel()
@@ -99,7 +98,7 @@ private fun OrderItemDto.toModel(): OrderLineItem = OrderLineItem(
 
 @Serializable
 private data class BuyerContextRequestDto(
-    val playerId: String
+    val buyerId: String
 )
 
 @Serializable
@@ -108,9 +107,9 @@ private data class GetOrderRequestDto(
 )
 
 @Serializable
-private data class UpdateOrderStatusRequestDto(
+private data class CancelOrderRequestDto(
     val orderId: String,
-    val status: String
+    val reason: String? = null
 )
 
 @Serializable

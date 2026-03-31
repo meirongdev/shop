@@ -29,7 +29,7 @@ class BuyerWalletRepository(
     suspend fun getWallet(buyerId: String): WalletAccount {
         val response = client.post("$baseUrl$buyerWalletGetPath") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-            setBody(BuyerContextRequestDto(playerId = buyerId))
+            setBody(BuyerContextRequestDto(buyerId = buyerId))
         }.body<ApiResponse<WalletAccountDto>>()
 
         return response.requireWallet().toModel()
@@ -44,7 +44,7 @@ class BuyerWalletRepository(
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             setBody(
                 DepositRequestDto(
-                    playerId = buyerId,
+                    buyerId = buyerId,
                     amount = amountInCents.toDouble() / 100.0,
                     currency = currency
                 )
@@ -68,7 +68,7 @@ private fun ApiResponse<WalletTransactionDto>.requireTransaction(): WalletTransa
 }
 
 private fun WalletAccountDto.toModel(): WalletAccount = WalletAccount(
-    playerId = playerId,
+    buyerId = buyerId,
     balanceInCents = (balance * 100.0).roundToLong(),
     updatedAt = updatedAt,
     recentTransactions = recentTransactions.map { it.toModel() }
@@ -76,7 +76,7 @@ private fun WalletAccountDto.toModel(): WalletAccount = WalletAccount(
 
 private fun WalletTransactionDto.toModel(): WalletTransaction = WalletTransaction(
     transactionId = transactionId,
-    playerId = playerId,
+    buyerId = buyerId,
     type = type,
     amountInCents = (amount * 100.0).roundToLong(),
     currency = currency,
@@ -87,19 +87,19 @@ private fun WalletTransactionDto.toModel(): WalletTransaction = WalletTransactio
 
 @Serializable
 private data class BuyerContextRequestDto(
-    val playerId: String
+    val buyerId: String
 )
 
 @Serializable
 private data class DepositRequestDto(
-    val playerId: String,
+    val buyerId: String,
     val amount: Double,
     val currency: String
 )
 
 @Serializable
 private data class WalletAccountDto(
-    val playerId: String,
+    val buyerId: String,
     val balance: Double,
     val updatedAt: String,
     val recentTransactions: List<WalletTransactionDto> = emptyList()
@@ -108,7 +108,7 @@ private data class WalletAccountDto(
 @Serializable
 private data class WalletTransactionDto(
     val transactionId: String,
-    val playerId: String,
+    val buyerId: String,
     val type: String,
     val amount: Double,
     val currency: String,

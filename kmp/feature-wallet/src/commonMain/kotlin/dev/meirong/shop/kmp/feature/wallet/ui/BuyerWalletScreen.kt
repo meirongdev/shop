@@ -108,6 +108,33 @@ fun BuyerWalletScreen(
         }
     }
 
+    fun withdraw(amountInCents: Long) {
+        scope.launch {
+            if (isSubmitting) return@launch
+            isSubmitting = true
+            uiState = uiState.copy(isLoading = true, actionMessage = null)
+            runCatching {
+                repository.withdraw(buyerId, amountInCents)
+                repository.getWallet(buyerId)
+            }
+                .onSuccess { refreshedWallet ->
+                    uiState = uiState.copy(
+                        isLoading = false,
+                        wallet = refreshedWallet,
+                        errorMessage = null,
+                        actionMessage = "Withdrew $${formatPriceInCents(amountInCents)} from the wallet."
+                    )
+                }
+                .onFailure { error ->
+                    uiState = uiState.copy(
+                        isLoading = false,
+                        actionMessage = error.message ?: "Wallet withdrawal failed."
+                    )
+                }
+            isSubmitting = false
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -139,7 +166,7 @@ fun BuyerWalletScreen(
                 uiState.actionMessage?.let { message ->
                     Text(
                         text = message,
-                        color = if (message.startsWith("Deposited")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        color = if (message.startsWith("Deposited") || message.startsWith("Withdrew")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -158,6 +185,21 @@ fun BuyerWalletScreen(
             }
             OutlinedButton(onClick = { deposit(5_000) }, enabled = !isSubmitting) {
                 Text("+$50")
+            }
+        }
+        Text(
+            text = "Withdrawals",
+            style = MaterialTheme.typography.titleMedium
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = { withdraw(1_000) }, enabled = !isSubmitting && wallet.balanceInCents >= 1_000) {
+                Text("-$10")
+            }
+            OutlinedButton(onClick = { withdraw(2_500) }, enabled = !isSubmitting && wallet.balanceInCents >= 2_500) {
+                Text("-$25")
+            }
+            OutlinedButton(onClick = { withdraw(5_000) }, enabled = !isSubmitting && wallet.balanceInCents >= 5_000) {
+                Text("-$50")
             }
         }
         Button(onClick = onOpenCart, enabled = !isSubmitting) {

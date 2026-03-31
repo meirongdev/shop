@@ -2,6 +2,7 @@ package dev.meirong.shop.kmp.feature.wallet.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,6 +12,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -29,6 +32,7 @@ import dev.meirong.shop.kmp.ui.components.ErrorScreen
 import dev.meirong.shop.kmp.ui.components.LoadingIndicator
 import dev.meirong.shop.kmp.ui.components.PriceTag
 import dev.meirong.shop.kmp.ui.components.formatPriceInCents
+import kotlinx.coroutines.launch
 
 @Composable
 fun SellerWalletScreen(
@@ -38,6 +42,9 @@ fun SellerWalletScreen(
 ) {
     var refreshKey by remember { mutableIntStateOf(0) }
     var uiState by remember { mutableStateOf(SellerWalletUiState()) }
+    var isSubmitting by remember { mutableStateOf(false) }
+    var actionMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(sellerId, refreshKey) {
         onE2eStateChanged("loading", null)
@@ -82,7 +89,7 @@ fun SellerWalletScreen(
     ) {
         Text(text = "Seller Wallet", style = MaterialTheme.typography.headlineSmall)
         Text(
-            text = "Live seller balance now comes from wallet-service through seller-bff. Settlement payout actions are still a later backend slice.",
+            text = "Live seller balance from wallet-service through seller-bff.",
             style = MaterialTheme.typography.bodyMedium
         )
         if (uiState.isLoading) {
@@ -107,13 +114,78 @@ fun SellerWalletScreen(
         Button(onClick = { refreshKey += 1 }, enabled = !uiState.isLoading) {
             Text("Refresh wallet")
         }
+        Text(
+            text = "Withdrawals",
+            style = MaterialTheme.typography.titleMedium
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        if (isSubmitting) return@launch
+                        isSubmitting = true
+                        actionMessage = null
+                        uiState = uiState.copy(isLoading = true)
+                        runCatching {
+                            repository.withdraw(sellerId, 1_000)
+                            repository.getWallet(sellerId)
+                        }
+                            .onSuccess { refreshedWallet ->
+                                uiState = uiState.copy(isLoading = false, wallet = refreshedWallet)
+                                actionMessage = "Withdrew $10.00 from wallet."
+                            }
+                            .onFailure { error ->
+                                uiState = uiState.copy(isLoading = false)
+                                actionMessage = error.message ?: "Withdrawal failed."
+                            }
+                        isSubmitting = false
+                    }
+                },
+                enabled = !isSubmitting && (wallet.balanceInCents >= 1_000)
+            ) {
+                Text("-$10")
+            }
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        if (isSubmitting) return@launch
+                        isSubmitting = true
+                        actionMessage = null
+                        uiState = uiState.copy(isLoading = true)
+                        runCatching {
+                            repository.withdraw(sellerId, 5_000)
+                            repository.getWallet(sellerId)
+                        }
+                            .onSuccess { refreshedWallet ->
+                                uiState = uiState.copy(isLoading = false, wallet = refreshedWallet)
+                                actionMessage = "Withdrew $50.00 from wallet."
+                            }
+                            .onFailure { error ->
+                                uiState = uiState.copy(isLoading = false)
+                                actionMessage = error.message ?: "Withdrawal failed."
+                            }
+                        isSubmitting = false
+                    }
+                },
+                enabled = !isSubmitting && (wallet.balanceInCents >= 5_000)
+            ) {
+                Text("-$50")
+            }
+        }
+        actionMessage?.let { message ->
+            Text(
+                text = message,
+                color = if (message.startsWith("Withdrew")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
         if (wallet.recentTransactions.isEmpty()) {
             Surface(
                 tonalElevation = 1.dp,
                 shape = MaterialTheme.shapes.medium
             ) {
                 Text(
-                    text = "No wallet transactions yet. Seller settlement and payout actions are not exposed yet, so this view is currently read-only.",
+                    text = "No wallet transactions yet. Use a withdrawal button above after depositing funds.",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(16.dp)
                 )

@@ -19,6 +19,7 @@ import kotlinx.serialization.Serializable
 
 private const val buyerWalletGetPath = "/buyer/v1/wallet/get"
 private const val buyerWalletDepositPath = "/buyer/v1/wallet/deposit"
+private const val buyerWalletWithdrawPath = "/buyer/v1/wallet/withdraw"
 
 class BuyerWalletRepository(
     tokenStorage: TokenStorage = NoOpTokenStorage,
@@ -44,6 +45,25 @@ class BuyerWalletRepository(
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             setBody(
                 DepositRequestDto(
+                    buyerId = buyerId,
+                    amount = amountInCents.toDouble() / 100.0,
+                    currency = currency
+                )
+            )
+        }.body<ApiResponse<WalletTransactionDto>>()
+
+        return response.requireTransaction().toModel()
+    }
+
+    suspend fun withdraw(
+        buyerId: String,
+        amountInCents: Long,
+        currency: String = "usd"
+    ): WalletTransaction {
+        val response = client.post("$baseUrl$buyerWalletWithdrawPath") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(
+                WithdrawRequestDto(
                     buyerId = buyerId,
                     amount = amountInCents.toDouble() / 100.0,
                     currency = currency
@@ -92,6 +112,13 @@ private data class BuyerContextRequestDto(
 
 @Serializable
 private data class DepositRequestDto(
+    val buyerId: String,
+    val amount: Double,
+    val currency: String
+)
+
+@Serializable
+private data class WithdrawRequestDto(
     val buyerId: String,
     val amount: Double,
     val currency: String

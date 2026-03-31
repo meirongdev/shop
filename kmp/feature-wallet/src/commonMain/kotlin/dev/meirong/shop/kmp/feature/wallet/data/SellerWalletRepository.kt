@@ -18,6 +18,7 @@ import kotlin.math.roundToLong
 import kotlinx.serialization.Serializable
 
 private const val sellerWalletGetPath = "/seller/v1/wallet/get"
+private const val sellerWalletWithdrawPath = "/seller/v1/wallet/withdraw"
 
 class SellerWalletRepository(
     tokenStorage: TokenStorage = NoOpTokenStorage,
@@ -32,6 +33,25 @@ class SellerWalletRepository(
         }.body<ApiResponse<SellerWalletAccountDto>>()
 
         return response.requireWallet().toModel()
+    }
+
+    suspend fun withdraw(
+        sellerId: String,
+        amountInCents: Long,
+        currency: String = "usd"
+    ): WalletTransaction {
+        val response = client.post("$baseUrl$sellerWalletWithdrawPath") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(
+                WithdrawRequestDto(
+                    sellerId = sellerId,
+                    amount = amountInCents.toDouble() / 100.0,
+                    currency = currency
+                )
+            )
+        }.body<ApiResponse<SellerWalletTransactionDto>>()
+
+        return response.requireTransaction().toModel()
     }
 
     fun close() {
@@ -50,6 +70,10 @@ private fun SellerWalletAccountDto.toModel(): WalletAccount = WalletAccount(
     recentTransactions = recentTransactions.map { it.toModel() }
 )
 
+private fun ApiResponse<SellerWalletTransactionDto>.requireTransaction(): SellerWalletTransactionDto {
+    return data ?: error(message.ifBlank { "Wallet transaction response did not include data." })
+}
+
 private fun SellerWalletTransactionDto.toModel(): WalletTransaction = WalletTransaction(
     transactionId = transactionId,
     buyerId = buyerId,
@@ -64,6 +88,13 @@ private fun SellerWalletTransactionDto.toModel(): WalletTransaction = WalletTran
 @Serializable
 private data class SellerContextRequestDto(
     val sellerId: String
+)
+
+@Serializable
+private data class WithdrawRequestDto(
+    val sellerId: String,
+    val amount: Double,
+    val currency: String
 )
 
 @Serializable

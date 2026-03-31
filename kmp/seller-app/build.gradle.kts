@@ -2,6 +2,7 @@
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.kmp.library)
@@ -52,6 +53,7 @@ kotlin {
                 implementation(libs.navigation.compose)
                 implementation(libs.lifecycle.viewmodel.compose)
                 implementation(libs.koin.compose)
+                implementation(libs.kotlinx.serialization.json)
             }
         }
     }

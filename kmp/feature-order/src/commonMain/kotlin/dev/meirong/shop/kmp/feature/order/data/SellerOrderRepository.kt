@@ -21,6 +21,7 @@ private const val sellerOrderListPath = "/seller/v1/order/list"
 private const val sellerOrderGetPath = "/seller/v1/order/get"
 private const val sellerOrderShipPath = "/seller/v1/order/ship"
 private const val sellerOrderDeliverPath = "/seller/v1/order/deliver"
+private const val sellerOrderCancelPath = "/seller/v1/order/cancel"
 
 class SellerOrderRepository(
     tokenStorage: TokenStorage = NoOpTokenStorage,
@@ -59,6 +60,15 @@ class SellerOrderRepository(
         val response = client.post("$baseUrl$sellerOrderDeliverPath") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             setBody(SellerUpdateOrderStatusRequestDto(orderId = orderId, status = "DELIVERED"))
+        }.body<ApiResponse<SellerOrderDto>>()
+
+        return response.requireOrder().toModel()
+    }
+
+    suspend fun cancelOrder(orderId: String, reason: String): ShopOrder {
+        val response = client.post("$baseUrl$sellerOrderCancelPath") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(SellerCancelOrderRequestDto(orderId = orderId, reason = reason))
         }.body<ApiResponse<SellerOrderDto>>()
 
         return response.requireOrder().toModel()
@@ -117,6 +127,12 @@ private data class SellerGetOrderRequestDto(
 private data class SellerUpdateOrderStatusRequestDto(
     val orderId: String,
     val status: String
+)
+
+@Serializable
+private data class SellerCancelOrderRequestDto(
+    val orderId: String,
+    val reason: String
 )
 
 @Serializable

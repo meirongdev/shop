@@ -7,10 +7,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -140,10 +146,70 @@ fun SellerOrderDetailScreen(
                 )
             }
         }
+        if (currentOrder.status == "PAID") {
+            var showCancelDialog by remember { mutableStateOf(false) }
+            var cancelReason by remember { mutableStateOf("") }
+
+            OutlinedButton(
+                onClick = { showCancelDialog = true },
+                enabled = !isSubmitting,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Cancel Order")
+            }
+
+            if (showCancelDialog) {
+                AlertDialog(
+                    onDismissRequest = { showCancelDialog = false },
+                    title = { Text("Cancel Order") },
+                    text = {
+                        Column {
+                            Text("Are you sure you want to cancel this order?")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = cancelReason,
+                                onValueChange = { cancelReason = it },
+                                label = { Text("Reason (optional)") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                showCancelDialog = false
+                                scope.launch {
+                                    isSubmitting = true
+                                    actionMessage = null
+                                    runCatching { repository.cancelOrder(currentOrder.id, cancelReason.ifBlank { "Cancelled by seller" }) }
+                                        .onSuccess {
+                                            order = it
+                                            actionMessage = "Order cancelled successfully."
+                                        }
+                                        .onFailure { error ->
+                                            actionMessage = error.message ?: "Failed to cancel order."
+                                        }
+                                    isSubmitting = false
+                                }
+                            }
+                        ) {
+                            Text("Confirm Cancel")
+                        }
+                    },
+                    dismissButton = {
+                        OutlinedButton(onClick = { showCancelDialog = false }) {
+                            Text("Keep Order")
+                        }
+                    }
+                )
+            }
+        }
         actionMessage?.let { message ->
             Text(
                 text = message,
-                color = if (message.startsWith("Order marked")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                color = if (message.startsWith("Order marked") || message.startsWith("Order cancelled")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium
             )
         }

@@ -1,0 +1,164 @@
+- generic [ref=e4]:
+  - link "Skip to main content" [ref=e5] [cursor=pointer]:
+    - /url: "#pageContent"
+    - generic [ref=e6]: Skip to main content
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - button "Close menu" [ref=e10] [cursor=pointer]:
+          - img "Grafana" [ref=e12]
+        - generic [ref=e13]: Grafana
+      - button "Undock menu" [ref=e14] [cursor=pointer]:
+        - img [ref=e161]
+    - navigation [ref=e16]:
+      - list "Navigation" [ref=e20]:
+        - listitem [ref=e22]:
+          - link "Home" [ref=e26] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e28]:
+              - img [ref=e163]
+              - generic [ref=e30]: Home
+        - listitem [ref=e32]:
+          - generic [ref=e33]:
+            - link "Starred" [ref=e36] [cursor=pointer]:
+              - /url: /dashboards?starred
+              - generic [ref=e38]:
+                - img [ref=e165]
+                - generic [ref=e40]: Starred
+            - button "Expand section Starred" [ref=e42] [cursor=pointer]:
+              - img [ref=e167]
+        - listitem [ref=e45]:
+          - generic [ref=e46]:
+            - link "Dashboards" [ref=e49] [cursor=pointer]:
+              - /url: /dashboards
+              - generic [ref=e51]:
+                - img [ref=e169]
+                - generic [ref=e53]: Dashboards
+            - button "Expand section Dashboards" [ref=e55] [cursor=pointer]:
+              - img [ref=e171]
+        - listitem [ref=e58]:
+          - link "Explore" [ref=e62] [cursor=pointer]:
+            - /url: /explore
+            - generic [ref=e64]:
+              - img [ref=e173]
+              - generic [ref=e66]: Explore
+        - listitem [ref=e68]:
+          - generic [ref=e69]:
+            - link "Drilldown New!" [ref=e72] [cursor=pointer]:
+              - /url: /drilldown
+              - generic [ref=e74]:
+                - img [ref=e175]
+                - generic [ref=e76]: Drilldown
+                - generic [ref=e77]:
+                  - img [ref=e180]
+                  - text: New!
+            - button "Expand section Drilldown" [ref=e80] [cursor=pointer]:
+              - img [ref=e182]
+        - listitem [ref=e83]:
+          - generic [ref=e84]:
+            - link "Alerting" [ref=e87] [cursor=pointer]:
+              - /url: /alerting
+              - generic [ref=e89]:
+                - img [ref=e184]
+                - generic [ref=e91]: Alerting
+            - button "Expand section Alerting" [ref=e93] [cursor=pointer]:
+              - img [ref=e186]
+        - listitem [ref=e96]:
+          - generic [ref=e97]:
+            - link "Connections" [ref=e100] [cursor=pointer]:
+              - /url: /connections
+              - generic [ref=e102]:
+                - img [ref=e188]
+                - generic [ref=e104]: Connections
+            - button "Expand section Connections" [ref=e106] [cursor=pointer]:
+              - img [ref=e190]
+        - listitem [ref=e109]:
+          - generic [ref=e110]:
+            - link "Administration" [ref=e113] [cursor=pointer]:
+              - /url: /admin
+              - generic [ref=e115]:
+                - img [ref=e192]
+                - generic [ref=e117]: Administration
+            - button "Expand section Administration" [ref=e119] [cursor=pointer]:
+              - img [ref=e194]
+  - banner [ref=e121]:
+    - generic [ref=e122]:
+      - navigation "Breadcrumbs" [ref=e124]:
+        - list [ref=e125]:
+          - listitem [ref=e126]:
+            - link "Home" [ref=e127] [cursor=pointer]:
+              - /url: /
+            - img [ref=e196]
+          - listitem [ref=e130]:
+            - link "Dashboards" [ref=e198] [cursor=pointer]:
+              - /url: /dashboards
+            - img [ref=e200]
+          - listitem [ref=e202]:
+            - generic "Shop Platform — Business Overview" [ref=e203]
+      - generic [ref=e132]:
+        - generic [ref=e134]:
+          - img [ref=e204]
+          - button "Search or jump to..." [ref=e137] [cursor=pointer]
+          - generic [ref=e138]:
+            - img [ref=e206]
+            - generic [ref=e140]: ⌘+k
+        - button "New" [ref=e141] [cursor=pointer]:
+          - img [ref=e208]
+          - img [ref=e210]
+        - button "Help" [ref=e145] [cursor=pointer]:
+          - img [ref=e212]
+        - button "Enable kiosk mode" [ref=e147] [cursor=pointer]:
+          - img [ref=e214]
+        - link "Sign in" [ref=e149] [cursor=pointer]:
+          - /url: /d/shop-business/shop-platform-e28094-business-overview?orgId=1&from=now-6h&to=now&timezone=browser&refresh=1m&forceLogin=true
+    - generic [ref=e219]:
+      - button "Edit" [ref=e223] [cursor=pointer]:
+        - generic [ref=e224]: Edit
+      - button "Export" [ref=e229] [cursor=pointer]:
+        - generic [ref=e230]:
+          - text: Export
+          - img [ref=e231]
+      - generic [ref=e234]:
+        - button "Share" [ref=e235] [cursor=pointer]:
+          - generic [ref=e236]: Share
+        - button "share-dropdown-menu" [ref=e237] [cursor=pointer]:
+          - img [ref=e238]
+  - main [ref=e152]:
+    - generic [ref=e241]:
+      - generic [ref=e244]:
+        - generic [ref=e245]:
+          - 'button "Time range selected: Last 6 hours" [ref=e246] [cursor=pointer]':
+            - img [ref=e247]
+            - generic [ref=e251]: Last 6 hours
+            - img [ref=e252]
+          - button "Zoom out time range" [ref=e254] [cursor=pointer]:
+            - img [ref=e255]
+        - generic [ref=e257]:
+          - button "Refresh" [ref=e258] [cursor=pointer]:
+            - img [ref=e259]
+            - generic [ref=e261]: Refresh
+          - button "Choose refresh time interval with current interval 1 minute selected" [ref=e263] [cursor=pointer]:
+            - generic [ref=e264]: 1m
+            - img [ref=e265]
+      - generic [ref=e270]:
+        - region "Orders Created / min" [ref=e274]:
+          - heading "Orders Created / min" [level=2] [ref=e277]
+          - generic [ref=e280]: No data
+        - region "Payment Success Rate" [ref=e284]:
+          - heading "Payment Success Rate" [level=2] [ref=e287]
+          - generic [ref=e294]: No data
+        - region "Checkout P99 Latency" [ref=e298]:
+          - heading "Checkout P99 Latency" [level=2] [ref=e301]
+          - generic [ref=e307]: No data
+        - region "Coupon Validations" [ref=e311]:
+          - heading "Coupon Validations" [level=2] [ref=e314]
+          - generic [ref=e317]: No data
+        - region "Loyalty Points Earned" [ref=e321]:
+          - heading "Loyalty Points Earned" [level=2] [ref=e324]
+          - generic [ref=e327]: No data
+        - region "Activity Participations" [ref=e331]:
+          - heading "Activity Participations" [level=2] [ref=e334]
+          - generic [ref=e337]: No data
+        - region "Wallet Deposits" [ref=e341]:
+          - heading "Wallet Deposits" [level=2] [ref=e344]
+          - generic [ref=e347]: No data

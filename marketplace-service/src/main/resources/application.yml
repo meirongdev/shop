@@ -75,14 +75,6 @@ shop:
     outbox:
       publish-delay-ms: ${MARKETPLACE_OUTBOX_PUBLISH_DELAY_MS:5000}
       topic: ${MARKETPLACE_PRODUCT_TOPIC:marketplace.product.events.v1}
-  security:
-    internal:
-      enabled: true
-      token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
-      excluded-path-prefixes:
-        - /actuator
-        - /v3/api-docs
-        - /swagger-ui
 
 springdoc:
   api-docs:

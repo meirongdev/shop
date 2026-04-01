@@ -1,0 +1,7 @@
+[     264ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ http://127.0.0.1:18080/favicon.ico:0
+[     605ms] [WARNING] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled @ http://127.0.0.1:18080/buyer-app/buyer-app.js:1
+[     605ms] [WARNING] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled @ http://127.0.0.1:18080/buyer-app/buyer-app.js:1
+[   11281ms] [WARNING] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled @ http://127.0.0.1:18080/buyer-app/buyer-app.js:1
+[   11281ms] [WARNING] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled @ http://127.0.0.1:18080/buyer-app/buyer-app.js:1
+[   11609ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ http://127.0.0.1:18080/api/buyer/v1/cart/list:0
+[   14879ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ http://127.0.0.1:18080/api/buyer/v1/cart/list:0

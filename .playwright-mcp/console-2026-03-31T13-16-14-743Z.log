@@ -1,0 +1,7 @@
+[     343ms] NotSupportedError: Failed to execute 'attachShadow' on 'Element': This element does not support attachShadow
+    at org.w3c.dom.attachShadow_$external_fun (http://127.0.0.1:18080/seller/seller-app.js:2:15147)
+    at http://127.0.0.1:18080/seller/840c509161e5a8e0b644.wasm:wasm-function[9216]:0x2e7a75
+    at http://127.0.0.1:18080/seller/840c509161e5a8e0b644.wasm:wasm-function[9111]:0x2dfc26
+    at http://127.0.0.1:18080/seller/840c509161e5a8e0b644.wasm:wasm-function[6138]:0x25937d
+    at http://127.0.0.1:18080/seller/840c509161e5a8e0b644.wasm:wasm-function[1762]:0x1a4b63
+    at http://127.0.0.1:18080/seller/seller-app.js:2:6346

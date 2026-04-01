@@ -4,8 +4,7 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "shop.seller")
-public record SellerClientProperties(String internalToken,
-                                     String profileServiceUrl,
+public record SellerClientProperties(String profileServiceUrl,
                                      String promotionServiceUrl,
                                      String walletServiceUrl,
                                      String marketplaceServiceUrl,

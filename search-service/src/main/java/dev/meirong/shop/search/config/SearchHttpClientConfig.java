@@ -14,7 +14,6 @@ public class SearchHttpClientConfig {
     MarketplaceInternalExchange marketplaceInternalExchange(SearchProperties properties) {
         RestClient restClient = RestClient.builder()
                 .baseUrl(properties.marketplaceServiceUrl())
-                .defaultHeader("X-Internal-Token", properties.internalToken())
                 .build();
         HttpServiceProxyFactory factory = HttpServiceProxyFactory
                 .builderFor(RestClientAdapter.create(restClient))

@@ -1,0 +1,15 @@
+[     599ms] [WARNING] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled @ http://127.0.0.1:18080/seller/seller-app.js:1
+[     600ms] [WARNING] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled @ http://127.0.0.1:18080/seller/seller-app.js:1
+[     604ms] SerializationException: Serializer for class 'SellerOrderDetail' is not found.
+Please ensure that class is marked as '@Serializable' and that the serialization compiler plugin is applied.
+
+    at kotlin.createJsError (http://127.0.0.1:18080/seller/seller-app.js:2:3659)
+    at http://127.0.0.1:18080/seller/7937b74fc41bd5d94dc6.wasm:wasm-function[1708]:0x175e48
+    at http://127.0.0.1:18080/seller/7937b74fc41bd5d94dc6.wasm:wasm-function[1709]:0x175e85
+    at http://127.0.0.1:18080/seller/7937b74fc41bd5d94dc6.wasm:wasm-function[1831]:0x177adf
+    at http://127.0.0.1:18080/seller/7937b74fc41bd5d94dc6.wasm:wasm-function[1826]:0x1779fd
+    at http://127.0.0.1:18080/seller/7937b74fc41bd5d94dc6.wasm:wasm-function[1817]:0x17787b
+    at http://127.0.0.1:18080/seller/7937b74fc41bd5d94dc6.wasm:wasm-function[2722]:0x1989f9
+    at http://127.0.0.1:18080/seller/7937b74fc41bd5d94dc6.wasm:wasm-function[2725]:0x198add
+    at http://127.0.0.1:18080/seller/7937b74fc41bd5d94dc6.wasm:wasm-function[12266]:0x3cd0e2
+    at http://127.0.0.1:18080/seller/7937b74fc41bd5d94dc6.wasm:wasm-function[12194]:0x3c39bf

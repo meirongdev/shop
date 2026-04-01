@@ -47,7 +47,6 @@ class BuyerAggregationServiceTest {
                 builder,
                 searchServiceClient,
                 new BuyerClientProperties(
-                        "token",
                         "http://profile",
                         "http://promotion",
                         "http://wallet",

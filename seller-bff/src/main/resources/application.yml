@@ -52,16 +52,7 @@ shop:
   profiling:
     enabled: ${PYROSCOPE_ENABLED:false}
     server-address: ${PYROSCOPE_SERVER_ADDRESS:http://pyroscope:4040}
-  security:
-    internal:
-      enabled: true
-      token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
-      excluded-path-prefixes:
-        - /actuator
-        - /v3/api-docs
-        - /swagger-ui
   seller:
-    internal-token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
     profile-service-url: ${PROFILE_SERVICE_URL:http://profile-service:8080}
     promotion-service-url: ${PROMOTION_SERVICE_URL:http://promotion-service:8080}
     wallet-service-url: ${WALLET_SERVICE_URL:http://wallet-service:8080}

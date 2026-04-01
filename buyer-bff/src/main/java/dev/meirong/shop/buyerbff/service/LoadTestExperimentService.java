@@ -63,7 +63,6 @@ public class LoadTestExperimentService {
         try {
             var request = restClient.post()
                     .uri(properties.marketplaceServiceUrl() + MarketplaceApi.CATEGORY_LIST)
-                    .header(TrustedHeaderNames.INTERNAL_TOKEN, properties.internalToken())
                     .body(Map.of());
             if (experimentHeaderValue != null) {
                 request.header(EXPERIMENT_HEADER, experimentHeaderValue);

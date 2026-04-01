@@ -44,7 +44,6 @@ class SocialLoginServiceTest {
                 "test-google-client-id",
                 "test-apple-client-id",
                 "http://profile-service:8080",
-                "local-dev-internal-token-change-me",
                 "buyer.registered.v1");
         JwtTokenService jwtTokenService = new JwtTokenService(props);
         socialLoginService = new SocialLoginService(props, userAccountRepository,

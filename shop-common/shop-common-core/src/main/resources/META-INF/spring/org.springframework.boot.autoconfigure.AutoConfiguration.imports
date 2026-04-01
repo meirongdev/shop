@@ -1,0 +1,3 @@
+dev.meirong.shop.common.json.JacksonCompatibilityAutoConfiguration
+dev.meirong.shop.common.observability.ObservabilityAutoConfiguration
+dev.meirong.shop.common.web.TomcatHttp2AutoConfiguration

@@ -803,7 +803,6 @@ public class BuyerAggregationService {
         try {
             ApiResponse<T> response = restClient.post()
                     .uri(url)
-                    .header(TrustedHeaderNames.INTERNAL_TOKEN, properties.internalToken())
                     .body(request)
                     .retrieve()
                     .body(typeReference);
@@ -820,7 +819,6 @@ public class BuyerAggregationService {
         try {
             ApiResponse<?> response = restClient.post()
                     .uri(url)
-                    .header(TrustedHeaderNames.INTERNAL_TOKEN, properties.internalToken())
                     .body(request)
                     .retrieve()
                     .body(new ParameterizedTypeReference<ApiResponse<Void>>() {});
@@ -836,7 +834,6 @@ public class BuyerAggregationService {
         try {
             ApiResponse<T> response = restClient.get()
                     .uri(url)
-                    .header(TrustedHeaderNames.INTERNAL_TOKEN, properties.internalToken())
                     .retrieve()
                     .body(typeReference);
             if (response == null || response.data() == null) {
@@ -853,7 +850,6 @@ public class BuyerAggregationService {
         try {
             ApiResponse<T> response = restClient.get()
                     .uri(url)
-                    .header(TrustedHeaderNames.INTERNAL_TOKEN, properties.internalToken())
                     .header(TrustedHeaderNames.BUYER_ID, buyerId)
                     .retrieve()
                     .body(typeReference);
@@ -871,7 +867,6 @@ public class BuyerAggregationService {
         try {
             ApiResponse<T> response = restClient.post()
                     .uri(url)
-                    .header(TrustedHeaderNames.INTERNAL_TOKEN, properties.internalToken())
                     .header(TrustedHeaderNames.BUYER_ID, buyerId)
                     .body(request)
                     .retrieve()

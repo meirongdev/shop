@@ -72,14 +72,6 @@ shop:
   profiling:
     enabled: ${PYROSCOPE_ENABLED:false}
     server-address: ${PYROSCOPE_SERVER_ADDRESS:http://pyroscope:4040}
-  security:
-    internal:
-      enabled: true
-      token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
-      excluded-path-prefixes:
-        - /actuator
-        - /v3/api-docs
-        - /swagger-ui
   webhook:
     order-events-topic: ${ORDER_EVENTS_TOPIC:order.events.v1}
     wallet-transactions-topic: ${WALLET_TRANSACTIONS_TOPIC:wallet.transactions.v1}

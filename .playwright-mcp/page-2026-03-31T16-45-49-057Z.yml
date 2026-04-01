@@ -1,0 +1,275 @@
+- generic [ref=e4]:
+  - link "Skip to main content" [ref=e12] [cursor=pointer]:
+    - /url: "#pageContent"
+    - generic [ref=e13]: Skip to main content
+  - generic [ref=e14]:
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - button "Close menu" [ref=e17] [cursor=pointer]:
+          - img "Grafana" [ref=e19]
+        - generic [ref=e20]: Grafana
+      - button "Undock menu" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+    - navigation [ref=e24]:
+      - list "Navigation" [ref=e28]:
+        - listitem [ref=e30]:
+          - link "Home" [ref=e34] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e36]:
+              - img [ref=e37]
+              - generic [ref=e39]: Home
+        - listitem [ref=e41]:
+          - generic [ref=e42]:
+            - link "Starred" [ref=e45] [cursor=pointer]:
+              - /url: /dashboards?starred
+              - generic [ref=e47]:
+                - img [ref=e48]
+                - generic [ref=e50]: Starred
+            - button "Expand section Starred" [ref=e52] [cursor=pointer]:
+              - img [ref=e53]
+        - listitem [ref=e56]:
+          - generic [ref=e57]:
+            - link "Dashboards" [ref=e60] [cursor=pointer]:
+              - /url: /dashboards
+              - generic [ref=e62]:
+                - img [ref=e63]
+                - generic [ref=e65]: Dashboards
+            - button "Expand section Dashboards" [ref=e67] [cursor=pointer]:
+              - img [ref=e68]
+        - listitem [ref=e71]:
+          - link "Explore" [ref=e75] [cursor=pointer]:
+            - /url: /explore
+            - generic [ref=e77]:
+              - img [ref=e78]
+              - generic [ref=e80]: Explore
+        - listitem [ref=e82]:
+          - generic [ref=e83]:
+            - link "Drilldown New!" [ref=e86] [cursor=pointer]:
+              - /url: /drilldown
+              - generic [ref=e88]:
+                - img [ref=e89]
+                - generic [ref=e94]: Drilldown
+                - generic [ref=e95]:
+                  - img [ref=e96]
+                  - text: New!
+            - button "Expand section Drilldown" [ref=e99] [cursor=pointer]:
+              - img [ref=e100]
+        - listitem [ref=e103]:
+          - generic [ref=e104]:
+            - link "Alerting" [ref=e107] [cursor=pointer]:
+              - /url: /alerting
+              - generic [ref=e109]:
+                - img [ref=e110]
+                - generic [ref=e112]: Alerting
+            - button "Expand section Alerting" [ref=e114] [cursor=pointer]:
+              - img [ref=e115]
+        - listitem [ref=e118]:
+          - generic [ref=e119]:
+            - link "Connections" [ref=e122] [cursor=pointer]:
+              - /url: /connections
+              - generic [ref=e124]:
+                - img [ref=e125]
+                - generic [ref=e127]: Connections
+            - button "Expand section Connections" [ref=e129] [cursor=pointer]:
+              - img [ref=e130]
+        - listitem [ref=e133]:
+          - generic [ref=e134]:
+            - link "Administration" [ref=e137] [cursor=pointer]:
+              - /url: /admin
+              - generic [ref=e139]:
+                - img [ref=e140]
+                - generic [ref=e142]: Administration
+            - button "Expand section Administration" [ref=e144] [cursor=pointer]:
+              - img [ref=e145]
+  - banner [ref=e147]:
+    - generic [ref=e148]:
+      - navigation "Breadcrumbs" [ref=e150]:
+        - list [ref=e151]:
+          - listitem [ref=e152]:
+            - link "Home" [ref=e153] [cursor=pointer]:
+              - /url: /
+            - img [ref=e155]
+          - listitem [ref=e157]:
+            - link "Dashboards" [ref=e158] [cursor=pointer]:
+              - /url: /dashboards
+            - img [ref=e160]
+          - listitem [ref=e162]:
+            - generic "Home" [ref=e163]
+      - generic [ref=e164]:
+        - generic [ref=e166]:
+          - img [ref=e168]
+          - button "Search or jump to..." [ref=e170] [cursor=pointer]
+          - generic [ref=e171]:
+            - img [ref=e172]
+            - generic [ref=e174]: ⌘+k
+        - button "New" [ref=e175] [cursor=pointer]:
+          - img [ref=e176]
+          - img [ref=e178]
+        - button "Help" [ref=e181] [cursor=pointer]:
+          - img [ref=e182]
+        - button "Enable kiosk mode" [ref=e184] [cursor=pointer]:
+          - img [ref=e185]
+        - link "Sign in" [ref=e187] [cursor=pointer]:
+          - /url: /?orgId=1&from=now-6h&to=now&timezone=browser&forceLogin=true
+  - main [ref=e7]:
+    - generic [ref=e196]:
+      - generic [ref=e202]:
+        - heading "Welcome to Grafana" [level=1] [ref=e203]
+        - generic [ref=e204]:
+          - heading "Need help?" [level=3] [ref=e205]
+          - generic [ref=e206]:
+            - link "Documentation" [ref=e207] [cursor=pointer]:
+              - /url: https://grafana.com/docs/grafana/latest?utm_source=grafana_gettingstarted
+            - link "Tutorials" [ref=e208] [cursor=pointer]:
+              - /url: https://grafana.com/tutorials?utm_source=grafana_gettingstarted
+            - link "Community" [ref=e209] [cursor=pointer]:
+              - /url: https://community.grafana.com?utm_source=grafana_gettingstarted
+            - link "Public Slack" [ref=e210] [cursor=pointer]:
+              - /url: http://slack.grafana.com?utm_source=grafana_gettingstarted
+      - generic [ref=e216]:
+        - button "Remove this panel" [ref=e217] [cursor=pointer]:
+          - generic [ref=e218]: Remove this panel
+        - generic [ref=e220]:
+          - generic [ref=e221]:
+            - heading "Basic" [level=2] [ref=e222]
+            - paragraph [ref=e223]: The steps below will guide you to quickly finish setting up your Grafana installation.
+          - generic [ref=e224]:
+            - link "tutorial Data source and dashboards Grafana fundamentals Set up and understand Grafana if you have no prior experience. This tutorial guides you through the entire process and covers the “Data source” and “Dashboards” steps to the right." [ref=e225] [cursor=pointer]:
+              - /url: https://grafana.com/tutorials/grafana-fundamentals?utm_source=grafana_gettingstarted
+              - generic [ref=e226]:
+                - generic [ref=e227]: tutorial
+                - generic [ref=e228]: Data source and dashboards
+                - heading "Grafana fundamentals" [level=4] [ref=e229]
+                - generic [ref=e230]: Set up and understand Grafana if you have no prior experience. This tutorial guides you through the entire process and covers the “Data source” and “Dashboards” steps to the right.
+            - generic [ref=e231]:
+              - link "complete Add your first data source" [ref=e233] [cursor=pointer]:
+                - /url: datasources/new?utm_source=grafana_gettingstarted
+                - generic [ref=e234]: complete
+                - heading "Add your first data source" [level=4] [ref=e235]
+              - link "Learn how in the docs" [ref=e236] [cursor=pointer]:
+                - /url: https://grafana.com/docs/grafana/latest/features/datasources/add-a-data-source?utm_source=grafana_gettingstarted
+                - text: Learn how in the docs
+                - img [ref=e237]
+            - generic [ref=e239]:
+              - link "complete Create your first dashboard" [ref=e241] [cursor=pointer]:
+                - /url: dashboard/new?utm_source=grafana_gettingstarted
+                - generic [ref=e242]: complete
+                - heading "Create your first dashboard" [level=4] [ref=e243]
+              - link "Learn how in the docs" [ref=e244] [cursor=pointer]:
+                - /url: https://grafana.com/docs/grafana/latest/guides/getting_started/#create-a-dashboard?utm_source=grafana_gettingstarted
+                - text: Learn how in the docs
+                - img [ref=e245]
+        - button "To advanced tutorials" [ref=e247] [cursor=pointer]:
+          - img [ref=e248]
+      - region "Dashboards" [ref=e253]:
+        - heading "Dashboards" [level=2] [ref=e256]
+        - generic [ref=e259]:
+          - generic [ref=e260]:
+            - heading "Starred dashboards" [level=6] [ref=e261]
+            - list
+          - generic [ref=e262]:
+            - heading "Recently viewed dashboards" [level=6] [ref=e263]
+            - list
+      - region "Latest from the blog" [ref=e267]:
+        - heading "Latest from the blog" [level=2] [ref=e270]
+        - generic [ref=e273]:
+          - 'article "Finding performance bottlenecks with Pyroscope and Alloy: An example using TON blockchain" [ref=e274]':
+            - link [ref=e275] [cursor=pointer]:
+              - /url: https://grafana.com/blog/finding-performance-bottlenecks-with-pyroscope-and-alloy-an-example-using-ton-blockchain/
+              - img
+            - generic [ref=e276]:
+              - time [ref=e277]: Mar 30
+              - 'link "Finding performance bottlenecks with Pyroscope and Alloy: An example using TON blockchain" [ref=e278] [cursor=pointer]':
+                - /url: https://grafana.com/blog/finding-performance-bottlenecks-with-pyroscope-and-alloy-an-example-using-ton-blockchain/
+                - 'heading "Finding performance bottlenecks with Pyroscope and Alloy: An example using TON blockchain" [level=3] [ref=e279]'
+              - generic [ref=e280]: Performance optimization often feels like searching for a needle in a haystack. You know your code is slow, but where exactly is the bottleneck? This is where continuous profiling comes in.
+          - 'article "Grafana security release: Critical and high severity security fixes for CVE-2026-27876 and CVE-2026-27880" [ref=e281]':
+            - link [ref=e282] [cursor=pointer]:
+              - /url: https://grafana.com/blog/grafana-security-release-critical-and-high-severity-security-fixes-for-cve-2026-27876-and-cve-2026-27880/
+              - img
+            - generic [ref=e283]:
+              - time [ref=e284]: Mar 26
+              - 'link "Grafana security release: Critical and high severity security fixes for CVE-2026-27876 and CVE-2026-27880" [ref=e285] [cursor=pointer]':
+                - /url: https://grafana.com/blog/grafana-security-release-critical-and-high-severity-security-fixes-for-cve-2026-27876-and-cve-2026-27880/
+                - 'heading "Grafana security release: Critical and high severity security fixes for CVE-2026-27876 and CVE-2026-27880" [level=3] [ref=e286]'
+              - generic [ref=e287]: Today we are releasing Grafana 12.4.2 along with patches for Grafana 12.3, 12.2, 12.1, and 11.6, which include critical and high severity security fixes. We recommend that you install the newly released versions as soon as possible.
+          - 'article "From raw data to flame graphs: A deep dive into how the OpenTelemetry eBPF profiler symbolizes Go" [ref=e288]':
+            - link [ref=e289] [cursor=pointer]:
+              - /url: https://grafana.com/blog/deep-dive-into-how-the-opentelemetry-ebpf-profiler-symbolizes-go/
+              - img
+            - generic [ref=e290]:
+              - time [ref=e291]: Mar 25
+              - 'link "From raw data to flame graphs: A deep dive into how the OpenTelemetry eBPF profiler symbolizes Go" [ref=e292] [cursor=pointer]':
+                - /url: https://grafana.com/blog/deep-dive-into-how-the-opentelemetry-ebpf-profiler-symbolizes-go/
+                - 'heading "From raw data to flame graphs: A deep dive into how the OpenTelemetry eBPF profiler symbolizes Go" [level=3] [ref=e293]'
+              - generic [ref=e294]: "Imagine you're troubleshooting a production issue: your application is slow, the CPU is spiking, and users are complaining. You turn to your profiler for answers—after all, this is exactly what it's built for."
+          - article "How OpenRouter and Grafana Cloud bring observability to LLM-powered applications" [ref=e295]:
+            - link [ref=e296] [cursor=pointer]:
+              - /url: https://grafana.com/blog/how-openrouter-and-grafana-cloud-bring-observability-to-llm-powered-applications/
+              - img
+            - generic [ref=e297]:
+              - time [ref=e298]: Mar 24
+              - link "How OpenRouter and Grafana Cloud bring observability to LLM-powered applications" [ref=e299] [cursor=pointer]:
+                - /url: https://grafana.com/blog/how-openrouter-and-grafana-cloud-bring-observability-to-llm-powered-applications/
+                - heading "How OpenRouter and Grafana Cloud bring observability to LLM-powered applications" [level=3] [ref=e300]
+              - generic [ref=e301]: "Chris Watts is Head of Enterprise Engineering at OpenRouter, building infrastructure for AI applications. Previously at Amazon and a startup founder.As large language models become core infrastructure for more and more applications, teams are discovering a familiar challenge in a new context: you can't improve what you can't see. Whether you're routing requests across multiple AI providers, managing costs across dozens of models, or debugging why a particular prompt is timing out in production, observability is no longer optional for LLM-powered systems."
+          - article "Instrument zero‑code observability for LLMs and agents on Kubernetes" [ref=e302]:
+            - link [ref=e303] [cursor=pointer]:
+              - /url: https://grafana.com/blog/ai-observability-zero-code/
+              - img
+            - generic [ref=e304]:
+              - time [ref=e305]: Mar 20
+              - link "Instrument zero‑code observability for LLMs and agents on Kubernetes" [ref=e306] [cursor=pointer]:
+                - /url: https://grafana.com/blog/ai-observability-zero-code/
+                - heading "Instrument zero‑code observability for LLMs and agents on Kubernetes" [level=3] [ref=e307]
+              - generic [ref=e308]: "Note: The world is changing all around us thanks to AI. Today, anyone and everyone can be a developer, using LLMs to create LLM-powered applications, which users can then interact with by using even more LLMs."
+          - 'article "Observe your AI agents: End‑to‑end tracing with OpenLIT and Grafana Cloud" [ref=e309]':
+            - link [ref=e310] [cursor=pointer]:
+              - /url: https://grafana.com/blog/ai-observability-ai-agents/
+              - img
+            - generic [ref=e311]:
+              - time [ref=e312]: Mar 20
+              - 'link "Observe your AI agents: End‑to‑end tracing with OpenLIT and Grafana Cloud" [ref=e313] [cursor=pointer]':
+                - /url: https://grafana.com/blog/ai-observability-ai-agents/
+                - 'heading "Observe your AI agents: End‑to‑end tracing with OpenLIT and Grafana Cloud" [level=3] [ref=e314]'
+              - generic [ref=e315]: "Note: The world is changing all around us thanks to AI. Today, anyone and everyone can be a developer, using LLMs to create LLM-powered applications, which users can then interact with by using even more LLMs."
+          - article "Monitor Model Context Protocol (MCP) servers with OpenLIT and Grafana Cloud" [ref=e316]:
+            - link [ref=e317] [cursor=pointer]:
+              - /url: https://grafana.com/blog/ai-observability-MCP-servers/
+              - img
+            - generic [ref=e318]:
+              - time [ref=e319]: Mar 20
+              - link "Monitor Model Context Protocol (MCP) servers with OpenLIT and Grafana Cloud" [ref=e320] [cursor=pointer]:
+                - /url: https://grafana.com/blog/ai-observability-MCP-servers/
+                - heading "Monitor Model Context Protocol (MCP) servers with OpenLIT and Grafana Cloud" [level=3] [ref=e321]
+              - generic [ref=e322]: "Note: The world is changing all around us thanks to AI. Today, anyone and everyone can be a developer, using LLMs to create LLM-powered applications, which users can then interact with by using even more LLMs."
+          - article "How to monitor LLMs in production with Grafana Cloud,OpenLIT, and OpenTelemetry" [ref=e323]:
+            - link [ref=e324] [cursor=pointer]:
+              - /url: https://grafana.com/blog/ai-observability-llms-in-production/
+              - img
+            - generic [ref=e325]:
+              - time [ref=e326]: Mar 20
+              - link "How to monitor LLMs in production with Grafana Cloud,OpenLIT, and OpenTelemetry" [ref=e327] [cursor=pointer]:
+                - /url: https://grafana.com/blog/ai-observability-llms-in-production/
+                - heading "How to monitor LLMs in production with Grafana Cloud,OpenLIT, and OpenTelemetry" [level=3] [ref=e328]
+              - generic [ref=e329]: "Note: The world is changing all around us thanks to AI. Today, anyone and everyone can be a developer, using LLMs to create LLM-powered applications, which users can then interact with by using even more LLMs."
+          - 'article "Open standards in 2026: The backbone of modern observability" [ref=e330]':
+            - link [ref=e331] [cursor=pointer]:
+              - /url: https://grafana.com/blog/observability-survey-OSS-open-standards-2026/
+              - img
+            - generic [ref=e332]:
+              - time [ref=e333]: Mar 18
+              - 'link "Open standards in 2026: The backbone of modern observability" [ref=e334] [cursor=pointer]':
+                - /url: https://grafana.com/blog/observability-survey-OSS-open-standards-2026/
+                - 'heading "Open standards in 2026: The backbone of modern observability" [level=3] [ref=e335]'
+              - generic [ref=e336]: Open source software and open standards are now an essential part of how organizations maintain their systems.That's not to say they haven't always been important, but the fourth annual Observability Survey, brought to you by Grafana Labs, shows just how deeply the shift to open has taken hold, with 77% of respondents saying open source and open standards are important1 to their observability strategy. We're also seeing open source have an impact on how people prioritize and select new tools, while OpenTelemetry continues to become a unified standard across all telemetry signals.
+          - 'article "AI in observability in 2026: Huge potential, lingering concerns" [ref=e337]':
+            - link [ref=e338] [cursor=pointer]:
+              - /url: https://grafana.com/blog/observability-survey-AI-2026/
+              - img
+            - generic [ref=e339]:
+              - time [ref=e340]: Mar 18
+              - 'link "AI in observability in 2026: Huge potential, lingering concerns" [ref=e341] [cursor=pointer]':
+                - /url: https://grafana.com/blog/observability-survey-AI-2026/
+                - 'heading "AI in observability in 2026: Huge potential, lingering concerns" [level=3] [ref=e342]'
+              - generic [ref=e343]: "The role of AI in observability is evolving rapidly, but the data from our fourth annual Observability Survey makes one thing abundantly clear: the potential is real, and so are the reservations."

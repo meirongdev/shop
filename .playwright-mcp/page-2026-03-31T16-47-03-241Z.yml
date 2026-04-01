@@ -1,0 +1,79 @@
+- generic [ref=e4]:
+  - link "Skip to main content" [ref=e5] [cursor=pointer]:
+    - /url: "#pageContent"
+    - generic [ref=e6]: Skip to main content
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - button "Close menu" [ref=e10] [cursor=pointer]:
+          - img "Grafana" [ref=e12]
+        - generic [ref=e13]: Grafana
+      - button "Undock menu" [ref=e14] [cursor=pointer]
+    - navigation [ref=e16]:
+      - list "Navigation" [ref=e20]:
+        - listitem [ref=e22]:
+          - link "Home" [ref=e26] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e30]: Home
+        - listitem [ref=e32]:
+          - generic [ref=e33]:
+            - link "Starred" [ref=e36] [cursor=pointer]:
+              - /url: /dashboards?starred
+              - generic [ref=e40]: Starred
+            - button "Expand section Starred" [ref=e42] [cursor=pointer]
+        - listitem [ref=e45]:
+          - generic [ref=e46]:
+            - link "Dashboards" [ref=e49] [cursor=pointer]:
+              - /url: /dashboards
+              - generic [ref=e53]: Dashboards
+            - button "Expand section Dashboards" [ref=e55] [cursor=pointer]
+        - listitem [ref=e58]:
+          - link "Explore" [ref=e62] [cursor=pointer]:
+            - /url: /explore
+            - generic [ref=e66]: Explore
+        - listitem [ref=e68]:
+          - generic [ref=e69]:
+            - link "Drilldown New!" [ref=e72] [cursor=pointer]:
+              - /url: /drilldown
+              - generic [ref=e74]:
+                - generic [ref=e76]: Drilldown
+                - generic [ref=e77]: New!
+            - button "Expand section Drilldown" [ref=e80] [cursor=pointer]
+        - listitem [ref=e83]:
+          - generic [ref=e84]:
+            - link "Alerting" [ref=e87] [cursor=pointer]:
+              - /url: /alerting
+              - generic [ref=e91]: Alerting
+            - button "Expand section Alerting" [ref=e93] [cursor=pointer]
+        - listitem [ref=e96]:
+          - generic [ref=e97]:
+            - link "Connections" [ref=e100] [cursor=pointer]:
+              - /url: /connections
+              - generic [ref=e104]: Connections
+            - button "Expand section Connections" [ref=e106] [cursor=pointer]
+        - listitem [ref=e109]:
+          - generic [ref=e110]:
+            - link "Administration" [ref=e113] [cursor=pointer]:
+              - /url: /admin
+              - generic [ref=e117]: Administration
+            - button "Expand section Administration" [ref=e119] [cursor=pointer]
+  - banner [ref=e121]:
+    - generic [ref=e122]:
+      - navigation "Breadcrumbs" [ref=e124]:
+        - list [ref=e125]:
+          - listitem [ref=e126]:
+            - link "Home" [ref=e127] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e130]:
+            - generic "Dashboards" [ref=e131]
+      - generic [ref=e132]:
+        - generic [ref=e134]:
+          - button "Search or jump to..." [ref=e137] [cursor=pointer]
+          - generic [ref=e140]: ⌘+k
+        - button "New" [ref=e141] [cursor=pointer]
+        - button "Help" [ref=e145] [cursor=pointer]
+        - button "Enable kiosk mode" [ref=e147] [cursor=pointer]
+        - link "Sign in" [ref=e149] [cursor=pointer]:
+          - /url: /d/shop-business/shop-platform-e28094-business-overview?orgId=1&from=now-6h&to=now&timezone=browser&forceLogin=true
+  - main [ref=e152]:
+    - generic [ref=e158]: Loading ...

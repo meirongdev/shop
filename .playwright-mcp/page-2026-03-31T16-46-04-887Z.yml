@@ -1,0 +1,202 @@
+- generic [ref=e4]:
+  - link "Skip to main content" [ref=e12] [cursor=pointer]:
+    - /url: "#pageContent"
+    - generic [ref=e13]: Skip to main content
+  - generic [ref=e14]:
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - button "Close menu" [ref=e17] [cursor=pointer]:
+          - img "Grafana" [ref=e19]
+        - generic [ref=e20]: Grafana
+      - button "Undock menu" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+    - navigation [ref=e24]:
+      - list "Navigation" [ref=e28]:
+        - listitem [ref=e30]:
+          - link "Home" [ref=e34] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e36]:
+              - img [ref=e37]
+              - generic [ref=e39]: Home
+        - listitem [ref=e41]:
+          - generic [ref=e42]:
+            - link "Starred" [ref=e45] [cursor=pointer]:
+              - /url: /dashboards?starred
+              - generic [ref=e47]:
+                - img [ref=e48]
+                - generic [ref=e50]: Starred
+            - button "Expand section Starred" [ref=e52] [cursor=pointer]:
+              - img [ref=e53]
+        - listitem [ref=e56]:
+          - generic [ref=e57]:
+            - link "Dashboards" [active] [ref=e60] [cursor=pointer]:
+              - /url: /dashboards
+              - generic [ref=e62]:
+                - img [ref=e63]
+                - generic [ref=e65]: Dashboards
+            - button "Expand section Dashboards" [ref=e67] [cursor=pointer]:
+              - img [ref=e68]
+        - listitem [ref=e71]:
+          - link "Explore" [ref=e75] [cursor=pointer]:
+            - /url: /explore
+            - generic [ref=e77]:
+              - img [ref=e78]
+              - generic [ref=e80]: Explore
+        - listitem [ref=e82]:
+          - generic [ref=e83]:
+            - link "Drilldown New!" [ref=e86] [cursor=pointer]:
+              - /url: /drilldown
+              - generic [ref=e88]:
+                - img [ref=e89]
+                - generic [ref=e94]: Drilldown
+                - generic [ref=e95]:
+                  - img [ref=e96]
+                  - text: New!
+            - button "Expand section Drilldown" [ref=e99] [cursor=pointer]:
+              - img [ref=e100]
+        - listitem [ref=e103]:
+          - generic [ref=e104]:
+            - link "Alerting" [ref=e107] [cursor=pointer]:
+              - /url: /alerting
+              - generic [ref=e109]:
+                - img [ref=e110]
+                - generic [ref=e112]: Alerting
+            - button "Expand section Alerting" [ref=e114] [cursor=pointer]:
+              - img [ref=e115]
+        - listitem [ref=e118]:
+          - generic [ref=e119]:
+            - link "Connections" [ref=e122] [cursor=pointer]:
+              - /url: /connections
+              - generic [ref=e124]:
+                - img [ref=e125]
+                - generic [ref=e127]: Connections
+            - button "Expand section Connections" [ref=e129] [cursor=pointer]:
+              - img [ref=e130]
+        - listitem [ref=e133]:
+          - generic [ref=e134]:
+            - link "Administration" [ref=e137] [cursor=pointer]:
+              - /url: /admin
+              - generic [ref=e139]:
+                - img [ref=e140]
+                - generic [ref=e142]: Administration
+            - button "Expand section Administration" [ref=e144] [cursor=pointer]:
+              - img [ref=e145]
+  - banner [ref=e147]:
+    - generic [ref=e148]:
+      - navigation "Breadcrumbs" [ref=e150]:
+        - list [ref=e151]:
+          - listitem [ref=e152]:
+            - link "Home" [ref=e153] [cursor=pointer]:
+              - /url: /
+            - img [ref=e155]
+          - listitem [ref=e157]:
+            - generic "Dashboards" [ref=e344]
+      - generic [ref=e164]:
+        - generic [ref=e166]:
+          - img [ref=e168]
+          - button "Search or jump to..." [ref=e170] [cursor=pointer]
+          - generic [ref=e171]:
+            - img [ref=e172]
+            - generic [ref=e174]: ⌘+k
+        - button "New" [ref=e175] [cursor=pointer]:
+          - img [ref=e176]
+          - img [ref=e178]
+        - button "Help" [ref=e181] [cursor=pointer]:
+          - img [ref=e182]
+        - button "Enable kiosk mode" [ref=e184] [cursor=pointer]:
+          - img [ref=e185]
+        - link "Sign in" [ref=e187] [cursor=pointer]:
+          - /url: /dashboards?forceLogin=true
+  - main [ref=e7]:
+    - generic [ref=e346]:
+      - generic [ref=e347]:
+        - generic [ref=e348]:
+          - heading "Dashboards" [level=1] [ref=e351]
+          - button "New" [ref=e353] [cursor=pointer]:
+            - generic [ref=e354]:
+              - text: New
+              - img [ref=e355]
+        - generic [ref=e357]: Create and manage dashboards to visualize your data
+      - generic [ref=e359]:
+        - generic [ref=e362]:
+          - img [ref=e364]
+          - textbox "Search for dashboards and folders" [ref=e366]
+        - generic [ref=e368]:
+          - generic [ref=e369]:
+            - generic [ref=e371] [cursor=pointer]:
+              - log [ref=e373]
+              - generic [ref=e374]:
+                - img [ref=e376]
+                - generic [ref=e378]:
+                  - generic [ref=e379]: Filter by tag
+                  - combobox "Tag filter" [ref=e381]
+                - img [ref=e383]
+            - generic [ref=e386]:
+              - checkbox "Starred" [ref=e388]
+              - generic [ref=e390] [cursor=pointer]: Starred
+          - generic [ref=e391]:
+            - radiogroup [ref=e392]:
+              - generic [ref=e393]:
+                - radio [checked] [ref=e394] [cursor=pointer]
+                - generic "View by folders" [ref=e395] [cursor=pointer]:
+                  - img [ref=e396]
+              - generic [ref=e398]:
+                - radio [ref=e399] [cursor=pointer]
+                - generic "View as list" [ref=e400] [cursor=pointer]:
+                  - img [ref=e401]
+            - generic [ref=e403] [cursor=pointer]:
+              - log [ref=e405]
+              - generic [ref=e406]:
+                - img [ref=e408]
+                - generic [ref=e410]:
+                  - generic [ref=e411]: Sort
+                  - combobox "Sort" [ref=e413]
+                - img [ref=e415]
+        - generic [ref=e417]:
+          - generic:
+            - table:
+              - row "Select all Name Tags" [ref=e418]:
+                - columnheader "Select all" [ref=e419]:
+                  - checkbox "Select all" [ref=e422]
+                - columnheader "Name" [ref=e424]:
+                  - generic [ref=e425]: Name
+                - columnheader "Tags" [ref=e426]
+              - rowgroup:
+                - generic [ref=e428]:
+                  - row "Shop Platform — Business Overview" [ref=e429]:
+                    - cell "Select" [ref=e430]:
+                      - checkbox "Select" [ref=e433]
+                    - cell "Shop Platform — Business Overview" [ref=e435]:
+                      - generic [ref=e436]:
+                        - img [ref=e437]
+                        - link "Shop Platform — Business Overview" [ref=e440] [cursor=pointer]:
+                          - /url: /d/shop-business/shop-platform-e28094-business-overview
+                    - cell "Tags" [ref=e441]:
+                      - list "Tags" [ref=e442]:
+                        - listitem [ref=e443]: business
+                        - listitem [ref=e444]: shop
+                  - row "Shop Platform — JVM & Virtual Threads" [ref=e445]:
+                    - cell "Select" [ref=e446]:
+                      - checkbox "Select" [ref=e449]
+                    - cell "Shop Platform — JVM & Virtual Threads" [ref=e451]:
+                      - generic [ref=e452]:
+                        - img [ref=e453]
+                        - link "Shop Platform — JVM & Virtual Threads" [ref=e456] [cursor=pointer]:
+                          - /url: /d/shop-jvm-vt/shop-platform-e28094-jvm-and-virtual-threads
+                    - cell "Tags" [ref=e457]:
+                      - list "Tags" [ref=e458]:
+                        - listitem [ref=e459]: jvm
+                        - listitem [ref=e460]: shop
+                        - listitem [ref=e461]: virtual-threads
+                  - row "Shop Platform — Service Health" [ref=e462]:
+                    - cell "Select" [ref=e463]:
+                      - checkbox "Select" [ref=e466]
+                    - cell "Shop Platform — Service Health" [ref=e468]:
+                      - generic [ref=e469]:
+                        - img [ref=e470]
+                        - link "Shop Platform — Service Health" [ref=e473] [cursor=pointer]:
+                          - /url: /d/shop-service-health/shop-platform-e28094-service-health
+                    - cell "Tags" [ref=e474]:
+                      - list "Tags" [ref=e475]:
+                        - listitem [ref=e476]: shop
+                        - listitem [ref=e477]: sre

@@ -1,0 +1,30 @@
+[    1388ms] [WARNING] SystemJS: failed to resolve 'react/jsx-runtime' @ http://127.0.0.1:13000/public/build/8501.218d37729a5947d7fb49.js:293
+[    1675ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:13000/react/jsx-runtime:0
+[    1675ms] [ERROR] Error: Could not load plugin: Error: 404 Not Found, loading react/jsx-runtime from http://127.0.0.1:13000/public/plugins/grafana-lokiexplore-app/module.js?_cache=1.0.39 (SystemJS Error#7 https://github.com/systemjs/systemjs/blob/main/docs/errors.md#7)
+    at http://127.0.0.1:13000/public/build/8501.218d37729a5947d7fb49.js:294:114640
+    at async ua (http://127.0.0.1:13000/public/build/8501.218d37729a5947d7fb49.js:294:115468)
+    at async Yf (http://127.0.0.1:13000/public/build/8501.218d37729a5947d7fb49.js:1561:134665)
+    at async Promise.all (index 0)
+    at async wl (http://127.0.0.1:13000/public/build/8501.218d37729a5947d7fb49.js:1561:134582) @ http://127.0.0.1:13000/public/build/8501.218d37729a5947d7fb49.js:293
+[    1677ms] [ERROR] [Plugins] Failed to preload plugin: public/plugins/grafana-lokiexplore-app/module.js (version: 1.0.39) Error: Could not load plugin: Error: 404 Not Found, loading react/jsx-runtime from http://127.0.0.1:13000/public/plugins/grafana-lokiexplore-app/module.js?_cache=1.0.39 (SystemJS Error#7 https://github.com/systemjs/systemjs/blob/main/docs/errors.md#7)
+    at http://127.0.0.1:13000/public/build/8501.218d37729a5947d7fb49.js:294:114640
+    at async ua (http://127.0.0.1:13000/public/build/8501.218d37729a5947d7fb49.js:294:115468)
+    at async Yf (http://127.0.0.1:13000/public/build/8501.218d37729a5947d7fb49.js:1561:134665)
+    at async Promise.all (index 0)
+    at async wl (http://127.0.0.1:13000/public/build/8501.218d37729a5947d7fb49.js:1561:134582) @ http://127.0.0.1:13000/public/build/8501.218d37729a5947d7fb49.js:1560
+[    1686ms] Error: 404 Not Found, loading react/jsx-runtime from http://127.0.0.1:13000/public/plugins/grafana-lokiexplore-app/module.js?_cache=1.0.39 (SystemJS Error#7 https://github.com/systemjs/systemjs/blob/main/docs/errors.md#7)
+    at http://127.0.0.1:13000/public/build/882.d5e18b48f62eb44a635b.js:283:1427
+[    2009ms] [WARNING] Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.
+Arguments: 
+[0] _isAMomentObject: true, _isUTC: false, _useUTC: false, _l: undefined, _i: Mon, 30 Mar 2026 16:22:31, _f: undefined, _strict: undefined, _locale: [object Object]
+Error
+    at a.createFromInputFallback (http://127.0.0.1:13000/public/build/6029.0549a3fcb50e73c4b256.js:624:3)
+    at an (http://127.0.0.1:13000/public/build/6029.0549a3fcb50e73c4b256.js:624:25647)
+    at un (http://127.0.0.1:13000/public/build/6029.0549a3fcb50e73c4b256.js:624:29355)
+    at aa (http://127.0.0.1:13000/public/build/6029.0549a3fcb50e73c4b256.js:624:29221)
+    at on (http://127.0.0.1:13000/public/build/6029.0549a3fcb50e73c4b256.js:624:28938)
+    at sa (http://127.0.0.1:13000/public/build/6029.0549a3fcb50e73c4b256.js:624:29715)
+    at A (http://127.0.0.1:13000/public/build/6029.0549a3fcb50e73c4b256.js:624:29748)
+    at a (http://127.0.0.1:13000/public/build/6029.0549a3fcb50e73c4b256.js:621:89)
+    at f (http://127.0.0.1:13000/public/build/7836.a82c814cd762dc40d7b8.js:1:4771)
+    at g (http://127.0.0.1:13000/public/build/8501.218d37729a5947d7fb49.js:1567:58208) @ http://127.0.0.1:13000/public/build/6029.0549a3fcb50e73c4b256.js:620

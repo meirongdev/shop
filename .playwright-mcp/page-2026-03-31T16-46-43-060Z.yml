@@ -1,0 +1,398 @@
+- generic [ref=e4]:
+  - link "Skip to main content" [ref=e12] [cursor=pointer]:
+    - /url: "#pageContent"
+    - generic [ref=e13]: Skip to main content
+  - generic [ref=e14]:
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - button "Close menu" [ref=e17] [cursor=pointer]:
+          - img "Grafana" [ref=e19]
+        - generic [ref=e20]: Grafana
+      - button "Undock menu" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+    - navigation [ref=e24]:
+      - list "Navigation" [ref=e28]:
+        - listitem [ref=e30]:
+          - link "Home" [ref=e34] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e36]:
+              - img [ref=e37]
+              - generic [ref=e39]: Home
+        - listitem [ref=e41]:
+          - generic [ref=e42]:
+            - link "Starred" [ref=e45] [cursor=pointer]:
+              - /url: /dashboards?starred
+              - generic [ref=e47]:
+                - img [ref=e48]
+                - generic [ref=e50]: Starred
+            - button "Expand section Starred" [ref=e52] [cursor=pointer]:
+              - img [ref=e53]
+        - listitem [ref=e56]:
+          - generic [ref=e57]:
+            - link "Dashboards" [ref=e60] [cursor=pointer]:
+              - /url: /dashboards
+              - generic [ref=e62]:
+                - img [ref=e63]
+                - generic [ref=e65]: Dashboards
+            - button "Expand section Dashboards" [ref=e67] [cursor=pointer]:
+              - img [ref=e68]
+        - listitem [ref=e71]:
+          - link "Explore" [ref=e75] [cursor=pointer]:
+            - /url: /explore
+            - generic [ref=e77]:
+              - img [ref=e78]
+              - generic [ref=e80]: Explore
+        - listitem [ref=e82]:
+          - generic [ref=e83]:
+            - link "Drilldown New!" [ref=e86] [cursor=pointer]:
+              - /url: /drilldown
+              - generic [ref=e88]:
+                - img [ref=e89]
+                - generic [ref=e94]: Drilldown
+                - generic [ref=e95]:
+                  - img [ref=e96]
+                  - text: New!
+            - button "Expand section Drilldown" [ref=e99] [cursor=pointer]:
+              - img [ref=e100]
+        - listitem [ref=e103]:
+          - generic [ref=e104]:
+            - link "Alerting" [ref=e107] [cursor=pointer]:
+              - /url: /alerting
+              - generic [ref=e109]:
+                - img [ref=e110]
+                - generic [ref=e112]: Alerting
+            - button "Expand section Alerting" [ref=e114] [cursor=pointer]:
+              - img [ref=e115]
+        - listitem [ref=e118]:
+          - generic [ref=e119]:
+            - link "Connections" [ref=e122] [cursor=pointer]:
+              - /url: /connections
+              - generic [ref=e124]:
+                - img [ref=e125]
+                - generic [ref=e127]: Connections
+            - button "Expand section Connections" [ref=e129] [cursor=pointer]:
+              - img [ref=e130]
+        - listitem [ref=e133]:
+          - generic [ref=e134]:
+            - link "Administration" [ref=e137] [cursor=pointer]:
+              - /url: /admin
+              - generic [ref=e139]:
+                - img [ref=e140]
+                - generic [ref=e142]: Administration
+            - button "Expand section Administration" [ref=e144] [cursor=pointer]:
+              - img [ref=e145]
+  - banner [ref=e147]:
+    - generic [ref=e148]:
+      - navigation "Breadcrumbs" [ref=e150]:
+        - list [ref=e151]:
+          - listitem [ref=e152]:
+            - link "Home" [ref=e153] [cursor=pointer]:
+              - /url: /
+            - img [ref=e155]
+          - listitem [ref=e157]:
+            - link "Dashboards" [ref=e478] [cursor=pointer]:
+              - /url: /dashboards
+            - img [ref=e480]
+          - listitem [ref=e482]:
+            - generic "Shop Platform — Service Health" [ref=e483]
+      - generic [ref=e164]:
+        - generic [ref=e166]:
+          - img [ref=e168]
+          - button "Search or jump to..." [ref=e170] [cursor=pointer]
+          - generic [ref=e171]:
+            - img [ref=e172]
+            - generic [ref=e174]: ⌘+k
+        - button "New" [ref=e175] [cursor=pointer]:
+          - img [ref=e176]
+          - img [ref=e178]
+        - button "Help" [ref=e181] [cursor=pointer]:
+          - img [ref=e182]
+        - button "Enable kiosk mode" [ref=e184] [cursor=pointer]:
+          - img [ref=e185]
+        - link "Sign in" [ref=e187] [cursor=pointer]:
+          - /url: /d/shop-service-health/shop-platform-e28094-service-health?orgId=1&from=now-6h&to=now&timezone=browser&refresh=30s&forceLogin=true
+    - generic [ref=e487]:
+      - button "Edit" [ref=e491] [cursor=pointer]:
+        - generic [ref=e492]: Edit
+      - button "Export" [ref=e497] [cursor=pointer]:
+        - generic [ref=e498]:
+          - text: Export
+          - img [ref=e499]
+      - generic [ref=e502]:
+        - button "Share" [ref=e503] [cursor=pointer]:
+          - generic [ref=e504]: Share
+        - button "share-dropdown-menu" [ref=e505] [cursor=pointer]:
+          - img [ref=e506]
+  - main [ref=e7]:
+    - generic [ref=e509]:
+      - generic [ref=e512]:
+        - generic [ref=e513]:
+          - 'button "Time range selected: Last 6 hours" [ref=e514] [cursor=pointer]':
+            - img [ref=e515]
+            - generic [ref=e519]: Last 6 hours
+            - img [ref=e520]
+          - button "Zoom out time range" [ref=e522] [cursor=pointer]:
+            - img [ref=e523]
+        - generic [ref=e525]:
+          - button "Refresh" [ref=e526] [cursor=pointer]:
+            - img [ref=e527]
+            - generic [ref=e529]: Refresh
+          - button "Choose refresh time interval with current interval 30 seconds selected" [ref=e531] [cursor=pointer]:
+            - generic [ref=e532]: 30s
+            - img [ref=e533]
+      - generic [ref=e538]:
+        - region "HTTP 5xx Error Rate" [ref=e542]:
+          - generic [ref=e543]:
+            - heading "HTTP 5xx Error Rate" [level=2] [ref=e545]
+            - button "Menu for panel with title HTTP 5xx Error Rate" [ref=e546] [cursor=pointer]:
+              - img [ref=e547]
+          - generic [ref=e551]: No data
+        - region "P99 HTTP Response Time" [ref=e555]:
+          - heading "P99 HTTP Response Time" [level=2] [ref=e558]
+          - generic [ref=e561]: No data
+        - region "JVM Heap Usage" [ref=e565]:
+          - heading "JVM Heap Usage" [level=2] [ref=e568]
+          - list [ref=e586]:
+            - listitem [ref=e587]:
+              - button "shop-apps" [ref=e591] [cursor=pointer]
+        - region "Kafka Consumer Lag" [ref=e595]:
+          - heading "Kafka Consumer Lag" [level=2] [ref=e598]
+          - generic [ref=e601]: No data
+        - region "CircuitBreaker State" [ref=e605]:
+          - heading "CircuitBreaker State" [level=2] [ref=e608]
+          - generic [ref=e609]:
+            - generic:
+              - generic [ref=e612]:
+                - generic [ref=e613]: loyaltyService (closed)
+                - generic [ref=e615]: "1"
+              - generic [ref=e618]:
+                - generic [ref=e619]: loyaltyService (disabled)
+                - generic [ref=e621]: "0"
+              - generic [ref=e624]:
+                - generic [ref=e625]: loyaltyService (forced_open)
+                - generic [ref=e627]: "0"
+              - generic [ref=e630]:
+                - generic [ref=e631]: loyaltyService (half_open)
+                - generic [ref=e633]: "0"
+              - generic [ref=e636]:
+                - generic [ref=e637]: loyaltyService (metrics_only)
+                - generic [ref=e639]: "0"
+              - generic [ref=e642]:
+                - generic [ref=e643]: loyaltyService (open)
+                - generic [ref=e645]: "0"
+              - generic [ref=e648]:
+                - generic [ref=e649]: marketplaceService (closed)
+                - generic [ref=e651]: "1"
+              - generic [ref=e654]:
+                - generic [ref=e655]: marketplaceService (disabled)
+                - generic [ref=e657]: "0"
+              - generic [ref=e660]:
+                - generic [ref=e661]: marketplaceService (forced_open)
+                - generic [ref=e663]: "0"
+              - generic [ref=e666]:
+                - generic [ref=e667]: marketplaceService (half_open)
+                - generic [ref=e669]: "0"
+              - generic [ref=e672]:
+                - generic [ref=e673]: marketplaceService (metrics_only)
+                - generic [ref=e675]: "0"
+              - generic [ref=e678]:
+                - generic [ref=e679]: marketplaceService (open)
+                - generic [ref=e681]: "0"
+              - generic [ref=e684]:
+                - generic [ref=e685]: orderService (closed)
+                - generic [ref=e687]: "1"
+              - generic [ref=e690]:
+                - generic [ref=e691]: orderService (disabled)
+                - generic [ref=e693]: "0"
+              - generic [ref=e696]:
+                - generic [ref=e697]: orderService (forced_open)
+                - generic [ref=e699]: "0"
+              - generic [ref=e702]:
+                - generic [ref=e703]: orderService (half_open)
+                - generic [ref=e705]: "0"
+              - generic [ref=e708]:
+                - generic [ref=e709]: orderService (metrics_only)
+                - generic [ref=e711]: "0"
+              - generic [ref=e714]:
+                - generic [ref=e715]: orderService (open)
+                - generic [ref=e717]: "0"
+              - generic [ref=e720]:
+                - generic [ref=e721]: profileService (closed)
+                - generic [ref=e723]: "1"
+              - generic [ref=e726]:
+                - generic [ref=e727]: profileService (disabled)
+                - generic [ref=e729]: "0"
+              - generic [ref=e732]:
+                - generic [ref=e733]: profileService (forced_open)
+                - generic [ref=e735]: "0"
+              - generic [ref=e738]:
+                - generic [ref=e739]: profileService (half_open)
+                - generic [ref=e741]: "0"
+              - generic [ref=e744]:
+                - generic [ref=e745]: profileService (metrics_only)
+                - generic [ref=e747]: "0"
+              - generic [ref=e750]:
+                - generic [ref=e751]: profileService (open)
+                - generic [ref=e753]: "0"
+              - generic [ref=e756]:
+                - generic [ref=e757]: promotionService (closed)
+                - generic [ref=e759]: "1"
+              - generic [ref=e762]:
+                - generic [ref=e763]: promotionService (disabled)
+                - generic [ref=e765]: "0"
+              - generic [ref=e768]:
+                - generic [ref=e769]: promotionService (forced_open)
+                - generic [ref=e771]: "0"
+              - generic [ref=e774]:
+                - generic [ref=e775]: promotionService (half_open)
+                - generic [ref=e777]: "0"
+              - generic [ref=e780]:
+                - generic [ref=e781]: promotionService (metrics_only)
+                - generic [ref=e783]: "0"
+              - generic [ref=e786]:
+                - generic [ref=e787]: promotionService (open)
+                - generic [ref=e789]: "0"
+              - generic [ref=e792]:
+                - generic [ref=e793]: searchService (closed)
+                - generic [ref=e795]: "1"
+              - generic [ref=e798]:
+                - generic [ref=e799]: searchService (disabled)
+                - generic [ref=e801]: "0"
+              - generic [ref=e804]:
+                - generic [ref=e805]: searchService (forced_open)
+                - generic [ref=e807]: "0"
+              - generic [ref=e810]:
+                - generic [ref=e811]: searchService (half_open)
+                - generic [ref=e813]: "0"
+              - generic [ref=e816]:
+                - generic [ref=e817]: searchService (metrics_only)
+                - generic [ref=e819]: "0"
+              - generic [ref=e822]:
+                - generic [ref=e823]: searchService (open)
+                - generic [ref=e825]: "0"
+              - generic [ref=e828]:
+                - generic [ref=e829]: walletService (closed)
+                - generic [ref=e831]: "1"
+              - generic [ref=e834]:
+                - generic [ref=e835]: walletService (disabled)
+                - generic [ref=e837]: "0"
+              - generic [ref=e840]:
+                - generic [ref=e841]: walletService (forced_open)
+                - generic [ref=e843]: "0"
+              - generic [ref=e846]:
+                - generic [ref=e847]: walletService (half_open)
+                - generic [ref=e849]: "0"
+              - generic [ref=e852]:
+                - generic [ref=e853]: walletService (metrics_only)
+                - generic [ref=e855]: "0"
+              - generic [ref=e858]:
+                - generic [ref=e859]: walletService (open)
+                - generic [ref=e861]: "0"
+              - generic [ref=e864]:
+                - generic [ref=e865]: marketplaceService (closed)
+                - generic [ref=e867]: "1"
+              - generic [ref=e870]:
+                - generic [ref=e871]: marketplaceService (disabled)
+                - generic [ref=e873]: "0"
+              - generic [ref=e876]:
+                - generic [ref=e877]: marketplaceService (forced_open)
+                - generic [ref=e879]: "0"
+              - generic [ref=e882]:
+                - generic [ref=e883]: marketplaceService (half_open)
+                - generic [ref=e885]: "0"
+              - generic [ref=e888]:
+                - generic [ref=e889]: marketplaceService (metrics_only)
+                - generic [ref=e891]: "0"
+              - generic [ref=e894]:
+                - generic [ref=e895]: marketplaceService (open)
+                - generic [ref=e897]: "0"
+              - generic [ref=e900]:
+                - generic [ref=e901]: orderService (closed)
+                - generic [ref=e903]: "1"
+              - generic [ref=e906]:
+                - generic [ref=e907]: orderService (disabled)
+                - generic [ref=e909]: "0"
+              - generic [ref=e912]:
+                - generic [ref=e913]: orderService (forced_open)
+                - generic [ref=e915]: "0"
+              - generic [ref=e918]:
+                - generic [ref=e919]: orderService (half_open)
+                - generic [ref=e921]: "0"
+              - generic [ref=e924]:
+                - generic [ref=e925]: orderService (metrics_only)
+                - generic [ref=e927]: "0"
+              - generic [ref=e930]:
+                - generic [ref=e931]: orderService (open)
+                - generic [ref=e933]: "0"
+              - generic [ref=e936]:
+                - generic [ref=e937]: profileService (closed)
+                - generic [ref=e939]: "1"
+              - generic [ref=e942]:
+                - generic [ref=e943]: profileService (disabled)
+                - generic [ref=e945]: "0"
+              - generic [ref=e948]:
+                - generic [ref=e949]: profileService (forced_open)
+                - generic [ref=e951]: "0"
+              - generic [ref=e954]:
+                - generic [ref=e955]: profileService (half_open)
+                - generic [ref=e957]: "0"
+              - generic [ref=e960]:
+                - generic [ref=e961]: profileService (metrics_only)
+                - generic [ref=e963]: "0"
+              - generic [ref=e966]:
+                - generic [ref=e967]: profileService (open)
+                - generic [ref=e969]: "0"
+              - generic [ref=e972]:
+                - generic [ref=e973]: promotionService (closed)
+                - generic [ref=e975]: "1"
+              - generic [ref=e978]:
+                - generic [ref=e979]: promotionService (disabled)
+                - generic [ref=e981]: "0"
+              - generic [ref=e984]:
+                - generic [ref=e985]: promotionService (forced_open)
+                - generic [ref=e987]: "0"
+              - generic [ref=e990]:
+                - generic [ref=e991]: promotionService (half_open)
+                - generic [ref=e993]: "0"
+              - generic [ref=e996]:
+                - generic [ref=e997]: promotionService (metrics_only)
+                - generic [ref=e999]: "0"
+              - generic [ref=e1002]:
+                - generic [ref=e1003]: promotionService (open)
+                - generic [ref=e1005]: "0"
+              - generic [ref=e1008]:
+                - generic [ref=e1009]: searchService (closed)
+                - generic [ref=e1011]: "1"
+              - generic [ref=e1014]:
+                - generic [ref=e1015]: searchService (disabled)
+                - generic [ref=e1017]: "0"
+              - generic [ref=e1020]:
+                - generic [ref=e1021]: searchService (forced_open)
+                - generic [ref=e1023]: "0"
+              - generic [ref=e1026]:
+                - generic [ref=e1027]: searchService (half_open)
+                - generic [ref=e1029]: "0"
+              - generic [ref=e1032]:
+                - generic [ref=e1033]: searchService (metrics_only)
+                - generic [ref=e1035]: "0"
+              - generic [ref=e1038]:
+                - generic [ref=e1039]: searchService (open)
+                - generic [ref=e1041]: "0"
+              - generic [ref=e1044]:
+                - generic [ref=e1045]: walletService (closed)
+                - generic [ref=e1047]: "1"
+              - generic [ref=e1050]:
+                - generic [ref=e1051]: walletService (disabled)
+                - generic [ref=e1053]: "0"
+              - generic [ref=e1056]:
+                - generic [ref=e1057]: walletService (forced_open)
+                - generic [ref=e1059]: "0"
+              - generic [ref=e1062]:
+                - generic [ref=e1063]: walletService (half_open)
+                - generic [ref=e1065]: "0"
+              - generic [ref=e1068]:
+                - generic [ref=e1069]: walletService (metrics_only)
+                - generic [ref=e1071]: "0"
+              - generic [ref=e1074]:
+                - generic [ref=e1075]: walletService (open)
+                - generic [ref=e1077]: "0"

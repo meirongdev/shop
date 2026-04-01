@@ -1,0 +1,25 @@
+- generic [ref=e3]:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic: Shop Buyer
+          - generic:
+            - button "Marketplace"
+            - button "Cart"
+            - button "Orders"
+            - button "Wallet"
+            - button "Promotions"
+            - button "Profile"
+            - button "Auth"
+      - generic:
+        - generic:
+          - generic: Buyer access required
+          - generic: The buyer KMP app now talks to authenticated gateway routes, and the auth screen can either sign in or continue as a guest buyer for browsing and cart access.
+          - generic:
+            - generic: "Live KMP flows call the authenticated `/api/**` gateway routes, so a portal session is required before the screen can talk to the BFFs."
+            - button "Open buyer access"
+        - generic:
+          - generic:
+            - generic:
+              - generic: Marketplace

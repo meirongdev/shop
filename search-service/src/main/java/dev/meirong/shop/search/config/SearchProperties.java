@@ -8,7 +8,6 @@ public record SearchProperties(
         MeilisearchProperties meilisearch,
         String productTopic,
         String marketplaceServiceUrl,
-        String internalToken,
         AnalyticsProperties analytics
 ) {
     public record MeilisearchProperties(String url, String adminKey, String searchKey) {}

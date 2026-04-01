@@ -18,7 +18,6 @@ public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
     private static final String USERNAME = "X-Username";
     private static final String ROLES = "X-Roles";
     private static final String PORTAL = "X-Portal";
-    private static final String INTERNAL_TOKEN = "X-Internal-Token";
 
     private static final Set<String> STRIPPED_HEADERS = Set.of(
             BUYER_ID.toLowerCase(Locale.ROOT),
@@ -26,8 +25,7 @@ public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
             "x-user-id",
             USERNAME.toLowerCase(Locale.ROOT),
             ROLES.toLowerCase(Locale.ROOT),
-            PORTAL.toLowerCase(Locale.ROOT),
-            INTERNAL_TOKEN.toLowerCase(Locale.ROOT));
+            PORTAL.toLowerCase(Locale.ROOT));
 
     private final Map<String, String> injectedHeadersByLowercase;
     private final Map<String, String> canonicalHeaderNames;
@@ -37,8 +35,7 @@ public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
                                         String buyerId,
                                         String username,
                                         String roles,
-                                        String portal,
-                                        String internalToken) {
+                                        String portal) {
         super(request);
         Map<String, String> headers = new LinkedHashMap<>();
         putIfPresent(headers, REQUEST_ID, requestId);
@@ -46,7 +43,6 @@ public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
         putIfPresent(headers, USERNAME, username);
         putIfPresent(headers, ROLES, roles);
         putIfPresent(headers, PORTAL, portal);
-        putIfPresent(headers, INTERNAL_TOKEN, internalToken);
 
         this.injectedHeadersByLowercase = new LinkedHashMap<>();
         this.canonicalHeaderNames = new LinkedHashMap<>();

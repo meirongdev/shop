@@ -1,0 +1,4 @@
+[     355ms] [WARNING] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled @ http://127.0.0.1:18080/seller/seller-app.js:1
+[     355ms] [WARNING] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled @ http://127.0.0.1:18080/seller/seller-app.js:1
+[   63140ms] [WARNING] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled @ http://127.0.0.1:18080/buyer-app/buyer-app.js:1
+[   63140ms] [WARNING] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled @ http://127.0.0.1:18080/buyer-app/buyer-app.js:1

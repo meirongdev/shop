@@ -57,8 +57,7 @@ public class TrustedHeadersFilter extends OncePerRequestFilter {
                 jwt.getClaimAsString("principalId"),
                 jwt.getClaimAsString("username"),
                 String.join(",", roles),
-                jwt.getClaimAsString("portal"),
-                properties.internalToken());
+                jwt.getClaimAsString("portal"));
         MDC.put("requestId", requestId);
         try {
             chain.doFilter(wrapped, response);

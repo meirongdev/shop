@@ -1,0 +1,27 @@
+- generic [ref=e3]:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic: Shop Seller
+          - generic:
+            - button "Inventory"
+            - button "Orders"
+            - button "Wallet"
+            - button "Promotions"
+            - button "Profile"
+            - button "Auth"
+      - generic:
+        - generic:
+          - generic: Seller Sign In
+          - generic: "Seller KMP now uses a real auth-server session so `/api/seller/**` routes can reach the authenticated gateway and seller BFF."
+          - generic:
+            - generic: Demo credentials
+            - generic: seller.demo / password
+            - textbox
+            - textbox
+            - button "Sign in"
+        - generic:
+          - generic:
+            - generic:
+              - generic: Auth

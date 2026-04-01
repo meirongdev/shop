@@ -1,0 +1,25 @@
+- generic [ref=e3]:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic: Shop Buyer
+          - generic:
+            - button "Marketplace"
+            - button "Cart"
+            - button "Promotions"
+            - button "Auth"
+      - generic:
+        - generic:
+          - generic: Buyer Marketplace
+          - generic: Live buyer search now talks to the existing BFF and search-service stack.
+          - textbox
+          - generic:
+            - generic: 0 results
+            - generic: Page 1 of 0
+          - list:
+            - generic: No products match your current search.
+        - generic:
+          - generic:
+            - generic:
+              - generic: Marketplace

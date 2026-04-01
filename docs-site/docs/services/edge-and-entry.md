@@ -100,6 +100,8 @@ KMP 模块结构：
 | `kmp/core` | 网络、token 存储、共享数据模型 |
 | `kmp/ui-shared` | 共享 Compose UI 组件 |
 | `kmp/feature-*` | 功能模块（auth、marketplace、cart、order、wallet、profile、promotion） |
+| `kmp/buyer-app` | Web WASM 入口 |
+| `kmp/buyer-android-app` | Android 入口 |
 | `kmp/seller-app` | Web WASM 入口 |
 | `kmp/seller-android-app` | Android 入口 |
 
@@ -178,6 +180,11 @@ baseUrl + "/seller/v1/marketplace/products"
 | `/api/seller/**` | 1 | seller-bff | `/seller/**` |
 | `/api/loyalty/**` | 1 | loyalty-service | `/loyalty/**` |
 | `/api/activity/**` | 1 | activity-service | `/activity/**` |
+| `/api/webhook/**` | 1 | webhook-service | `/webhook/**` |
+| `/api/subscription/**` | 1 | subscription-service | `/subscription/**` |
+| `/public/buyer/**` | 1 | buyer-bff | `/buyer/**` |
+
+> 注意：`search-service` 没有直接的 Gateway API 路由，由 BFF 通过内部地址直接调用。
 
 ### KMP 模块与后端 API 对应关系
 

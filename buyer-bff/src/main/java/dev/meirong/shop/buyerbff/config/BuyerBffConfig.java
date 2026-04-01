@@ -37,7 +37,6 @@ public class BuyerBffConfig {
         RestClient searchRestClient = RestClient.builder()
                 .requestFactory(jdkClientHttpRequestFactory)
                 .baseUrl(properties.searchServiceUrl())
-                .defaultHeader("X-Internal-Token", properties.internalToken())
                 .build();
         HttpServiceProxyFactory factory = HttpServiceProxyFactory
                 .builderFor(RestClientAdapter.create(searchRestClient))

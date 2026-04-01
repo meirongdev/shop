@@ -34,7 +34,6 @@ public class SellerBffConfig {
         return RestClient.builder()
                 .requestFactory(jdkClientHttpRequestFactory)
                 .baseUrl(properties.searchServiceUrl())
-                .defaultHeader("X-Internal-Token", properties.internalToken())
                 .build();
     }
 }

@@ -1,0 +1,24 @@
+- generic [ref=e3]:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic: Shop Seller
+          - generic:
+            - button "Inventory"
+            - button "Orders"
+            - button "Wallet"
+            - button "Promotions"
+            - button "Profile"
+            - button "Auth"
+      - generic:
+        - generic:
+          - generic: Seller sign-in required
+          - generic: "Seller inventory and order flows now use authenticated `/api/seller/**` routes behind the gateway."
+          - generic:
+            - generic: "Live KMP flows call the authenticated `/api/**` gateway routes, so a portal session is required before the screen can talk to the BFFs."
+            - button "Open seller sign-in"
+        - generic:
+          - generic:
+            - generic:
+              - generic: Inventory

@@ -72,15 +72,6 @@ shop:
       minimum-trending-searches: ${SEARCH_ANALYTICS_MIN_TRENDING_SEARCHES:2}
     product-topic: ${MARKETPLACE_PRODUCT_TOPIC:marketplace.product.events.v1}
     marketplace-service-url: ${MARKETPLACE_SERVICE_URL:http://marketplace-service:8080}
-    internal-token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
-  security:
-    internal:
-      enabled: true
-      token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
-      excluded-path-prefixes:
-        - /actuator
-        - /v3/api-docs
-        - /swagger-ui
 
 springdoc:
   api-docs:

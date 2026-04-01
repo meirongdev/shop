@@ -1,0 +1,525 @@
+---
+# NetworkPolicy: restrict ingress to each service to only trusted callers.
+# This replaces the static X-Internal-Token validation previously done by InternalAccessFilter.
+# Port 8080 = application; port 8081 = management/actuator (open to observability namespace).
+
+# api-gateway: public ingress (no restriction on port 8080)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-gateway-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: api-gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# auth-server: called by api-gateway
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-server-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: auth-server
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# buyer-bff: called by api-gateway
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: buyer-bff-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: buyer-bff
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# seller-bff: called by api-gateway
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: seller-bff-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: seller-bff
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# profile-service: called by auth-server, buyer-bff, seller-bff, loyalty-service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: profile-service-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: profile-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: auth-server
+        - podSelector:
+            matchLabels:
+              app: buyer-bff
+        - podSelector:
+            matchLabels:
+              app: seller-bff
+        - podSelector:
+            matchLabels:
+              app: loyalty-service
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# marketplace-service: called by buyer-bff, seller-bff
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: marketplace-service-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: marketplace-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: buyer-bff
+        - podSelector:
+            matchLabels:
+              app: seller-bff
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# order-service: called by buyer-bff, seller-bff
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: order-service-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: order-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: buyer-bff
+        - podSelector:
+            matchLabels:
+              app: seller-bff
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# wallet-service: called by buyer-bff
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: wallet-service-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: wallet-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: buyer-bff
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# promotion-service: called by buyer-bff, seller-bff
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: promotion-service-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: promotion-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: buyer-bff
+        - podSelector:
+            matchLabels:
+              app: seller-bff
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# loyalty-service: called by api-gateway (direct route /api/loyalty/**)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: loyalty-service-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: loyalty-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# activity-service: called by api-gateway (direct route /api/activity/**) and buyer-bff
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: activity-service-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: activity-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+        - podSelector:
+            matchLabels:
+              app: buyer-bff
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# subscription-service: called by api-gateway (direct route /api/subscription/**) and seller-bff
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: subscription-service-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: subscription-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+        - podSelector:
+            matchLabels:
+              app: seller-bff
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# webhook-service: called by api-gateway (direct route /api/webhook/**)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: webhook-service-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: webhook-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# search-service: called by buyer-bff
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: search-service-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: search-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: buyer-bff
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# notification-service: receives events via Kafka; no direct HTTP callers from other services
+# Allow actuator scraping only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: notification-service-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: notification-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# buyer-portal: called by api-gateway
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: buyer-portal-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: buyer-portal
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+
+---
+# seller-portal: nginx static, called by api-gateway
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: seller-portal-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: seller-portal
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 80
+
+---
+# buyer-app: nginx static, called by api-gateway
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: buyer-app-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels:
+      app: buyer-app
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 80

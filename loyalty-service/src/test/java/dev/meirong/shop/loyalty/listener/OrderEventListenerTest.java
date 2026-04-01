@@ -6,12 +6,10 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.common.idempotency.IdempotencyGuard;
 import dev.meirong.shop.common.kafka.NonRetryableKafkaConsumerException;
-import dev.meirong.shop.common.web.InternalSecurityProperties;
 import dev.meirong.shop.loyalty.config.LoyaltyProperties;
 import dev.meirong.shop.loyalty.domain.LoyaltyIdempotencyKeyRepository;
 import dev.meirong.shop.loyalty.service.LoyaltyAccountService;
 import dev.meirong.shop.loyalty.service.OnboardingTaskService;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,7 +47,6 @@ class OrderEventListenerTest {
                 idempotencyGuard,
                 idempotencyKeyRepository,
                 new LoyaltyProperties("orders", "users", "http://profile-service", 10, 1, 3),
-                new InternalSecurityProperties(true, "token", List.of("/actuator")),
                 builder
         );
     }

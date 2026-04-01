@@ -10,6 +10,5 @@ public record AuthProperties(String issuer,
                              String googleClientId,
                              String appleClientId,
                              String profileServiceUrl,
-                             String internalToken,
                              String buyerRegisteredTopic) {
 }

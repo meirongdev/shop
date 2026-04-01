@@ -5,7 +5,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "shop.gateway")
 public record GatewayProperties(String jwtSecret,
-                                String internalToken,
                                 RateLimit rateLimit,
                                 Cors cors) {
 

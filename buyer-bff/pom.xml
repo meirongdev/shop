@@ -48,8 +48,15 @@
         </dependency>
         <dependency>
             <groupId>dev.meirong.shop</groupId>
-            <artifactId>shop-common</artifactId>
-            <version>${project.version}</version>
+            <artifactId>shop-common-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-starter-resilience</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-starter-api-compat</artifactId>
         </dependency>
         <dependency>
             <groupId>dev.meirong.shop</groupId>

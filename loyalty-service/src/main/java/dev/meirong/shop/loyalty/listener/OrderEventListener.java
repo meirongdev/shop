@@ -4,11 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.common.http.TrustedHeaderNames;
 import dev.meirong.shop.common.idempotency.IdempotencyGuard;
 import dev.meirong.shop.common.kafka.NonRetryableKafkaConsumerException;
 import dev.meirong.shop.common.kafka.RetryableKafkaConsumerException;
-import dev.meirong.shop.common.web.InternalSecurityProperties;
 import dev.meirong.shop.contracts.api.ProfileInternalApi;
 import dev.meirong.shop.contracts.event.EventEnvelope;
 import dev.meirong.shop.contracts.event.OrderEventData;
@@ -42,7 +40,6 @@ public class OrderEventListener {
     private final IdempotencyGuard idempotencyGuard;
     private final LoyaltyIdempotencyKeyRepository idempotencyKeyRepository;
     private final LoyaltyProperties loyaltyProperties;
-    private final InternalSecurityProperties internalSecurityProperties;
     private final RestClient restClient;
 
     public OrderEventListener(ObjectMapper objectMapper,
@@ -51,7 +48,6 @@ public class OrderEventListener {
                               IdempotencyGuard idempotencyGuard,
                               LoyaltyIdempotencyKeyRepository idempotencyKeyRepository,
                               LoyaltyProperties loyaltyProperties,
-                              InternalSecurityProperties internalSecurityProperties,
                               RestClient.Builder builder) {
         this.objectMapper = objectMapper;
         this.accountService = accountService;
@@ -59,7 +55,6 @@ public class OrderEventListener {
         this.idempotencyGuard = idempotencyGuard;
         this.idempotencyKeyRepository = idempotencyKeyRepository;
         this.loyaltyProperties = loyaltyProperties;
-        this.internalSecurityProperties = internalSecurityProperties;
         this.restClient = builder.build();
     }
 
@@ -136,7 +131,6 @@ public class OrderEventListener {
     private ProfileInternalApi.ReferralRewardResult resolveReferralReward(String inviteeId) {
         ApiResponse<ProfileInternalApi.ReferralRewardResult> response = restClient.post()
                 .uri(loyaltyProperties.profileServiceUrl() + ProfileInternalApi.REFERRAL_FIRST_ORDER)
-                .header(TrustedHeaderNames.INTERNAL_TOKEN, internalSecurityProperties.token())
                 .body(new ProfileInternalApi.ReferralFirstOrderRequest(inviteeId))
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});

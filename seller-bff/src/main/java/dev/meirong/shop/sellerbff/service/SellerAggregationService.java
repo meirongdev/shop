@@ -288,7 +288,6 @@ public class SellerAggregationService {
     private <T> T post(String url, Object request, ParameterizedTypeReference<ApiResponse<T>> typeReference) {
         ApiResponse<T> response = restClient.post()
                 .uri(url)
-                .header("X-Internal-Token", properties.internalToken())
                 .body(request)
                 .retrieve()
                 .body(typeReference);

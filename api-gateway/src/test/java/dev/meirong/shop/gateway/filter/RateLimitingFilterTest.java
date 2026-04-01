@@ -29,7 +29,6 @@ class RateLimitingFilterTest {
     private final StringRedisTemplate redis = mock(StringRedisTemplate.class);
     private final GatewayProperties properties = new GatewayProperties(
             "secret",
-            "internal",
             new GatewayProperties.RateLimit(100, 20),
             null);
     private final Clock clock = Clock.fixed(Instant.parse("2026-03-22T05:00:00Z"), ZoneOffset.UTC);

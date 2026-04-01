@@ -20,7 +20,6 @@ class TrustedHeadersFilterTest {
 
     private final GatewayProperties properties = new GatewayProperties(
             "change-this-to-a-32-byte-demo-secret",
-            "internal-token",
             new GatewayProperties.RateLimit(100, 20),
             null);
 
@@ -50,9 +49,8 @@ class TrustedHeadersFilterTest {
         HttpHeaderAssertions.assertTrustedHeaders(chain.request());
         assertThat(chain.request().getHeader("X-Request-Id")).isEqualTo("req-123");
         assertThat(chain.request().getHeader("X-Custom")).isEqualTo("custom-value");
-        assertThat(Collections.list(chain.request().getHeaders("X-Internal-Token"))).containsExactly("internal-token");
         assertThat(Collections.list(chain.request().getHeaderNames()))
-                .contains("X-Request-Id", "X-Buyer-Id", "X-Username", "X-Roles", "X-Portal", "X-Internal-Token", "X-Custom")
+                .contains("X-Request-Id", "X-Buyer-Id", "X-Username", "X-Roles", "X-Portal", "X-Custom")
                 .doesNotContain("x-player-id", "x-user-id");
     }
 
@@ -115,7 +113,6 @@ class TrustedHeadersFilterTest {
             assertThat(request.getHeader("X-Username")).isEqualTo("alice");
             assertThat(request.getHeader("X-Roles")).isEqualTo("ROLE_BUYER");
             assertThat(request.getHeader("X-Portal")).isEqualTo("buyer");
-            assertThat(request.getHeader("X-Internal-Token")).isEqualTo("internal-token");
         }
     }
 }

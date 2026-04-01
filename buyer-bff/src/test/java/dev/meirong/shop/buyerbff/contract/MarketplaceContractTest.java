@@ -62,7 +62,6 @@ class MarketplaceContractTest {
 
         String baseUrl = "http://localhost:" + wireMock.port();
         BuyerClientProperties properties = new BuyerClientProperties(
-                "test-token",
                 baseUrl, baseUrl, baseUrl, baseUrl, baseUrl, baseUrl, baseUrl,
                 Duration.ofHours(48), HttpClient.Version.HTTP_1_1, Duration.ofSeconds(2), Duration.ofSeconds(5));
 

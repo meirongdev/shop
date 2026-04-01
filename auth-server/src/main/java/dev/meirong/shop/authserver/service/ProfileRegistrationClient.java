@@ -3,7 +3,6 @@ package dev.meirong.shop.authserver.service;
 import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
-import dev.meirong.shop.common.http.TrustedHeaderNames;
 import dev.meirong.shop.contracts.api.ProfileInternalApi;
 import dev.meirong.shop.authserver.config.AuthProperties;
 import org.springframework.core.ParameterizedTypeReference;
@@ -24,7 +23,6 @@ public class ProfileRegistrationClient {
     public void registerBuyer(ProfileInternalApi.RegisterBuyerRequest request) {
         ApiResponse<Void> response = restClient.post()
                 .uri(properties.profileServiceUrl() + ProfileInternalApi.BUYER_REGISTER)
-                .header(TrustedHeaderNames.INTERNAL_TOKEN, properties.internalToken())
                 .body(request)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});

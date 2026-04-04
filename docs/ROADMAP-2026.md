@@ -97,9 +97,11 @@
 - [x] **Problem Details（RFC 7807）**：已在 `shop-common` 统一 `GlobalExceptionHandler` 为 RFC 7807 `ProblemDetail`，服务配置启用 Problem Details，并保留 `code` / `message` / `traceId` 兼容字段
 - [x] **Testcontainers @ServiceConnection**：`AbstractMySqlIntegrationTest` 基类已在 order / wallet / promotion / marketplace / loyalty / profile / activity / notification 8 个 MySQL 服务落地，@ServiceConnection 推广完成
 - [x] **HTTP Interfaces（@HttpExchange）**：buyer-bff 搜索调用 + search-service marketplace internal client 已切换为声明式 HTTP 客户端
-- [ ] 业务指标埋点：已在 buyer-bff / search-service / order-service / promotion-service / wallet-service / loyalty-service / activity-service 落地 `shop_*` Counter/Timer，仍待 seller-bff / marketplace / notification / webhook / subscription 补齐
-- [x] 关键链路契约测试（BFF → Domain Service）：buyer-bff MarketplaceContractTest 4 个 WireMock 契约测试已落地
-- [x] 异常语义收敛（`src/main/java` 中 `catch (Exception)` 已清零，buyer-bff / search-service / api-gateway / webhook-service / promotion-service / notification-service / loyalty-service / activity-service / subscription-service 已按边界收窄异常）
+- [x] **业务指标埋点补齐**：已在 seller-bff / marketplace / notification / webhook / subscription 补齐 `shop_*` Counter/Timer（52 个新指标，5 个服务），加上已有的 buyer-bff / search-service / order-service / promotion-service / wallet-service / loyalty-service / activity-service，全量完成
+- [x] **关键链路契约测试**：buyer-bff Marketplace/Order/LoyaltyContractTest（10 tests）+ seller-bff SellerContractTest（3 tests），共 13 个 WireMock 契约测试
+- [x] **OpenAPI 全服务接入**：15/15 服务已有 OpenApiConfig Bean，关键 DTO（BuyerApi/OrderApi）补充 @Schema 注解
+- [x] **Harness Engineering**：增强 Git hooks（pre-commit/pre-push），新增 AGENTS.md 定义 5 类 agent 质量门禁，verify-platform-improvements.sh 自动化验证 7/7 通过
+- [x] **异常语义收敛**（`src/main/java` 中 `catch (Exception)` 已清零，buyer-bff / search-service / api-gateway / webhook-service / promotion-service / notification-service / loyalty-service / activity-service / subscription-service 已按边界收窄异常）
 
 **Phase 4 剩余：**
 - [ ] Meilisearch 搜索增强（向量搜索、语义搜索、多语言分词）

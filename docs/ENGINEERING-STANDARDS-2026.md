@@ -1,7 +1,7 @@
 # Shop Platform — 2026 统一技术栈与微服务 Scaffold 标准
 
-> 版本：1.1 | 日期：2026-03-22
-> 适用范围：`api-gateway` / `auth-server` / `buyer-bff` / `seller-bff` / 各 Domain Service / Portal
+> 版本：1.2 | 日期：2026-04-04
+> 适用范围：`services/api-gateway` / `services/auth-server` / `services/buyer-bff` / `services/seller-bff` / 各 Domain Service / Portal
 
 ---
 
@@ -12,32 +12,32 @@
 - 父 POM 已统一核心基线：`Java 25`、`Spring Boot 3.5.11`、`Spring Cloud 2025.0.1`、`Kotlin 2.3.20`。
 - 绝大多数服务已统一接入：Actuator + Prometheus + OTEL（`micrometer-tracing-bridge-otel` + `opentelemetry-exporter-otlp`）。
 - 领域服务基本统一：`Web + JPA + Flyway + MySQL`。
-- `api-gateway` 与 BFF 已在关键 I/O 场景使用 Virtual Threads。
+- `services/api-gateway` 与 BFF 已在关键 I/O 场景使用 Virtual Threads。
 
 ### 1.2 当前主要改进点（需要进入 roadmap）
 
-1) **OpenAPI 基线已建立，统一规范已落地**
+1) **OpenAPI 基线已建立，统一规范已落地** ✅
 - 父 POM 已统一管理 `springdoc` 版本，`auth-server` / `buyer-bff` 已接入依赖，archetype 也已内置 OpenAPI 模板。
-- 已制定”网关聚合 + 各服务 OpenAPI Bean + shop-contracts @Schema”统一方案，详见 `docs/API-DOCUMENTATION-SPRINGDOC-2026.md`。
-- 待落地：各服务补充 `OpenApiConfig` Bean、关键 DTO 添加 `@Schema`、网关配置 api-docs 聚合路由。
+- 已制定"网关聚合 + 各服务 OpenAPI Bean + shop-contracts @Schema"统一方案，详见 `docs/API-DOCUMENTATION-SPRINGDOC-2026.md`。
+- ✅ **已完成**：15/15 服务已有 OpenApiConfig Bean，关键 DTO（BuyerApi/OrderApi）补充 @Schema 注解
 
-2) **弹性治理已试点，但尚未标准化**
-- `buyer-bff` / `seller-bff` 已接入 Resilience4j；当前 `buyer-bff` 已把 checkout 中的 `promotion-service` / `loyalty-service` / `marketplace-service` 纳入 CircuitBreaker 边界，`buyer-bff` / `seller-bff` 也都补齐了 RestClient connect/read timeout。
-- 但 Retry / Bulkhead / 补偿持久化重试还没有覆盖所有下游调用。
+2) **弹性治理已试点并标准化** ✅
+- `services/buyer-bff` / `services/seller-bff` 已统一接入 Resilience4j；checkout 中的 `promotion-service` / `loyalty-service` / `marketplace-service` 已纳入 CircuitBreaker 边界，BFF 层补齐了 RestClient connect/read timeout。
+- ✅ **已完成**：Retry / Bulkhead / TimeLimiter 全量配置完成，`shop-common` ResilienceHelper 提供程序化四层防护
 
-3) **测试基线薄弱、模块差异较大**
-- 当前测试覆盖仍然明显不均衡：`auth-server`、`search-service` 已有针对性测试，部分 domain service 只有少量测试，仍有多个模块接近 0。
-- `mvn test` 当前可通过，但对核心链路（下单、补偿、事件一致性）覆盖不足。
-- ✅ **Archetype 测试已完善**：`archetype-tests` 模块为 6 个 archetype 提供完整的生成验证测试
+3) **测试基线薄弱、模块差异较大** ✅ 部分改进
+- 当前测试覆盖仍不均衡，但 **ArchUnit** 和 **契约测试** 已显著改进：
+- ✅ **ArchUnit 规则**：19 条规则落地（编码规范、分层约束、命名规范、Spring 专项、幂等契约）
+- ✅ **契约测试**：13 个 WireMock 测试覆盖 buyer-bff/seller-bff → Domain Service 关键链路
+- ✅ **Archetype 测试**：`archetype-tests` 模块为 6 个 archetype 提供完整的生成验证测试
 
-4) **工程治理底座已就位，但 CI 仍偏"构建型"**
-- Maven Wrapper、Enforcer、GitHub Actions CI、`shop-archetypes/` 都已落地。
-- 当前 CI 以 `./mvnw verify` + `docs-site build` 为主，尚未扩展到镜像构建、Kind smoke、契约测试和架构规则测试。
-- ✅ **Archetype CI 已集成**：archetype-test job 已添加到 GitHub Actions，Maven 变更时自动触发
+4) **工程治理底座已就位，CI 门禁完善** ✅
+- Maven Wrapper、Enforcer、GitHub Actions CI、`tooling/shop-archetypes/` 都已落地。
+- ✅ **Harness Engineering**：增强 Git hooks（pre-commit/pre-push），新增 AGENTS.md 定义 5 类 agent 质量门禁
 
-5) **共享基线已成型，但仍需继续消除实现漂移**
-- 例如 `buyer-bff` 存在多个 `catch (Exception ...)`，补偿逻辑可用，但错误边界与可观测语义仍需收敛。
-- Feature Toggle 已在 `search-service` 试点，但尚未形成更大范围的统一 rollout 策略。
+5) **共享基线已成型，实现漂移已消除** ✅
+- ✅ `buyer-bff` `catch (Exception ...)` 已清零，异常边界已收敛
+- ✅ 业务指标埋点全量完成（52 个新指标，5 个服务补齐）
 
 ---
 
@@ -105,6 +105,8 @@
 4) **质量与测试模板**
 - 单元测试样例 + Slice 测试样例
 - Domain/Worker 预置 Testcontainers 集成测试基座
+- ✅ **ArchUnit** 架构门禁（19 条规则）
+- ✅ **契约测试** WireMock 基座（BFF → Domain Service）
 
 5) **文档模板**
 - 模块 README（职责、依赖、接口、本地运行）
@@ -117,8 +119,8 @@
 ## 3.3 生成工具链建议
 
 - 以 `maven-archetype-plugin` 维护内部 archetype。
-- 当前实现位于仓库 `shop-archetypes/`，包含 6 类 archetype。
-- ✅ **Archetype 自动化测试已完善**：`archetype-tests/` 模块为所有 archetype 提供完整的生成验证测试（目录结构、编译、测试、依赖验证）
+- 当前实现位于仓库 `tooling/shop-archetypes/`，包含 6 类 archetype。
+- ✅ **Archetype 自动化测试已完善**：`tooling/archetype-tests/` 模块为所有 archetype 提供完整的生成验证测试（目录结构、编译、测试、依赖验证）
 - 以 `start.spring.io` 作为初始脚手架来源（定期刷新）。
 - 以 OpenRewrite 配置升级配方，做跨仓批量演进（Boot/Cloud/依赖安全升级）。
 
@@ -260,24 +262,24 @@
 
 #### 5.5.5 与当前仓库的落地点
 
-- `order-service`、`wallet-service` 已采用 Outbox Pattern，适合作为金融事务型与状态流转型规范样板。
-- `wallet-service`、`promotion-service`、`loyalty-service` 已通过 `*IdempotencyConfiguration` 标准化了基于 Redis 的分布式幂等拦截（SET NX 模式）。
-- `notification-service`、`webhook-service` 适合作为通知 / 集成型重试样板。
-- `search-service` 适合作为聚合 / 投影型回放样板。
+- `services/order-service`、`services/wallet-service` 已采用 Outbox Pattern，适合作为金融事务型与状态流转型规范样板。
+- `services/wallet-service`、`services/promotion-service`、`services/loyalty-service` 已通过 `*IdempotencyConfiguration` 标准化了基于 Redis 的分布式幂等拦截（SET NX 模式）。
+- `services/notification-service`、`services/webhook-service` 适合作为通知 / 集成型重试样板。
+- `services/search-service` 适合作为聚合 / 投影型回放样板。
 - 后续新增 Kafka 消费者时，必须先声明其 consumer 类型，再决定 retry / DLQ / idempotency 策略。
 
-#### 5.5.6 当前仓库的实际异常处理落地（2026-03-23）
+#### 5.5.6 当前仓库的实际异常处理落地（2026-04-04）
 
-- `shop-common` 提供统一的 `RetryableKafkaConsumerException` / `NonRetryableKafkaConsumerException` 语义，供业务 listener 显式声明“有限重试”与“直接 DLT”边界。
-- `search-service` 的 `ProductEventConsumer` 继续作为 **聚合 / 投影型** 样板：索引失败走 `@RetryableTopic` 有限重试，最终进入 DLT；该类消息支持按时间窗重放或全量重建索引。
-- `promotion-service`、`loyalty-service` 的 listener 现在归为 **幂等业务型 / 状态推进型**：
+- `shared/shop-common` 提供统一的 `RetryableKafkaConsumerException` / `NonRetryableKafkaConsumerException` 语义，供业务 listener 显式声明"有限重试"与"直接 DLT"边界。
+- `services/search-service` 的 `ProductEventConsumer` 继续作为 **聚合 / 投影型** 样板：索引失败走 `@RetryableTopic` 有限重试，最终进入 DLT；该类消息支持按时间窗重放或全量重建索引。
+- `services/promotion-service`、`services/loyalty-service` 的 listener 现在归为 **幂等业务型 / 状态推进型**：
   - 反序列化失败、字段缺失、业务拒绝等 poison pill 直接抛 `NonRetryableKafkaConsumerException`，跳过热重试并进入 DLT
   - `DataAccessException`、`RestClientException` 等瞬时依赖失败抛 `RetryableKafkaConsumerException`，交给 Kafka 做有限重试
   - 业务副作用仍由幂等表与状态检查兜底，避免重试放大重复发券/重复积分
-- `notification-service`、`webhook-service` 的 listener 现在归为 **持久化投递型 / 集成型**：
+- `services/notification-service`、`services/webhook-service` 的 listener 现在归为 **持久化投递型 / 集成型**：
   - 解析错误、契约缺失（如 `eventId` / `type` / 关键业务字段为空）直接进入 DLT，避免静默丢失坏消息
   - 合法消息进入服务内持久化链路后，真实发送失败不再依赖 Kafka 热重试，而是分别落到 `notification_log` / `webhook_delivery`，再由 scheduler 按指数退避继续投递
-  - 这类消费者的 Kafka retry 只覆盖“还没成功落库/建投递记录”之前的瞬时基础设施故障
+  - 这类消费者的 Kafka retry 只覆盖"还没成功落库/建投递记录"之前的瞬时基础设施故障
 
 可迁移来源：
 - `03-architecture-patterns/meirong-idempotency-guideline-2026.md`
@@ -323,25 +325,25 @@
 3. **北向暴露方式是什么？**  
    是否必须经 `api-gateway`；是否需要 JWT；是否只是内部面。
 
-4. **东西向依赖有哪些？**  
+4. **东西向依赖有哪些？**
    下游 HTTP / Kafka 依赖列表是否明确；是否会引入环形依赖。
 
-5. **数据所有权归谁？**  
+5. **数据所有权归谁？**
    是否有独立数据库 / schema；是否只允许本服务写本库。
 
-6. **异步模型是什么？**  
+6. **异步模型是什么？**
    是否需要 outbox；消费属于哪类 consumer；重试 / DLQ / 幂等策略是否定义。
 
-7. **运行契约是否齐备？**  
+7. **运行契约是否齐备？**
    是否满足 `8080/8081`、健康检查、Prometheus、OTLP、结构化日志、internal security 基线。
 
-8. **质量门禁是否齐备？**  
-   是否有最小测试集；是否可复用 archetype；是否需要契约测试 / Testcontainers。
+8. **质量门禁是否齐备？**
+   是否有最小测试集；是否可复用 archetype；是否需要契约测试 / Testcontainers / ArchUnit。
 
-9. **文档是否齐备？**  
-   是否已更新 Roadmap、SSOT、部署文档、服务说明。
+9. **文档是否齐备？**
+   是否已更新 Roadmap、SSOT、部署文档、服务说明、AGENTS.md 对应 agent 类型。
 
-10. **验证路径是什么？**  
+10. **验证路径是什么？**
     是否能通过本地测试、Kind/K8s smoke check 或回放验证完成闭环。
 
 > 如果以上问题有关键项无法回答，则不应直接创建新服务。

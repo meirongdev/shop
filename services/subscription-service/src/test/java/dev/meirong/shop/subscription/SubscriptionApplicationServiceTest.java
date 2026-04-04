@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import io.micrometer.core.instrument.MeterRegistry;
 
 @ExtendWith(MockitoExtension.class)
 class SubscriptionApplicationServiceTest {
@@ -28,6 +29,9 @@ class SubscriptionApplicationServiceTest {
 
     @Mock
     private SubscriptionRepository subscriptionRepository;
+
+    @Mock(answer = org.mockito.Answers.RETURNS_DEEP_STUBS)
+    private MeterRegistry meterRegistry;
 
     @InjectMocks
     private SubscriptionApplicationService service;

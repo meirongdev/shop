@@ -124,18 +124,31 @@ class OrderContractTest {
 
     @Test
     void cancelOrder_returnsCancelledOrder() throws JsonProcessingException {
-        OrderApi.OrderResponse order = new OrderApi.OrderResponse(
-                UUID.randomUUID(), "ORD-003", "BUYER", null, "buyer-001", "seller-001", "CANCELLED",
+        OrderApi.OrderResponse existingOrder = new OrderApi.OrderResponse(
+                UUID.randomUUID(), "ORD-003", "BUYER", null, "buyer-001", "seller-001", "PAID",
                 new BigDecimal("50.00"), new BigDecimal("0.00"), new BigDecimal("50.00"),
                 null, null, "txn-789", List.of(),
                 Instant.now(), null, null, null, Instant.now(), Instant.now(), Instant.now());
-        ApiResponse<OrderApi.OrderResponse> apiResp = ApiResponse.success(order);
+        ApiResponse<OrderApi.OrderResponse> getOrderResp = ApiResponse.success(existingOrder);
+
+        stubFor(post(urlEqualTo(OrderApi.ORDER_GET))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(objectMapper.writeValueAsString(getOrderResp))));
+
+        OrderApi.OrderResponse cancelledOrder = new OrderApi.OrderResponse(
+                existingOrder.id(), "ORD-003", "BUYER", null, "buyer-001", "seller-001", "CANCELLED",
+                new BigDecimal("50.00"), new BigDecimal("0.00"), new BigDecimal("50.00"),
+                null, null, "txn-789", List.of(),
+                Instant.now(), null, null, null, Instant.now(), Instant.now(), Instant.now());
+        ApiResponse<OrderApi.OrderResponse> cancelResp = ApiResponse.success(cancelledOrder);
 
         stubFor(post(urlEqualTo(OrderApi.ORDER_CANCEL))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody(objectMapper.writeValueAsString(apiResp))));
+                        .withBody(objectMapper.writeValueAsString(cancelResp))));
 
         OrderApi.OrderResponse result = aggregationService.cancelOrder("ORD-003", "buyer-001");
 

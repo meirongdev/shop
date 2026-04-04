@@ -10,6 +10,7 @@ import dev.meirong.shop.subscription.domain.SubscriptionOrderLogRepository;
 import dev.meirong.shop.subscription.domain.SubscriptionPlanEntity;
 import dev.meirong.shop.subscription.domain.SubscriptionPlanRepository;
 import dev.meirong.shop.subscription.domain.SubscriptionRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -41,15 +42,19 @@ class SubscriptionRenewalServiceTest {
     @Mock
     private RLock renewalLock;
 
+    private SimpleMeterRegistry meterRegistry;
+
     private SubscriptionRenewalService service;
 
     @BeforeEach
     void setUp() throws Exception {
+        meterRegistry = new SimpleMeterRegistry();
         service = new SubscriptionRenewalService(
                 subscriptionRepository,
                 planRepository,
                 orderLogRepository,
-                redissonClient
+                redissonClient,
+                meterRegistry
         );
         when(redissonClient.getLock("shop:subscription:scheduler:renewal")).thenReturn(renewalLock);
         when(renewalLock.tryLock(0, 1800, TimeUnit.SECONDS)).thenReturn(true);

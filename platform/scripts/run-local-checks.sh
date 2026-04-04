@@ -47,6 +47,7 @@ fi
 
 run_maven=false
 run_docs=false
+run_gradle=false
 k8s_changed=false
 run_platform=false
 
@@ -55,6 +56,9 @@ for path in "${changed_files[@]}"; do
     docs-site/*)
       run_docs=true
       ;;
+    frontend/kmp/*|*.gradle.kts|gradle.properties)
+      run_gradle=true
+      ;;
     platform/docker/*|platform/k8s/*|platform/kind/*|Tiltfile|.mirrord/*)
       k8s_changed=true
       run_platform=true
@@ -62,6 +66,7 @@ for path in "${changed_files[@]}"; do
     .github/workflows/*|Makefile|.editorconfig|.githooks/*|platform/scripts/*)
       run_maven=true
       run_docs=true
+      run_gradle=true
       run_platform=true
       ;;
     pom.xml|mvnw|mvnw.cmd|.mvn/*|*/pom.xml|*.java|*.kt|*.kts|*.xml|*.yml|*.yaml|*.properties)
@@ -91,6 +96,14 @@ fi
 if [[ "${run_maven}" == "true" ]]; then
   echo "==> Running Maven verify"
   ./mvnw -q verify
+fi
+
+if [[ "${run_gradle}" == "true" ]]; then
+  echo "==> Running Gradle compile check"
+  ./gradlew :kmp:core:compileKotlinWasmJs --quiet 2>&1 || {
+    echo "ERROR: Gradle compilation failed for KMP core module"
+    exit 1
+  }
 fi
 
 if [[ "${run_docs}" == "true" ]]; then

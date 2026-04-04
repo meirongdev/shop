@@ -1,20 +1,73 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Pre-commit hook for Shop Platform monorepo
+# Enforces code quality gates before allowing commits
+
 repo_root="$(git rev-parse --show-toplevel)"
-cd "${repo_root}"
 
-staged_files=()
-while IFS= read -r path; do
-  staged_files+=("${path}")
-done < <(git diff --cached --name-only --diff-filter=ACMRTUXB)
+echo "==> Running pre-commit quality gates..."
 
-if [[ "${#staged_files[@]}" -eq 0 ]]; then
-  exit 0
+# 1. Check for merge conflict markers
+echo "  [1/4] Checking for merge conflict markers..."
+# Only check actual file content, not diff metadata
+conflict_files=$(git diff --cached --name-only --diff-filter=ACM | \
+    xargs -I {} grep -l '^<<<<<<< \|^>>>>>>> \|^=======$' {} 2>/dev/null || true)
+
+if [[ -n "$conflict_files" ]]; then
+    echo "ERROR: Merge conflict markers detected in:"
+    echo "$conflict_files"
+    echo "Please resolve all conflicts before committing."
+    exit 1
 fi
+echo "  ✓ No merge conflict markers found"
 
-if conflict_markers=$(git grep -n -I -E '^(<<<<<<<|=======|>>>>>>>)' -- "${staged_files[@]}"); then
-  echo "Resolve merge conflict markers before committing:"
-  echo "${conflict_markers}"
-  exit 1
+# 2. Check for trailing whitespace in code files (excluding markdown)
+echo "  [2/4] Checking for trailing whitespace..."
+trailing_files=$(git diff --cached --name-only --diff-filter=ACM | \
+    grep -E '\.(java|kt|kts|xml|yml|yaml|sh|properties)$' | \
+    xargs -I {} grep -l ' $' {} 2>/dev/null || true)
+
+if [[ -n "$trailing_files" ]]; then
+    echo "ERROR: Trailing whitespace detected in:"
+    echo "$trailing_files"
+    echo "Please remove trailing whitespace before committing."
+    exit 1
 fi
+echo "  ✓ No trailing whitespace found"
+
+# 3. Check for large files (>1MB)
+echo "  [3/4] Checking for large files (>1MB)..."
+large_files=$(git diff --cached --name-only -z | \
+    xargs -0 -I {} sh -c 'test -f "{}" && test $(stat -f%z "{}" 2>/dev/null || stat -c%s "{}" 2>/dev/null) -gt 1048576 && echo "{}"' 2>/dev/null || true)
+
+if [[ -n "$large_files" ]]; then
+    echo "WARNING: Large files detected (>1MB):"
+    echo "$large_files"
+    echo "Consider using Git LFS for binary assets."
+fi
+echo "  ✓ Large file check complete"
+
+# 4. Validate shell scripts syntax (if any shell scripts changed)
+echo "  [4/4] Validating shell script syntax..."
+shell_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.sh$' || true)
+if [[ -n "$shell_files" ]]; then
+    shell_errors=""
+    for file in $shell_files; do
+        if [[ -f "$repo_root/$file" ]]; then
+            if ! bash -n "$repo_root/$file" 2>/dev/null; then
+                shell_errors="${shell_errors}\n  - $file"
+            fi
+        fi
+    done
+    if [[ -n "$shell_errors" ]]; then
+        echo "ERROR: Shell script syntax errors detected in:$shell_errors"
+        echo "Please fix syntax errors before committing."
+        exit 1
+    fi
+fi
+echo "  ✓ Shell script syntax valid"
+
+echo ""
+echo "✅ Pre-commit quality gates passed!"
+exit 0

@@ -4,4 +4,4 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 mode="${HOOK_LOCAL_CHECK_MODE:---since-main}"
 
-"${repo_root}/scripts/run-local-checks.sh" "${mode}"
+"${repo_root}/platform/scripts/run-local-checks.sh" "${mode}"

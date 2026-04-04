@@ -8,7 +8,7 @@ DOCS_STAMP := $(DOCS_DIR)/node_modules/.package-lock-stamp
 CLUSTER ?= shop-kind
 OVERLAY ?= dev
 TILT_REGISTRY ?= localhost:5000
-ARCHETYPE_MODULES := shop-common,shop-contracts,shop-archetypes/gateway-service-archetype,shop-archetypes/auth-service-archetype,shop-archetypes/bff-service-archetype,shop-archetypes/domain-service-archetype,shop-archetypes/event-worker-archetype,shop-archetypes/portal-service-archetype
+ARCHETYPE_MODULES := shared/shop-common,shared/shop-contracts,tooling/shop-archetypes/gateway-service-archetype,tooling/shop-archetypes/auth-service-archetype,tooling/shop-archetypes/bff-service-archetype,tooling/shop-archetypes/domain-service-archetype,tooling/shop-archetypes/event-worker-archetype,tooling/shop-archetypes/portal-service-archetype
 
 .PHONY: help test build verify arch-test archetype-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed redeploy smoke-test verify-observability ui-e2e e2e-playwright e2e-playwright-seller e2e-playwright-buyer-app e2e-playwright-kmp local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap kind-teardown clean-images clean-all
 
@@ -46,83 +46,83 @@ archetypes-install: ## Install archetypes into the local Maven repository
 
 archetype-test: ## Run archetype generation and integration tests
 	@echo "Running archetype generation tests..."
-	bash ./scripts/test-archetypes.sh
+	bash platform/scripts/test-archetypes.sh
 
 install-hooks: ## Configure Git to use the repository-managed hooks
-	./scripts/install-git-hooks.sh
+	platform/scripts/install-git-hooks.sh
 
 local-checks: ## Run path-aware local checks against origin/main
-	./scripts/run-local-checks.sh --since-main
+	platform/scripts/run-local-checks.sh --since-main
 
 local-checks-all: ## Run all local checks regardless of changed files
-	./scripts/run-local-checks.sh --all
+	platform/scripts/run-local-checks.sh --all
 
 platform-validate: ## Validate shell/Kustomize/Tilt/mirrord platform assets
-	bash ./scripts/validate-platform-assets.sh
+	bash platform/scripts/validate-platform-assets.sh
 
 kind-bootstrap: ## Create the Kind cluster and install infra dependencies
-	./scripts/kind-up.sh $(CLUSTER)
+	platform/scripts/kind-up.sh $(CLUSTER)
 
 kind-deploy: ## Apply platform manifests to the current cluster
-	./scripts/deploy-kind.sh $(OVERLAY)
+	platform/scripts/deploy-kind.sh $(OVERLAY)
 
 build-images: ## Build service images for local/Kind use (fast by default)
-	./scripts/build-images.sh --fast
+	platform/scripts/build-images.sh --fast
 
 build-images-legacy: ## Build service images with the legacy Docker-in-Docker path
-	./scripts/build-images.sh --legacy
+	platform/scripts/build-images.sh --legacy
 
 load-images: ## Sync built images into the Kind cluster (registry push by default)
-	./scripts/load-images-kind.sh $(CLUSTER) --registry
+	platform/scripts/load-images-kind.sh $(CLUSTER) --registry
 
 load-images-legacy: ## Load built images into the Kind cluster with kind load
-	./scripts/load-images-kind.sh $(CLUSTER) --kind-load
+	platform/scripts/load-images-kind.sh $(CLUSTER) --kind-load
 
 build-changed: ## Build only Docker images for changed modules
-	./scripts/build-images.sh --changed -j 4
+	platform/scripts/build-images.sh --changed -j 4
 
 load-changed: ## Load only Docker images for changed modules into CLUSTER
-	./scripts/load-images-kind.sh $(CLUSTER) --changed
+	platform/scripts/load-images-kind.sh $(CLUSTER) --changed
 
 redeploy: ## Rebuild, reload, and restart a single MODULE (usage: make redeploy MODULE=buyer-bff)
 	@test -n "$(MODULE)" || (echo "Usage: make redeploy MODULE=<service-name>" >&2 && false)
-	./scripts/build-images.sh --fast --module $(MODULE)
-	./scripts/load-images-kind.sh $(CLUSTER) --registry --module $(MODULE)
+	platform/scripts/build-images.sh --fast --module $(MODULE)
+	platform/scripts/load-images-kind.sh $(CLUSTER) --registry --module $(MODULE)
 	kubectl --context kind-$(CLUSTER) -n shop rollout restart deployment/$(MODULE)
 	kubectl --context kind-$(CLUSTER) -n shop rollout status deployment/$(MODULE) --timeout=300s
 
 smoke-test: ## Run smoke tests against the local gateway entrypoint
-	./scripts/smoke-test.sh
+	platform/scripts/smoke-test.sh
 
 verify-observability: ## Verify Grafana, Prometheus, Loki, and Tempo are healthy
-	./scripts/verify-observability.sh
+	platform/scripts/verify-observability.sh
 
 ui-e2e: ## Run buyer SSR and seller/buyer KMP page automation checks
-	bash ./scripts/ui-e2e.sh
+	bash platform/scripts/ui-e2e.sh
 
 e2e-playwright: ## Run Playwright buyer tests (requires: make local-access running)
 	cd e2e-tests && npx playwright test --project=buyer
 
 e2e-playwright-seller: ## Build seller WASM, start proxy, run Playwright seller tests
-	bash ./scripts/kmp-e2e.sh --seller
+	bash platform/scripts/kmp-e2e.sh --seller
 
 e2e-playwright-buyer-app: ## Build buyer-app WASM, start proxy, run Playwright buyer-app tests
-	bash ./scripts/kmp-e2e.sh --buyer-app
+	bash platform/scripts/kmp-e2e.sh --buyer-app
 
 e2e-playwright-kmp: ## Build all KMP WASM, start proxies, run all KMP Playwright tests
-	bash ./scripts/kmp-e2e.sh
+	bash platform/scripts/kmp-e2e.sh
 
 local-access: ## Open stable local access to gateway, Mailpit, and Prometheus via port-forward
-	./scripts/local-access.sh
+	platform/scripts/local-access.sh
 
 e2e: ## Bootstrap Kind, run fast local build/deploy, and verify buyer/seller flows
-	bash ./scripts/e2e.sh $(CLUSTER) $(OVERLAY)
+	bash platform/scripts/e2e.sh $(CLUSTER) $(OVERLAY)
 
 e2e-legacy: ## Run the legacy Docker build + kind load loop
-	E2E_FLOW=legacy bash ./scripts/e2e.sh $(CLUSTER) $(OVERLAY)
+	E2E_FLOW=legacy bash platform/scripts/e2e.sh $(CLUSTER) $(OVERLAY)
 
 registry: ## Start a local Docker registry for faster Kind/Tilt image cycles
-	./scripts/setup-local-registry.sh $(CLUSTER)
+	platform/scripts/setup-local-registry.sh $(CLUSTER)
 
 tilt-up: ## Start Tilt for inner-loop Kubernetes development
 	tilt up -- --registry=$(TILT_REGISTRY)
@@ -131,13 +131,13 @@ tilt-ci: ## Run Tilt once in CI/headless mode
 	tilt ci -- --registry=$(TILT_REGISTRY)
 
 mirrord-run: ## Run a local module through mirrord (usage: make mirrord-run MODULE=api-gateway)
-	bash ./scripts/mirrord-debug.sh $(MODULE)
+	bash platform/scripts/mirrord-debug.sh $(MODULE)
 
 argocd-bootstrap: ## Install ArgoCD (non-HA) and apply the shop-platform Application
-	./scripts/argocd-bootstrap.sh
+	platform/scripts/argocd-bootstrap.sh
 
 kind-teardown: ## Delete the Kind cluster and remove its kubeconfig context
-	./kind/teardown.sh $(CLUSTER)
+	platform/kind/teardown.sh $(CLUSTER)
 
 clean-images: ## Remove all local shop/* dev Docker images
 	docker images --format '{{.Repository}}:{{.Tag}}' | grep '^localhost:5000/shop/' | xargs -r docker rmi --force || true

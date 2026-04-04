@@ -1,5 +1,5 @@
 FROM nginx:1.27-alpine
-ARG DIST_DIR=kmp/seller-app/build/dist/wasmJs/productionExecutable
+ARG DIST_DIR=frontend/kmp/seller-app/build/dist/wasmJs/productionExecutable
 COPY ${DIST_DIR}/ /usr/share/nginx/html/
-COPY docker/nginx-seller.conf /etc/nginx/conf.d/default.conf
+COPY platform/docker/nginx-seller.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80

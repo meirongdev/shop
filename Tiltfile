@@ -16,25 +16,25 @@ ALL_MODULES = [
 if LOCAL_REGISTRY:
     default_registry(LOCAL_REGISTRY)
 
-k8s_yaml('k8s/namespace.yaml')
-k8s_yaml('k8s/infra/base.yaml')
-k8s_yaml(kustomize('k8s/apps/overlays/dev'))
+k8s_yaml('platform/k8s/namespace.yaml')
+k8s_yaml('platform/k8s/infra/base.yaml')
+k8s_yaml(kustomize('platform/k8s/apps/overlays/dev'))
 
 def watched_paths(service_name):
     return [
-        service_name + '/',
-        'shop-common/',
-        'shop-contracts/',
+        'services/' + service_name + '/',
+        'shared/shop-common/',
+        'shared/shop-contracts/',
         'pom.xml',
-        'docker/Dockerfile.module',
+        'platform/docker/Dockerfile.module',
     ]
 
 for service_name in TILT_SERVICES:
     docker_build(
         'shop/' + service_name + ':dev',
         context='.',
-        dockerfile='docker/Dockerfile.module',
-        build_args={'MODULE': service_name},
+        dockerfile='platform/docker/Dockerfile.module',
+        build_args={'MODULE': service_name, 'MODULE_DIR': 'services/' + service_name},
         only=watched_paths(service_name),
     )
 

@@ -25,9 +25,9 @@ done
 
 echo "==> Deploying overlay '${overlay}'"
 if [[ "${deploy_mode}" == "legacy" ]]; then
-  kubectl --context "${context_name}" apply -f "${repo_root}/k8s/apps/platform.yaml"
+  kubectl --context "${context_name}" apply -f "${repo_root}/platform/k8s/apps/platform.yaml"
 else
-  kubectl --context "${context_name}" apply -k "${repo_root}/k8s/apps/overlays/${overlay}"
+  kubectl --context "${context_name}" apply -k "${repo_root}/platform/k8s/apps/overlays/${overlay}"
 fi
 
 if [[ "${mode}" == "changed" ]]; then

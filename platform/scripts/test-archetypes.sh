@@ -23,7 +23,7 @@ cd "$PROJECT_ROOT"
 echo -e "${YELLOW}Step 1: Installing archetypes to local Maven repository...${NC}"
 echo ""
 
-ARCHETYPE_MODULES="shop-common,shop-contracts,shop-archetypes/gateway-service-archetype,shop-archetypes/auth-service-archetype,shop-archetypes/bff-service-archetype,shop-archetypes/domain-service-archetype,shop-archetypes/event-worker-archetype,shop-archetypes/portal-service-archetype"
+ARCHETYPE_MODULES="shared/shop-common,shared/shop-contracts,tooling/shop-archetypes/gateway-service-archetype,tooling/shop-archetypes/auth-service-archetype,tooling/shop-archetypes/bff-service-archetype,tooling/shop-archetypes/domain-service-archetype,tooling/shop-archetypes/event-worker-archetype,tooling/shop-archetypes/portal-service-archetype"
 ./mvnw -pl "$ARCHETYPE_MODULES" -am install -q -DskipTests
 
 if [ $? -eq 0 ]; then
@@ -39,7 +39,7 @@ echo ""
 echo -e "${YELLOW}Step 2: Running archetype integration tests...${NC}"
 echo ""
 
-./mvnw -pl archetype-tests -am test -B
+./mvnw -pl tooling/archetype-tests -am test -B
 
 if [ $? -eq 0 ]; then
     echo ""

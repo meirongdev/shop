@@ -12,11 +12,11 @@ make verify                         # Maven verify + docs-site build
 # Test
 make test                           # All Maven tests
 make arch-test                      # Architecture tests (ArchUnit, 19 rules)
-./mvnw -pl <module> -am test        # Single module + required dependencies
-./mvnw -pl auth-server -am -Dtest=AuthControllerTest test                        # Single test class
-./mvnw -pl auth-server -am -Dtest=AuthControllerTest#me_withValidJwt_returnsUserInfo test  # Single test method
+./mvnw -pl services/<module> -am test        # Single module + required dependencies
+./mvnw -pl services/auth-server -am -Dtest=AuthControllerTest test                        # Single test class
+./mvnw -pl services/auth-server -am -Dtest=AuthControllerTest#me_withValidJwt_returnsUserInfo test  # Single test method
 
-# Playwright E2E tests (e2e-tests/ directory, requires running cluster + port-forward)
+# Playwright E2E tests (frontend/e2e-tests/ directory, requires running cluster + port-forward)
 make local-access &                 # Port-forward gateway→18080, Grafana→13000 (keep running)
 make e2e-playwright                 # Run buyer portal Playwright tests
 make e2e-playwright-seller          # Build seller WASM + run seller Playwright tests
@@ -77,21 +77,21 @@ Services write business data + outbox record atomically. A 5-second scheduler em
 Each domain service owns its MySQL schema and Flyway migrations (`src/main/resources/db/migration/`). JPA DDL mode is `validate`—never `update`.
 
 ### Language Split
-- **Java**: `api-gateway`, `auth-server`, BFFs, all domain services, `shop-common`, `shop-contracts`
+- **Java**: `services/api-gateway`, `services/auth-server`, BFFs, all domain services, `shared/shop-common`, `shared/shop-contracts`
 - **Kotlin**: `buyer-portal` (Spring Boot + Thymeleaf SSR)
 - **Kotlin Multiplatform / Compose Multiplatform**: `kmp/seller-app` (Web WASM / Android / iOS → served at `/seller/**`), `kmp/buyer-app` (Web WASM → served at `/buyer-app/**`), `kmp/buyer-android-app`, plus shared `kmp/core`, `kmp/ui-shared`, and six `kmp/feature-*` modules
 
 ## Key Conventions
 
 ### Contracts & Responses
-- **API path constants** live in `shop-contracts/contracts/api/*Api.java`—use them in both controllers and `@HttpExchange` clients.
-- **Event DTOs** live in `shop-contracts/contracts/event/`.
-- All controllers return `ApiResponse<T>` from `shop-common`; error codes are `SC_*` constants also from `shop-contracts`.
-- Error responses follow RFC 7807 Problem Details; global exception handling is in `shop-common`.
+- **API path constants** live in `shared/shop-contracts/contracts/api/*Api.java`—use them in both controllers and `@HttpExchange` clients.
+- **Event DTOs** live in `shared/shop-contracts/contracts/event/`.
+- All controllers return `ApiResponse<T>` from `shared/shop-common`; error codes are `SC_*` constants also from `shared/shop-contracts`.
+- Error responses follow RFC 7807 Problem Details; global exception handling is in `shared/shop-common`.
 
 ### Internal Trust Model
 - Gateway injects trusted headers on every request: `X-Request-Id`, `X-Buyer-Id` (= JWT `principalId` claim), `X-Username`, `X-Roles`, `X-Portal`, `X-Internal-Token`.
-- Domain services enforce `InternalAccessFilter` (from `shop-common`) when `shop.security.internal.enabled=true`.
+- Domain services enforce `InternalAccessFilter` (from `shared/shop-common`) when `shop.security.internal.enabled=true`.
 - BFF-to-service calls always include `X-Internal-Token`.
 
 ### Configuration
@@ -104,12 +104,12 @@ Each domain service owns its MySQL schema and Flyway migrations (`src/main/resou
 - Integration tests extend `AbstractMySqlIntegrationTest` (Testcontainers `@ServiceConnection`).
 - HTTP client stubs use WireMock.
 - Architecture rules are enforced via ArchUnit (`architecture-tests` module, 19 rules). Notable rules: no field injection, no `RestTemplate`, no `System.out/err`, Kafka listeners must be idempotent.
-- **Playwright E2E tests** live in `e2e-tests/` (Node.js, `@playwright/test`). Three projects:
+- **Playwright E2E tests** live in `frontend/e2e-tests/` (Node.js, `@playwright/test`). Three projects:
   - `buyer` — tests covering the buyer portal SSR (login, guest mode, all authenticated pages).
   - `seller` — tests covering the KMP/WASM seller app via e2e token injection, **plus seller portal gateway SPA shell checks** at `/seller/`.
   - `buyer-app` — tests covering the KMP/WASM buyer app via e2e token injection (auth, guest, routes), **plus buyer-app gateway SPA shell checks** at `/buyer-app/`.
   - Requires gateway on port 18080 (`make local-access &`) and seller proxy on 18181 for seller tests.
-- **`scripts/verify-observability.sh`** — automated validation of Grafana, Prometheus, Loki, and Tempo health and datasource connectivity. Run with `make verify-observability`.
+- **`platform/scripts/verify-observability.sh`** — automated validation of Grafana, Prometheus, Loki, and Tempo health and datasource connectivity. Run with `make verify-observability`.
 
 ### K8s / Deployment Notes
 - All deployments include a `startupProbe` (failureThreshold=30, periodSeconds=10 → 5-minute startup budget) to prevent liveness probe kills during slow JVM/WASM startup.

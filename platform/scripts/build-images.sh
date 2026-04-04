@@ -111,42 +111,42 @@ build_fast_module() {
     return 1
   }
 
-  echo "==> Building $(module_local_image_ref "${module}") with docker/Dockerfile.fast"
+  echo "==> Building $(module_local_image_ref "${module}") with platform/docker/Dockerfile.fast"
   docker build \
     --build-arg JAR_FILE="${jar_file}" \
-    -f docker/Dockerfile.fast \
+    -f platform/docker/Dockerfile.fast \
     -t "$(module_local_image_ref "${module}")" \
     .
 }
 
 build_seller_portal() {
-  local dist_dir="kmp/seller-app/build/dist/wasmJs/productionExecutable"
+  local dist_dir="frontend/kmp/seller-app/build/dist/wasmJs/productionExecutable"
 
   if [[ ! -d "${dist_dir}" ]]; then
     echo "==> Building seller-portal WASM (first time, may take several minutes)..."
-    (cd kmp && ./gradlew :seller-app:wasmJsBrowserProductionWebpack --no-daemon -q)
+    ./gradlew :kmp:seller-app:wasmJsBrowserProductionWebpack --no-daemon -q
   fi
 
-  echo "==> Building $(module_local_image_ref "seller-portal") with docker/Dockerfile.seller-portal"
+  echo "==> Building $(module_local_image_ref "seller-portal") with platform/docker/Dockerfile.seller-portal"
   docker build \
     --build-arg "DIST_DIR=${dist_dir}" \
-    -f docker/Dockerfile.seller-portal \
+    -f platform/docker/Dockerfile.seller-portal \
     -t "$(module_local_image_ref "seller-portal")" \
     .
 }
 
 build_buyer_app() {
-  local dist_dir="kmp/buyer-app/build/dist/wasmJs/productionExecutable"
+  local dist_dir="frontend/kmp/buyer-app/build/dist/wasmJs/productionExecutable"
 
   if [[ ! -d "${dist_dir}" ]]; then
     echo "==> Building buyer-app WASM (first time, may take several minutes)..."
-    (cd kmp && ./gradlew :buyer-app:wasmJsBrowserProductionWebpack --no-daemon -q)
+    ./gradlew :kmp:buyer-app:wasmJsBrowserProductionWebpack --no-daemon -q
   fi
 
-  echo "==> Building $(module_local_image_ref "buyer-app") with docker/Dockerfile.buyer-app"
+  echo "==> Building $(module_local_image_ref "buyer-app") with platform/docker/Dockerfile.buyer-app"
   docker build \
     --build-arg "DIST_DIR=${dist_dir}" \
-    -f docker/Dockerfile.buyer-app \
+    -f platform/docker/Dockerfile.buyer-app \
     -t "$(module_local_image_ref "buyer-app")" \
     .
 }
@@ -154,10 +154,10 @@ build_buyer_app() {
 build_legacy_module() {
   local module="$1"
 
-  echo "==> Building $(module_local_image_ref "${module}") with docker/Dockerfile.module"
+  echo "==> Building $(module_local_image_ref "${module}") with platform/docker/Dockerfile.module"
   docker build \
     --build-arg MODULE="${module}" \
-    -f docker/Dockerfile.module \
+    -f platform/docker/Dockerfile.module \
     -t "$(module_local_image_ref "${module}")" \
     .
 }

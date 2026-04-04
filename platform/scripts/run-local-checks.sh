@@ -55,11 +55,11 @@ for path in "${changed_files[@]}"; do
     docs-site/*)
       run_docs=true
       ;;
-    docker/*|k8s/*|kind/*|Tiltfile|.mirrord/*)
+    platform/docker/*|platform/k8s/*|platform/kind/*|Tiltfile|.mirrord/*)
       k8s_changed=true
       run_platform=true
       ;;
-    .github/workflows/*|Makefile|.editorconfig|.githooks/*|scripts/*)
+    .github/workflows/*|Makefile|.editorconfig|.githooks/*|platform/scripts/*)
       run_maven=true
       run_docs=true
       run_platform=true
@@ -85,7 +85,7 @@ fi
 
 if [[ "${run_platform}" == "true" ]]; then
   echo "==> Validating platform assets"
-  bash ./scripts/validate-platform-assets.sh
+  bash ./platform/scripts/validate-platform-assets.sh
 fi
 
 if [[ "${run_maven}" == "true" ]]; then

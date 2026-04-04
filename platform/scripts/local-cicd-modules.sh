@@ -25,11 +25,11 @@ ALL_MODULES=(
 )
 
 SHARED_PATHS=(
-  shop-common
-  shop-contracts
+  shared/shop-common
+  shared/shop-contracts
   pom.xml
-  docker/Dockerfile.module
-  docker/Dockerfile.fast
+  platform/docker/Dockerfile.module
+  platform/docker/Dockerfile.fast
 )
 
 # Returns space-separated extra source paths for KMP modules whose source
@@ -38,10 +38,10 @@ module_extra_paths() {
   local module="$1"
   case "${module}" in
     seller-portal)
-      echo "kmp/seller-app docker/Dockerfile.seller-portal docker/nginx-seller.conf"
+      echo "frontend/kmp/seller-app platform/docker/Dockerfile.seller-portal platform/docker/nginx-seller.conf"
       ;;
     buyer-app)
-      echo "kmp/buyer-app docker/Dockerfile.buyer-app docker/nginx-buyer.conf"
+      echo "frontend/kmp/buyer-app platform/docker/Dockerfile.buyer-app platform/docker/nginx-buyer.conf"
       ;;
   esac
 }
@@ -68,7 +68,14 @@ module_runtime_image_ref() {
 
 module_jar_path() {
   local module="$1"
-  printf '%s/target/%s-0.1.0-SNAPSHOT.jar\n' "${module}" "${module}"
+  case "${module}" in
+    auth-server|api-gateway|buyer-bff|seller-bff|profile-service|promotion-service|wallet-service|marketplace-service|order-service|search-service|notification-service|loyalty-service|activity-service|webhook-service|subscription-service)
+      printf 'services/%s/target/%s-0.1.0-SNAPSHOT.jar\n' "${module}" "${module}"
+      ;;
+    *)
+      printf '%s/target/%s-0.1.0-SNAPSHOT.jar\n' "${module}" "${module}"
+      ;;
+  esac
 }
 
 array_contains() {

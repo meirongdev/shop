@@ -18,10 +18,10 @@ BUYER_APP_WEB_PORT="${BUYER_APP_WEB_PORT:-18182}"
 UI_E2E_TIMEOUT_SECONDS="${UI_E2E_TIMEOUT_SECONDS:-10}"
 
 SELLER_WASM_BUILD_TASK="${SELLER_WASM_BUILD_TASK:-:kmp:seller-app:wasmJsBrowserDevelopmentExecutableDistribution}"
-SELLER_WASM_DIST_DIR="${SELLER_WASM_DIST_DIR:-kmp/seller-app/build/dist/wasmJs/developmentExecutable}"
+SELLER_WASM_DIST_DIR="${SELLER_WASM_DIST_DIR:-frontend/kmp/seller-app/build/dist/wasmJs/developmentExecutable}"
 
 BUYER_APP_WASM_BUILD_TASK="${BUYER_APP_WASM_BUILD_TASK:-:kmp:buyer-app:wasmJsBrowserDevelopmentExecutableDistribution}"
-BUYER_APP_WASM_DIST_DIR="${BUYER_APP_WASM_DIST_DIR:-kmp/buyer-app/build/dist/wasmJs/developmentExecutable}"
+BUYER_APP_WASM_DIST_DIR="${BUYER_APP_WASM_DIST_DIR:-frontend/kmp/buyer-app/build/dist/wasmJs/developmentExecutable}"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"

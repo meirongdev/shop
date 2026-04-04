@@ -45,7 +45,7 @@ jobs:
               - '.mvn/**'
               - 'mvnw'
               - 'mvnw.cmd'
-              - 'scripts/**'
+              - 'platform/scripts/**'
               - 'Makefile'
               - '.editorconfig'
               - '.githooks/**'
@@ -55,10 +55,10 @@ jobs:
               - 'Makefile'
               - '.github/workflows/**'
             platform:
-              - 'k8s/**'
-              - 'kind/**'
-              - 'docker/**'
-              - 'scripts/**'
+              - 'platform/k8s/**'
+              - 'platform/kind/**'
+              - 'platform/docker/**'
+              - 'platform/scripts/**'
               - '.mirrord/**'
               - 'Tiltfile'
               - 'Makefile'
@@ -84,7 +84,7 @@ jobs:
           version: 'v1.34.1'
 
       - name: Validate platform assets
-        run: bash ./scripts/validate-platform-assets.sh
+        run: bash ./platform/scripts/validate-platform-assets.sh
 
   maven-verify:
     needs: changes
@@ -131,10 +131,10 @@ jobs:
           cache: 'maven'
       
       - name: Install archetypes
-        run: ./mvnw -pl shop-common,shop-contracts,shop-archetypes -am install -B -ntp
-      
+        run: ./mvnw -pl shared/shop-common,shared/shop-contracts,tooling/shop-archetypes -am install -B -ntp
+
       - name: Run archetype tests
-        run: ./mvnw -pl archetype-tests test -B -ntp
+        run: ./mvnw -pl tooling/archetype-tests test -B -ntp
       
       - name: Upload archetype test results
         if: always()

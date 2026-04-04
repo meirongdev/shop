@@ -5,20 +5,20 @@ repo_root="$(git rev-parse --show-toplevel)"
 cd "${repo_root}"
 
 script_files=(
-  scripts/build-images.sh
-  scripts/load-images-kind.sh
-  scripts/local-cicd-modules.sh
-  scripts/run-local-checks.sh
-  scripts/smoke-test.sh
-  scripts/setup-local-registry.sh
-  scripts/argocd-bootstrap.sh
-  scripts/deploy-kind.sh
-  scripts/e2e.sh
-  scripts/local-access.sh
-  scripts/mirrord-debug.sh
-  kind/setup.sh
-  kind/mirrord-run.sh
-  kind/teardown.sh
+  platform/scripts/build-images.sh
+  platform/scripts/load-images-kind.sh
+  platform/scripts/local-cicd-modules.sh
+  platform/scripts/run-local-checks.sh
+  platform/scripts/smoke-test.sh
+  platform/scripts/setup-local-registry.sh
+  platform/scripts/argocd-bootstrap.sh
+  platform/scripts/deploy-kind.sh
+  platform/scripts/e2e.sh
+  platform/scripts/local-access.sh
+  platform/scripts/mirrord-debug.sh
+  platform/kind/setup.sh
+  platform/kind/mirrord-run.sh
+  platform/kind/teardown.sh
 )
 
 echo "==> Validating shell scripts"
@@ -34,32 +34,32 @@ echo "==> Validating mirrord example configs"
 python3 -m json.tool .mirrord/mirrord.api-gateway.json >/dev/null
 python3 -m json.tool .mirrord/mirrord.buyer-bff.json >/dev/null
 python3 -m json.tool .mirrord/mirrord.marketplace-service.json >/dev/null
-python3 -m json.tool kind/mirrord.json >/dev/null
+python3 -m json.tool platform/kind/mirrord.json >/dev/null
 
 echo "==> Validating Kustomize overlay"
-kubectl kustomize k8s/apps/overlays/dev >/dev/null
+kubectl kustomize platform/k8s/apps/overlays/dev >/dev/null
 
 echo "==> Validating Kind registry wiring uses containerd certs.d hosts config"
-grep -Fq 'config_path = "/etc/containerd/certs.d"' kind/cluster-config.yaml || {
-  echo "error: kind/cluster-config.yaml must enable containerd certs.d registry config for the local Kind registry." >&2
+grep -Fq 'config_path = "/etc/containerd/certs.d"' platform/kind/cluster-config.yaml || {
+  echo "error: platform/kind/cluster-config.yaml must enable containerd certs.d registry config for the local Kind registry." >&2
   exit 1
 }
-if grep -Fq 'registry.mirrors."localhost:5000"' kind/cluster-config.yaml; then
-  echo "error: kind/cluster-config.yaml must not use the legacy registry.mirrors patch, which breaks modern Kind/containerd nodes." >&2
+if grep -Fq 'registry.mirrors."localhost:5000"' platform/kind/cluster-config.yaml; then
+  echo "error: platform/kind/cluster-config.yaml must not use the legacy registry.mirrors patch, which breaks modern Kind/containerd nodes." >&2
   exit 1
 fi
-grep -Fq 'hosts.toml' scripts/setup-local-registry.sh || {
-  echo "error: scripts/setup-local-registry.sh must install hosts.toml aliases into Kind nodes for localhost registry pulls." >&2
+grep -Fq 'hosts.toml' platform/scripts/setup-local-registry.sh || {
+  echo "error: platform/scripts/setup-local-registry.sh must install hosts.toml aliases into Kind nodes for localhost registry pulls." >&2
   exit 1
 }
 
 echo "==> Validating fast Docker build context rules"
-grep -Fxq '!docker/Dockerfile.fast' .dockerignore || {
-  echo "error: .dockerignore must include docker/Dockerfile.fast for fast local image builds." >&2
+grep -Fxq '!platform/docker/Dockerfile.fast' .dockerignore || {
+  echo "error: .dockerignore must include platform/docker/Dockerfile.fast for fast local image builds." >&2
   exit 1
 }
 grep -Fxq '!**/target/*.jar' .dockerignore || {
-  echo "error: .dockerignore must include host-built target jars for docker/Dockerfile.fast." >&2
+  echo "error: .dockerignore must include host-built target jars for platform/docker/Dockerfile.fast." >&2
   exit 1
 }
 
@@ -76,19 +76,19 @@ mkdir -p "${fast_context_target}"
 printf 'fast-context-check\n' > "${fast_context_jar}"
 docker build --no-cache \
   --build-arg JAR_FILE="${fast_context_jar}" \
-  -f docker/Dockerfile.fast \
+  -f platform/docker/Dockerfile.fast \
   -t "${fast_context_image}" \
   . >/dev/null
 docker run --rm --entrypoint sh "${fast_context_image}" -c 'test -s /app/app.jar' || {
-  echo "error: docker/Dockerfile.fast cannot read non-empty target artifacts from the Docker context." >&2
+  echo "error: platform/docker/Dockerfile.fast cannot read non-empty target artifacts from the Docker context." >&2
   exit 1
 }
 
 echo "==> Validating legacy platform manifest stays in sync"
-cmp -s k8s/apps/platform.yaml k8s/apps/base/platform.yaml || {
-  echo "error: k8s/apps/platform.yaml and k8s/apps/base/platform.yaml differ." >&2
+cmp -s platform/k8s/apps/platform.yaml platform/k8s/apps/base/platform.yaml || {
+  echo "error: platform/k8s/apps/platform.yaml and platform/k8s/apps/base/platform.yaml differ." >&2
   echo "Keep the compatibility copy in sync with:" >&2
-  echo "  cp k8s/apps/base/platform.yaml k8s/apps/platform.yaml" >&2
+  echo "  cp platform/k8s/apps/base/platform.yaml platform/k8s/apps/platform.yaml" >&2
   exit 1
 }
 

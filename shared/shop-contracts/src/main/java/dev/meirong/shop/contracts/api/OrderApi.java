@@ -1,5 +1,6 @@
 package dev.meirong.shop.contracts.api;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -32,12 +33,20 @@ public final class OrderApi {
     private OrderApi() {
     }
 
-    public record AddToCartRequest(@NotBlank String buyerId,
-                                   @NotBlank String productId,
-                                   @NotBlank String productName,
-                                   @NotNull BigDecimal productPrice,
-                                   @NotBlank String sellerId,
-                                   @NotNull Integer quantity) {
+    @Schema(description = "添加购物车请求")
+    public record AddToCartRequest(
+            @Schema(description = "买家 ID", example = "buyer-01HX123456")
+            @NotBlank String buyerId,
+            @Schema(description = "商品 ID", example = "prod-01HX789012")
+            @NotBlank String productId,
+            @Schema(description = "商品名称", example = "iPhone 15 Pro")
+            @NotBlank String productName,
+            @Schema(description = "商品单价", example = "7999.00")
+            @NotNull BigDecimal productPrice,
+            @Schema(description = "卖家 ID", example = "seller-01HX345678")
+            @NotBlank String sellerId,
+            @Schema(description = "购买数量", example = "1")
+            @NotNull Integer quantity) {
     }
 
     public record UpdateCartRequest(@NotBlank String buyerId,

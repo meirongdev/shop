@@ -60,30 +60,48 @@ public final class BuyerApi {
     private BuyerApi() {
     }
 
-    public record BuyerContextRequest(@NotBlank String buyerId) {
+    public record BuyerContextRequest(
+            @Schema(description = "买家 ID", example = "buyer-01HX123456")
+            @NotBlank String buyerId) {
     }
 
-    public record MergeGuestCartRequest(@NotBlank String guestBuyerId) {
+    public record MergeGuestCartRequest(
+            @Schema(description = "游客买家 ID", example = "guest-01HX789012")
+            @NotBlank String guestBuyerId) {
     }
 
-    public record DashboardResponse(ProfileApi.ProfileResponse profile,
-                                    WalletApi.WalletAccountResponse wallet,
-                                    List<PromotionApi.OfferResponse> promotions,
-                                    List<MarketplaceApi.ProductResponse> marketplace,
-                                    LoyaltyApi.AccountResponse loyalty) {
+    @Schema(description = "买家仪表盘响应（聚合 profile/wallet/promotions/marketplace/loyalty）")
+    public record DashboardResponse(
+            @Schema(description = "用户档案") ProfileApi.ProfileResponse profile,
+            @Schema(description = "钱包账户") WalletApi.WalletAccountResponse wallet,
+            @Schema(description = "促销活动列表") List<PromotionApi.OfferResponse> promotions,
+            @Schema(description = "商品列表") List<MarketplaceApi.ProductResponse> marketplace,
+            @Schema(description = "忠诚度账户") LoyaltyApi.AccountResponse loyalty) {
     }
 
-    public record CheckoutRequest(@NotBlank String buyerId,
-                                  String couponCode,
-                                  String paymentMethod,
-                                  Long pointsToUse) {
+    @Schema(description = "结账请求")
+    public record CheckoutRequest(
+            @Schema(description = "买家 ID", example = "buyer-01HX123456")
+            @NotBlank String buyerId,
+            @Schema(description = "优惠券编码", example = "SAVE10")
+            String couponCode,
+            @Schema(description = "支付方式", example = "STRIPE")
+            String paymentMethod,
+            @Schema(description = "使用积分数量", example = "100")
+            Long pointsToUse) {
     }
 
-    public record CheckoutResponse(List<OrderApi.OrderResponse> orders,
-                                   java.math.BigDecimal totalPaid,
-                                   String paymentMethod,
-                                   String paymentIntentClientSecret,
-                                   String paymentRedirectUrl) {
+    @Schema(description = "结账响应")
+    public record CheckoutResponse(
+            @Schema(description = "订单列表") List<OrderApi.OrderResponse> orders,
+            @Schema(description = "支付总额", example = "99.99")
+            java.math.BigDecimal totalPaid,
+            @Schema(description = "支付方式", example = "STRIPE")
+            String paymentMethod,
+            @Schema(description = "Stripe PaymentIntent 客户端密钥")
+            String paymentIntentClientSecret,
+            @Schema(description = "支付重定向 URL")
+            String paymentRedirectUrl) {
     }
 
     public record LoyaltyHubResponse(LoyaltyApi.AccountResponse account,

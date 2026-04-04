@@ -95,7 +95,29 @@ fi
 
 if [[ "${run_maven}" == "true" ]]; then
   echo "==> Running Maven verify"
-  ./mvnw -q verify
+  # Detect changed Maven modules and only verify affected modules
+  maven_modules=()
+  for path in "${changed_files[@]}"; do
+    # Extract module name from path pattern: services/<module>/ or shared/<module>/ etc.
+    if [[ "${path}" =~ ^(services|shared|tooling)/([^/]+)/ ]]; then
+      module="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+      maven_modules+=("${module}")
+    elif [[ "${path}" =~ ^pom\.xml$ ]] || [[ "${path}" =~ ^\.mvn/ ]]; then
+      # Root pom or mvn config changed - need full verify
+      maven_modules=()
+      break
+    fi
+  done
+
+  if [[ "${#maven_modules[@]}" -eq 0 ]]; then
+    # No specific modules detected or root pom changed - run full verify
+    ./mvnw -q verify
+  else
+    # Only verify changed modules and their dependencies
+    unique_modules=$(printf "%s\n" "${maven_modules[@]}" | sort -u | tr '\n' ',' | sed 's/,$//')
+    echo "   Changed modules: ${unique_modules}"
+    ./mvnw -q -pl "${unique_modules}" -am verify
+  fi
 fi
 
 if [[ "${run_gradle}" == "true" ]]; then

@@ -28,10 +28,12 @@
 3) **测试基线薄弱、模块差异较大**
 - 当前测试覆盖仍然明显不均衡：`auth-server`、`search-service` 已有针对性测试，部分 domain service 只有少量测试，仍有多个模块接近 0。
 - `mvn test` 当前可通过，但对核心链路（下单、补偿、事件一致性）覆盖不足。
+- ✅ **Archetype 测试已完善**：`archetype-tests` 模块为 6 个 archetype 提供完整的生成验证测试
 
-4) **工程治理底座已就位，但 CI 仍偏“构建型”**
+4) **工程治理底座已就位，但 CI 仍偏"构建型"**
 - Maven Wrapper、Enforcer、GitHub Actions CI、`shop-archetypes/` 都已落地。
 - 当前 CI 以 `./mvnw verify` + `docs-site build` 为主，尚未扩展到镜像构建、Kind smoke、契约测试和架构规则测试。
+- ✅ **Archetype CI 已集成**：archetype-test job 已添加到 GitHub Actions，Maven 变更时自动触发
 
 5) **共享基线已成型，但仍需继续消除实现漂移**
 - 例如 `buyer-bff` 存在多个 `catch (Exception ...)`，补偿逻辑可用，但错误边界与可观测语义仍需收敛。
@@ -115,7 +117,8 @@
 ## 3.3 生成工具链建议
 
 - 以 `maven-archetype-plugin` 维护内部 archetype。
-- 当前实现位于仓库 `shop-archetypes/`，包含 6 类 archetype，并已通过样板工程生成与 `mvn test` 验证。
+- 当前实现位于仓库 `shop-archetypes/`，包含 6 类 archetype。
+- ✅ **Archetype 自动化测试已完善**：`archetype-tests/` 模块为所有 archetype 提供完整的生成验证测试（目录结构、编译、测试、依赖验证）
 - 以 `start.spring.io` 作为初始脚手架来源（定期刷新）。
 - 以 OpenRewrite 配置升级配方，做跨仓批量演进（Boot/Cloud/依赖安全升级）。
 

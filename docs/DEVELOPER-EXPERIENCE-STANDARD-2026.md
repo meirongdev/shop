@@ -7,14 +7,15 @@
 
 ## 1. DX 目标
 
-当前项目已经有成熟的 Maven 多模块结构、`docs-site`、`scripts/` 和 `shop-archetypes/`，但过去缺少统一的入口层。  
+当前项目已经有成熟的 Maven 多模块结构、`docs-site`、`scripts/`、`shop-archetypes/` **和** `archetype-tests/`，但过去缺少统一的入口层。
 本规范要解决的是：
 
 - CI 跑什么、本地该跑什么，入口保持一致
 - 新同学拿到仓库后可以通过 `make` 和文档快速上手
-- Git hooks 做“快反馈”，CI 做“可信兜底”
+- Git hooks 做"快反馈"，CI 做"可信兜底"
 - 编辑器行为尽量统一，减少无意义格式漂移
 - 新模块优先从 archetype 起步，而不是手写脚手架
+- **Archetype 可用性由自动化测试保障**，CI 门禁验证生成项目可编译/测试通过
 
 ---
 
@@ -44,8 +45,8 @@
 
 后续如果需要继续强化 CI，可以按顺序增加：
 
-1. OpenAPI diff / 契约变更门禁
-2. Archetype 生成 smoke 验证
+1. ~~OpenAPI diff / 契约变更门禁~~ ✅ 已部分实现（BFF 契约测试）
+2. ~~Archetype 生成 smoke 验证~~ ✅ 已完成（archetype-tests 模块）
 3. 镜像构建 smoke
 4. Kind / Kubernetes smoke
 5. 更细粒度的 changed-module 测试矩阵
@@ -79,6 +80,7 @@ make help
 - `make mirrord-run MODULE=<service>`：把本地进程挂到 Kind 中对应 Deployment 上调试
 - `make argocd-bootstrap`：可选安装本地 ArgoCD，验证 GitOps 同步链路
 - `make arch-test`：仅跑架构测试
+- `make archetype-test`：运行 archetype 生成和集成测试
 - `make docs-install`：安装 docs-site 依赖
 - `make docs-build`：构建 docs-site
 - `make docs-start`：本地启动 docs-site

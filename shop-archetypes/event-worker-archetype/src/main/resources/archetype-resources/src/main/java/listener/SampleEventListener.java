@@ -1,4 +1,4 @@
-package ${package}.messaging;
+package ${package}.listener;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

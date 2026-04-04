@@ -93,6 +93,7 @@
 - [x] **Bloom Filter 幂等加速**：`shop-common` 已落地 `IdempotencyGuard` / Redis BF auto-config，`wallet-service`（HTTP `Idempotency-Key`）与 `promotion-service`（welcome coupon Kafka consumer）已完成首批接入并通过 focused Maven 验证
   > 设计文档：`docs/superpowers/specs/2026-03-23-bloom-filter-idempotency-design.md` | 实施计划：`docs/superpowers/plans/2026-03-23-bloom-filter-idempotency.md`
 - [x] **ArchUnit 规则**：新增 `architecture-tests` 模块，落地 5 大类共 19 条规则（编码规范、分层约束、命名规范、Spring 专项、幂等契约），同步修复 activity-service / marketplace-service 分层违规；详见 `docs/ARCHUNIT-RULES.md`
+- [x] **Archetype 自动化测试**：新增 `archetype-tests` 模块，为 6 个 archetype 提供完整的生成验证测试（目录结构、编译、测试、依赖验证），集成到 CI 门禁；详见 `docs/ARCHETYPE-TESTING-IMPROVEMENT-PLAN.md`
 - [x] **Problem Details（RFC 7807）**：已在 `shop-common` 统一 `GlobalExceptionHandler` 为 RFC 7807 `ProblemDetail`，服务配置启用 Problem Details，并保留 `code` / `message` / `traceId` 兼容字段
 - [x] **Testcontainers @ServiceConnection**：`AbstractMySqlIntegrationTest` 基类已在 order / wallet / promotion / marketplace / loyalty / profile / activity / notification 8 个 MySQL 服务落地，@ServiceConnection 推广完成
 - [x] **HTTP Interfaces（@HttpExchange）**：buyer-bff 搜索调用 + search-service marketplace internal client 已切换为声明式 HTTP 客户端

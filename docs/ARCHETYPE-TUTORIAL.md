@@ -917,7 +917,115 @@ Archetype 版本与 `shop-platform` 版本绑定：
 
 ---
 
-## 八、参考文档
+## 七、自动化测试
+
+### 7.4 测试架构
+
+项目包含完整的 archetype 自动化测试体系，确保所有模板都能正确生成可编译、可测试的项目。
+
+**测试模块**：`archetype-tests/`
+
+**测试覆盖**：
+- ✅ `domain-service-archetype`
+- ✅ `bff-service-archetype`
+- ✅ `event-worker-archetype`
+- ✅ `gateway-service-archetype`
+- ✅ `auth-service-archetype`
+- ✅ `portal-service-archetype`
+
+### 7.5 本地运行测试
+
+```bash
+# 使用 Makefile（推荐）
+make archetype-test
+
+# 或直接运行脚本
+bash ./scripts/test-archetypes.sh
+```
+
+**预期输出**：
+
+```
+========================================
+  Shop Platform Archetype Tests
+========================================
+
+Step 1: Installing archetypes to local Maven repository...
+✓ Archetypes installed successfully
+
+Step 2: Running archetype integration tests...
+[INFO] BUILD SUCCESS
+[INFO] Tests run: 24, Failures: 0, Errors: 0
+
+========================================
+  All archetype tests passed!
+========================================
+```
+
+### 7.6 测试验证内容
+
+每个 archetype 测试验证：
+
+| 验证项 | 说明 |
+|--------|------|
+| 目录结构 | 标准的 Java/Kotlin 目录结构 |
+| K8s 配置 | deployment.yaml, service.yaml, hpa.yaml |
+| 编译通过 | `mvn compile` 成功 |
+| 测试通过 | `mvn test` 成功 |
+| 依赖完整 | 关键依赖存在于 pom.xml |
+
+### 7.7 CI 集成
+
+Archetype 测试已集成到 GitHub Actions CI：
+
+```yaml
+archetype-test:
+  runs-on: ubuntu-latest
+  steps:
+    - name: Install archetypes
+      run: ./mvnw -pl shop-common,shop-contracts,shop-archetypes -am install
+      
+    - name: Run archetype tests
+      run: ./mvnw -pl archetype-tests test
+```
+
+**触发条件**：
+- Maven 相关文件变更时自动触发
+- PR 提交时自动运行
+- 可手动触发（workflow_dispatch）
+
+### 7.8 添加新的 Archetype 测试
+
+为新的 archetype 添加测试：
+
+```java
+class NewArchetypeTest extends AbstractArchetypeTest {
+
+    private static final String ARCHETYPE = "new-service-archetype";
+    private static final String ARTIFACT = "test-new-service";
+
+    @Override
+    protected String getArchetypeArtifactId() {
+        return ARCHETYPE;
+    }
+
+    @Override
+    protected String getArtifactId() {
+        return ARTIFACT;
+    }
+
+    @Test
+    void shouldGenerateCompilableProject() throws Exception {
+        Path projectDir = generateProject();
+        compileProject(projectDir);
+        assertThat(projectDir.resolve("target/classes")).exists();
+    }
+}
+```
+
+---
+
+## 九、参考文档
 
 | 文档 | 说明 |
 |------|------|
@@ -925,11 +1033,12 @@ Archetype 版本与 `shop-platform` 版本绑定：
 | `docs/ENGINEERING-STANDARDS-2026.md` | 2026 统一技术栈标准 |
 | `docs/DEVELOPER-EXPERIENCE-STANDARD-2026.md` | DX 工具链规范 |
 | `docs/API-DOCUMENTATION-SPRINGDOC-2026.md` | OpenAPI 文档规范 |
+| `docs/ARCHETYPE-TESTING-IMPROVEMENT-PLAN.md` | Archetype 测试改进方案 |
 | [Maven Archetype 官方文档](https://maven.apache.org/archetype/) | Maven Archetype 参考 |
 
 ---
 
-## 九、快速参考卡片
+## 十、快速参考卡片
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

@@ -45,6 +45,49 @@ make archetypes-install
 ./mvnw -pl shop-common,shop-contracts,shop-archetypes/gateway-service-archetype,shop-archetypes/auth-service-archetype,shop-archetypes/bff-service-archetype,shop-archetypes/domain-service-archetype,shop-archetypes/event-worker-archetype,shop-archetypes/portal-service-archetype -am install
 ```
 
+## 自动化测试
+
+所有 archetype 都有自动化集成测试，确保生成的项目可编译、测试通过。
+
+### 运行测试
+
+```bash
+# 使用 Makefile（推荐）
+make archetype-test
+
+# 或直接运行脚本
+bash ./scripts/test-archetypes.sh
+
+# 或运行 Maven 测试
+./mvnw -pl archetype-tests test
+```
+
+### 测试覆盖
+
+| Archetype | 测试类 | 状态 |
+|-----------|--------|------|
+| `domain-service-archetype` | `DomainServiceArchetypeTest` | ✅ |
+| `bff-service-archetype` | `BffServiceArchetypeTest` | ✅ |
+| `event-worker-archetype` | `EventWorkerArchetypeTest` | ✅ |
+| `gateway-service-archetype` | `GatewayServiceArchetypeTest` | ✅ |
+| `auth-service-archetype` | `AuthServiceArchetypeTest` | ✅ |
+| `portal-service-archetype` | `PortalServiceArchetypeTest` | ✅ |
+
+### 测试验证内容
+
+每个 archetype 测试验证：
+1. **目录结构** - 标准的 Java/Kotlin 目录结构
+2. **K8s 配置** - deployment.yaml, service.yaml, hpa.yaml
+3. **编译通过** - `mvn compile` 成功
+4. **测试通过** - `mvn test` 成功
+5. **依赖完整** - 关键依赖存在于 pom.xml
+
+### CI 集成
+
+Archetype 测试已集成到 GitHub Actions CI，Maven 文件变更时自动触发。
+
+详细说明见：`docs/ARCHETYPE-TESTING-IMPROVEMENT-PLAN.md`
+
 ## 生成示例
 
 ```bash

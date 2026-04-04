@@ -23,5 +23,5 @@ nodes:
             node-labels: "ingress-ready=true"
 containerdConfigPatches:
   - |-
-    [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]
-      endpoint = ["http://kind-registry:5000"]
+    [plugins."io.containerd.grpc.v1.cri".registry]
+      config_path = "/etc/containerd/certs.d"

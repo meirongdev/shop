@@ -32,6 +32,15 @@ else
 fi
 
 if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
+  echo "==> Installing localhost registry aliases into cluster '${CLUSTER_NAME}' nodes"
+  registry_dir="/etc/containerd/certs.d/localhost:${REGISTRY_PORT}"
+  for node in $(kind get nodes --name "${CLUSTER_NAME}"); do
+    docker exec "${node}" mkdir -p "${registry_dir}"
+    cat <<EOF | docker exec -i "${node}" cp /dev/stdin "${registry_dir}/hosts.toml"
+[host."http://${REGISTRY_NAME}:5000"]
+EOF
+  done
+
   echo "==> Publishing local registry ConfigMap to cluster '${CLUSTER_NAME}'"
   cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -45,7 +54,7 @@ data:
     help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
 EOF
 else
-  echo "==> Cluster '${CLUSTER_NAME}' not found yet; skip ConfigMap publication for now"
+  echo "==> Cluster '${CLUSTER_NAME}' not found yet; skip node alias + ConfigMap publication for now"
 fi
 
 echo "==> Local registry ready: localhost:${REGISTRY_PORT}"

@@ -39,6 +39,20 @@ python3 -m json.tool kind/mirrord.json >/dev/null
 echo "==> Validating Kustomize overlay"
 kubectl kustomize k8s/apps/overlays/dev >/dev/null
 
+echo "==> Validating Kind registry wiring uses containerd certs.d hosts config"
+grep -Fq 'config_path = "/etc/containerd/certs.d"' kind/cluster-config.yaml || {
+  echo "error: kind/cluster-config.yaml must enable containerd certs.d registry config for the local Kind registry." >&2
+  exit 1
+}
+if grep -Fq 'registry.mirrors."localhost:5000"' kind/cluster-config.yaml; then
+  echo "error: kind/cluster-config.yaml must not use the legacy registry.mirrors patch, which breaks modern Kind/containerd nodes." >&2
+  exit 1
+fi
+grep -Fq 'hosts.toml' scripts/setup-local-registry.sh || {
+  echo "error: scripts/setup-local-registry.sh must install hosts.toml aliases into Kind nodes for localhost registry pulls." >&2
+  exit 1
+}
+
 echo "==> Validating fast Docker build context rules"
 grep -Fxq '!docker/Dockerfile.fast' .dockerignore || {
   echo "error: .dockerignore must include docker/Dockerfile.fast for fast local image builds." >&2

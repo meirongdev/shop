@@ -17,6 +17,7 @@
     <module>shop-contracts</module>
     <module>architecture-tests</module>
     <module>shop-archetypes</module>
+    <module>archetype-tests</module>
     <module>auth-server</module>
     <module>api-gateway</module>
     <module>buyer-bff</module>

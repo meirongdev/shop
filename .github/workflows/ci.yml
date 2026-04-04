@@ -114,6 +114,36 @@ jobs:
             **/target/failsafe-reports/*.xml
           retention-days: 7
 
+  archetype-test:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.maven == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+      
+      - name: Install archetypes
+        run: ./mvnw -pl shop-common,shop-contracts,shop-archetypes -am install -B -ntp
+      
+      - name: Run archetype tests
+        run: ./mvnw -pl archetype-tests test -B -ntp
+      
+      - name: Upload archetype test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: archetype-test-results
+          path: '**/archetype-tests/target/surefire-reports/*.xml'
+          retention-days: 7
+
   docs-site:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.docs_site == 'true'

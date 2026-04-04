@@ -10,7 +10,7 @@ OVERLAY ?= dev
 TILT_REGISTRY ?= localhost:5000
 ARCHETYPE_MODULES := shop-common,shop-contracts,shop-archetypes/gateway-service-archetype,shop-archetypes/auth-service-archetype,shop-archetypes/bff-service-archetype,shop-archetypes/domain-service-archetype,shop-archetypes/event-worker-archetype,shop-archetypes/portal-service-archetype
 
-.PHONY: help test build verify arch-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed redeploy smoke-test verify-observability ui-e2e e2e-playwright e2e-playwright-seller e2e-playwright-buyer-app e2e-playwright-kmp local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap kind-teardown clean-images clean-all
+.PHONY: help test build verify arch-test archetype-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed redeploy smoke-test verify-observability ui-e2e e2e-playwright e2e-playwright-seller e2e-playwright-buyer-app e2e-playwright-kmp local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap kind-teardown clean-images clean-all
 
 help: ## Show available developer commands
 	@awk 'BEGIN {FS = ":.*## "; printf "\nUsage:\n  make <target>\n\nTargets:\n"} /^[a-zA-Z0-9_.-]+:.*## / { printf "  %-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -43,6 +43,10 @@ docs-start: $(DOCS_STAMP) ## Start the docs site locally
 
 archetypes-install: ## Install archetypes into the local Maven repository
 	$(MVNW) -q -pl $(ARCHETYPE_MODULES) -am install
+
+archetype-test: ## Run archetype generation and integration tests
+	@echo "Running archetype generation tests..."
+	bash ./scripts/test-archetypes.sh
 
 install-hooks: ## Configure Git to use the repository-managed hooks
 	./scripts/install-git-hooks.sh

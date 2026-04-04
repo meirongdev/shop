@@ -8,17 +8,17 @@ A **cloud-native microservices e-commerce platform** built on **Java 25 + Spring
 
 ```
 Client
-  └→ api-gateway:8080 (Spring Cloud Gateway MVC, JWT validation, rate limiting)
-       ├→ /auth/**             → auth-server
-       ├→ /buyer/**            → buyer-portal (Kotlin + Thymeleaf SSR)
-       ├→ /buyer-app/**        → buyer-app (KMP WASM SPA)
-       ├→ /seller/**           → seller-portal (KMP WASM SPA)
-       ├→ /api/buyer/**        → buyer-bff (aggregates domain services)
-       ├→ /api/seller/**       → seller-bff (aggregates domain services)
-       ├→ /api/loyalty/**      → loyalty-service
-       ├→ /api/activity/**     → activity-service
-       ├→ /api/webhook/**      → webhook-service
-       └→ /api/subscription/** → subscription-service
+  └→ services/api-gateway:8080 (Spring Cloud Gateway MVC, JWT validation, rate limiting)
+       ├→ /auth/**             → services/auth-server
+       ├→ /buyer/**            → frontend/buyer-portal (Kotlin + Thymeleaf SSR)
+       ├→ /buyer-app/**        → frontend/kmp/buyer-app (KMP WASM SPA)
+       ├→ /seller/**           → frontend/kmp/seller-app (KMP WASM SPA)
+       ├→ /api/buyer/**        → services/buyer-bff (aggregates domain services)
+       ├→ /api/seller/**       → services/seller-bff (aggregates domain services)
+       ├→ /api/loyalty/**      → services/loyalty-service
+       ├→ /api/activity/**     → services/activity-service
+       ├→ /api/webhook/**      → services/webhook-service
+       └→ /api/subscription/** → services/subscription-service
 ```
 
 ### Technology Stack
@@ -40,16 +40,30 @@ Client
 
 | Module | Description |
 |--------|-------------|
-| `shop-common` | Common response envelope, error model, internal auth filter |
-| `shop-contracts` | API path constants, DTOs, event contracts |
-| `auth-server` | JWT authentication service |
-| `api-gateway` | Unified routing, JWT validation, trusted headers injection |
-| `buyer-bff` / `seller-bff` | Backend-for-Frontend aggregation layer |
-| `buyer-portal` | Kotlin SSR portal (Thymeleaf) — SEO/guest-mode buyer pages |
-| `buyer-app` | Buyer KMP WASM SPA — interactive shopping experience (`/buyer-app/`) |
-| `seller-portal` | Seller KMP WASM SPA — seller management app (`/seller/`) |
-| `kmp/*` | Compose Multiplatform buyer/seller apps (WASM, Android, iOS) |
+| `shared/shop-common` | Common response envelope, error model, internal auth filter |
+| `shared/shop-contracts` | API path constants, DTOs, event contracts |
+| `services/auth-server` | JWT authentication service |
+| `services/api-gateway` | Unified routing, JWT validation, trusted headers injection |
+| `services/buyer-bff` / `services/seller-bff` | Backend-for-Frontend aggregation layer |
+| `frontend/buyer-portal` | Kotlin SSR portal (Thymeleaf) — SEO/guest-mode buyer pages |
+| `frontend/kmp/buyer-app` | Buyer KMP WASM SPA — interactive shopping experience (`/buyer-app/`) |
+| `frontend/kmp/seller-app` | Seller KMP WASM SPA — seller management app (`/seller/`) |
+| `frontend/kmp/*` | Compose Multiplatform buyer/seller apps (WASM, Android, iOS) |
+| `services/*-service` | Domain services: profile, promotion, wallet, marketplace, order, search, notification, loyalty, activity, subscription, webhook |
 | Domain Services | `profile`, `promotion`, `wallet`, `marketplace`, `order`, `search`, `notification`, `loyalty`, `activity`, `subscription`, `webhook` |
+
+### New Directory Structure (April 2026)
+
+The repository has been restructured into logical domains:
+
+```
+shop/
+├── shared/              # Shared libraries (shop-common, shop-contracts)
+├── services/            # All backend microservices (15 modules)
+├── frontend/            # Frontend applications (buyer-portal, KMP, e2e-tests)
+├── platform/            # Infrastructure (k8s, kind, docker, scripts)
+└── tooling/             # Build quality (architecture-tests, archetypes)
+```
 
 ## Building and Running
 

@@ -8,16 +8,16 @@
 !**/src/**
 
 # Allow shared infrastructure and contracts
-!shop-common/**
-!shop-contracts/**
+!shared/shop-common/**
+!shared/shop-contracts/**
 
 # Allow the Dockerfile itself
-!docker/Dockerfile.module
-!docker/Dockerfile.fast
-!docker/Dockerfile.seller-portal
-!docker/Dockerfile.buyer-app
-!docker/nginx-seller.conf
-!docker/nginx-buyer.conf
+!platform/docker/Dockerfile.module
+!platform/docker/Dockerfile.fast
+!platform/docker/Dockerfile.seller-portal
+!platform/docker/Dockerfile.buyer-app
+!platform/docker/nginx-seller.conf
+!platform/docker/nginx-buyer.conf
 
 # Ignore build artifacts and IDE folders
 **/target/**
@@ -35,5 +35,5 @@ node_modules
 !**/target/*.jar
 
 # Allow KMP WASM build outputs for seller-portal and buyer-app images
-!kmp/seller-app/build/dist/**
-!kmp/buyer-app/build/dist/**
+!frontend/kmp/seller-app/build/dist/**
+!frontend/kmp/buyer-app/build/dist/**

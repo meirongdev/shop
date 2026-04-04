@@ -1,0 +1,20 @@
+ARG MODULE
+ARG MODULE_DIR=services/${MODULE}
+
+FROM maven:3.9-eclipse-temurin-25 AS builder
+ARG MODULE_DIR
+WORKDIR /workspace
+COPY . .
+RUN --mount=type=cache,target=/root/.m2 mvn -pl ${MODULE_DIR} -am clean package -DskipTests -q
+
+FROM eclipse-temurin:25-jre
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+ARG MODULE
+ARG MODULE_DIR=services/${MODULE}
+COPY --from=builder /workspace/${MODULE_DIR}/target/${MODULE}-0.1.0-SNAPSHOT.jar app.jar
+EXPOSE 8080
+EXPOSE 8081
+USER appuser
+ENTRYPOINT ["java","-XX:MaxRAMPercentage=70.0","-XX:+HeapDumpOnOutOfMemoryError","-XX:HeapDumpPath=/tmp/heapdump.hprof","-jar","/app/app.jar"]

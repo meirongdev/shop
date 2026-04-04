@@ -13,27 +13,27 @@
   <name>shop-platform</name>
   <description>Cloud-native shop technical validation platform</description>
   <modules>
-    <module>shop-common</module>
-    <module>shop-contracts</module>
-    <module>architecture-tests</module>
-    <module>shop-archetypes</module>
-    <module>archetype-tests</module>
-    <module>auth-server</module>
-    <module>api-gateway</module>
-    <module>buyer-bff</module>
-    <module>seller-bff</module>
-    <module>profile-service</module>
-    <module>promotion-service</module>
-    <module>wallet-service</module>
-    <module>marketplace-service</module>
-    <module>order-service</module>
-    <module>search-service</module>
-    <module>notification-service</module>
-    <module>loyalty-service</module>
-    <module>activity-service</module>
-        <module>webhook-service</module>
-        <module>subscription-service</module>
-        <module>buyer-portal</module>
+    <module>shared/shop-common</module>
+    <module>shared/shop-contracts</module>
+    <module>tooling/architecture-tests</module>
+    <module>tooling/shop-archetypes</module>
+    <module>tooling/archetype-tests</module>
+    <module>services/auth-server</module>
+    <module>services/api-gateway</module>
+    <module>services/buyer-bff</module>
+    <module>services/seller-bff</module>
+    <module>services/profile-service</module>
+    <module>services/promotion-service</module>
+    <module>services/wallet-service</module>
+    <module>services/marketplace-service</module>
+    <module>services/order-service</module>
+    <module>services/search-service</module>
+    <module>services/notification-service</module>
+    <module>services/loyalty-service</module>
+    <module>services/activity-service</module>
+    <module>services/webhook-service</module>
+    <module>services/subscription-service</module>
+    <module>frontend/buyer-portal</module>
   </modules>
   <properties>
     <java.version>25</java.version>

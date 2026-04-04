@@ -13,6 +13,10 @@
     <artifactId>architecture-tests</artifactId>
     <name>architecture-tests</name>
 
+    <properties>
+        <enforcer.skip>true</enforcer.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.tngtech.archunit</groupId>

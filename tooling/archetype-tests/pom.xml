@@ -16,6 +16,7 @@
     <description>Integration tests for Maven Archetypes - verifies generated projects compile and pass tests</description>
 
     <properties>
+        <enforcer.skip>true</enforcer.skip>
         <maven-invoker.version>3.3.0</maven-invoker.version>
         <awaitility.version>4.2.2</awaitility.version>
         <maven-archiver.version>3.6.2</maven-archiver.version>

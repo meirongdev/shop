@@ -26,7 +26,7 @@ verify: ## Run the local DX verification set (Maven verify + docs-site build)
 	$(MAKE) docs-build
 
 arch-test: ## Run architecture-tests with required modules
-	$(MVNW) -q -pl architecture-tests -am test
+	$(MVNW) -q -pl tooling/architecture-tests -am test
 
 $(DOCS_STAMP): $(DOCS_DIR)/package-lock.json
 	cd $(DOCS_DIR) && npm ci
@@ -101,7 +101,7 @@ ui-e2e: ## Run buyer SSR and seller/buyer KMP page automation checks
 	bash platform/scripts/ui-e2e.sh
 
 e2e-playwright: ## Run Playwright buyer tests (requires: make local-access running)
-	cd e2e-tests && npx playwright test --project=buyer
+	cd frontend/e2e-tests && npx playwright test --project=buyer
 
 e2e-playwright-seller: ## Build seller WASM, start proxy, run Playwright seller tests
 	bash platform/scripts/kmp-e2e.sh --seller

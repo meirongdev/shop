@@ -75,9 +75,10 @@ class OrderContractTest {
     @Test
     void listOrders_deserializesOrderListCorrectly() throws JsonProcessingException {
         OrderApi.OrderResponse order = new OrderApi.OrderResponse(
-                UUID.randomUUID(), "buyer-001", "ORD-001", "PAID",
-                new BigDecimal("99.99"), "STRIPE", Instant.now(), Instant.now(),
-                null, null, null, null, List.of(), null);
+                UUID.randomUUID(), "ORD-001", "BUYER", null, "buyer-001", "seller-001", "PAID",
+                new BigDecimal("89.99"), new BigDecimal("10.00"), new BigDecimal("99.99"),
+                null, null, "txn-123", List.of(),
+                Instant.now(), null, null, null, null, Instant.now(), Instant.now());
         ApiResponse<List<OrderApi.OrderResponse>> apiResp = ApiResponse.success(List.of(order));
 
         stubFor(post(urlEqualTo(OrderApi.ORDER_LIST))
@@ -86,10 +87,10 @@ class OrderContractTest {
                         .withHeader("Content-Type", "application/json")
                         .withBody(objectMapper.writeValueAsString(apiResp))));
 
-        List<OrderApi.OrderResponse> result = aggregationService.listOrders("buyer-001");
+        List<OrderApi.OrderResponse> result = aggregationService.listOrders("buyer-001", "BUYER");
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).orderId()).isEqualTo("ORD-001");
+        assertThat(result.get(0).orderNo()).isEqualTo("ORD-001");
         assertThat(result.get(0).status()).isEqualTo("PAID");
         assertThat(result.get(0).totalAmount()).isEqualByComparingTo("99.99");
     }
@@ -98,12 +99,13 @@ class OrderContractTest {
     void getOrder_deserializesOrderDetailCorrectly() throws JsonProcessingException {
         UUID itemId = UUID.randomUUID();
         OrderApi.OrderItemResponse item = new OrderApi.OrderItemResponse(
-                itemId, "prod-001", "Test Product", new BigDecimal("49.99"), 2,
-                new BigDecimal("99.98"), null);
+                itemId, "ORD-002", "prod-001", "Test Product", new BigDecimal("49.99"), 2,
+                new BigDecimal("99.98"));
         OrderApi.OrderResponse order = new OrderApi.OrderResponse(
-                UUID.randomUUID(), "buyer-001", "ORD-002", "SHIPPED",
-                new BigDecimal("99.99"), "STRIPE", Instant.now(), Instant.now(),
-                null, null, "TRACK123", "FedEx", List.of(item), null);
+                UUID.randomUUID(), "ORD-002", "BUYER", null, "buyer-001", "seller-001", "SHIPPED",
+                new BigDecimal("89.99"), new BigDecimal("10.00"), new BigDecimal("99.99"),
+                null, null, "txn-456", List.of(item),
+                Instant.now(), Instant.now(), null, null, null, Instant.now(), Instant.now());
         ApiResponse<OrderApi.OrderResponse> apiResp = ApiResponse.success(order);
 
         stubFor(post(urlEqualTo(OrderApi.ORDER_GET))
@@ -112,10 +114,10 @@ class OrderContractTest {
                         .withHeader("Content-Type", "application/json")
                         .withBody(objectMapper.writeValueAsString(apiResp))));
 
-        OrderApi.OrderResponse result = aggregationService.getOrder("buyer-001", "ORD-002");
+        OrderApi.OrderResponse result = aggregationService.getOrder("ORD-002");
 
-        assertThat(result.orderId()).isEqualTo("ORD-002");
-        assertThat(result.trackingNumber()).isEqualTo("TRACK123");
+        assertThat(result.orderNo()).isEqualTo("ORD-002");
+        assertThat(result.status()).isEqualTo("SHIPPED");
         assertThat(result.items()).hasSize(1);
         assertThat(result.items().get(0).productName()).isEqualTo("Test Product");
     }
@@ -123,9 +125,10 @@ class OrderContractTest {
     @Test
     void cancelOrder_returnsCancelledOrder() throws JsonProcessingException {
         OrderApi.OrderResponse order = new OrderApi.OrderResponse(
-                UUID.randomUUID(), "buyer-001", "ORD-003", "CANCELLED",
-                new BigDecimal("50.00"), "WALLET", Instant.now(), Instant.now(),
-                null, null, null, null, List.of(), "User requested cancellation");
+                UUID.randomUUID(), "ORD-003", "BUYER", null, "buyer-001", "seller-001", "CANCELLED",
+                new BigDecimal("50.00"), new BigDecimal("0.00"), new BigDecimal("50.00"),
+                null, null, "txn-789", List.of(),
+                Instant.now(), null, null, null, Instant.now(), Instant.now(), Instant.now());
         ApiResponse<OrderApi.OrderResponse> apiResp = ApiResponse.success(order);
 
         stubFor(post(urlEqualTo(OrderApi.ORDER_CANCEL))
@@ -134,9 +137,8 @@ class OrderContractTest {
                         .withHeader("Content-Type", "application/json")
                         .withBody(objectMapper.writeValueAsString(apiResp))));
 
-        OrderApi.OrderResponse result = aggregationService.cancelOrder("buyer-001", "ORD-003");
+        OrderApi.OrderResponse result = aggregationService.cancelOrder("ORD-003", "buyer-001");
 
         assertThat(result.status()).isEqualTo("CANCELLED");
-        assertThat(result.cancellationReason()).isEqualTo("User requested cancellation");
     }
 }

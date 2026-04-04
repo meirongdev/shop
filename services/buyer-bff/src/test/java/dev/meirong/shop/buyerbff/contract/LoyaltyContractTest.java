@@ -79,7 +79,7 @@ class LoyaltyContractTest {
                 "buyer-001", 2000L, 500L, 1500L, "BRONZE", 100L);
         ApiResponse<LoyaltyApi.AccountResponse> apiResp = ApiResponse.success(account);
 
-        stubFor(post(urlEqualTo(LoyaltyApi.LOYALTY_ACCOUNT))
+        stubFor(post(urlEqualTo(LoyaltyApi.ACCOUNT))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")

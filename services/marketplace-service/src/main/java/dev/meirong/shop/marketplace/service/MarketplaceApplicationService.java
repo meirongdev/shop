@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
+import dev.meirong.shop.common.metrics.MetricsHelper;
 import dev.meirong.shop.contracts.api.MarketplaceApi;
 import dev.meirong.shop.contracts.api.MarketplaceInternalApi;
 import dev.meirong.shop.contracts.event.EventEnvelope;
@@ -14,6 +15,7 @@ import dev.meirong.shop.marketplace.domain.MarketplaceProductEntity;
 import dev.meirong.shop.marketplace.domain.MarketplaceProductRepository;
 import dev.meirong.shop.marketplace.domain.ProductCategoryEntity;
 import dev.meirong.shop.marketplace.domain.ProductCategoryRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -38,19 +40,22 @@ public class MarketplaceApplicationService {
     private final ObjectMapper objectMapper;
     private final RedissonClient redissonClient;
     private final String productTopic;
+    private final MetricsHelper metrics;
 
     public MarketplaceApplicationService(MarketplaceProductRepository repository,
                                          ProductCategoryRepository categoryRepository,
                                          MarketplaceOutboxEventRepository outboxRepository,
                                          ObjectMapper objectMapper,
                                          RedissonClient redissonClient,
-                                         @Value("${shop.marketplace.outbox.topic:marketplace.product.events.v1}") String productTopic) {
+                                         @Value("${shop.marketplace.outbox.topic:marketplace.product.events.v1}") String productTopic,
+                                         MeterRegistry meterRegistry) {
         this.repository = repository;
         this.categoryRepository = categoryRepository;
         this.outboxRepository = outboxRepository;
         this.objectMapper = objectMapper;
         this.redissonClient = redissonClient;
         this.productTopic = productTopic;
+        this.metrics = new MetricsHelper("marketplace-service", meterRegistry);
     }
 
     @Transactional(readOnly = true)
@@ -85,6 +90,7 @@ public class MarketplaceApplicationService {
         );
         MarketplaceProductEntity saved = repository.save(entity);
         writeOutboxEvent(saved, MarketplaceEventType.PRODUCT_CREATED);
+        metrics.increment("shop_product_created_total");
         return toResponse(saved);
     }
 
@@ -105,6 +111,7 @@ public class MarketplaceApplicationService {
         MarketplaceProductEntity saved = repository.save(entity);
         MarketplaceEventType eventType = resolveUpdateEventType(wasBefore, saved.isPublished());
         writeOutboxEvent(saved, eventType);
+        metrics.increment("shop_product_updated_total", "seller_id", request.sellerId());
         return toResponse(saved);
     }
 
@@ -144,6 +151,7 @@ public class MarketplaceApplicationService {
                         "Insufficient inventory for product: " + entity.getName());
             }
             repository.save(entity);
+            metrics.increment("shop_inventory_deducted_total", "product_id", request.productId());
         });
     }
 
@@ -155,6 +163,7 @@ public class MarketplaceApplicationService {
                             CommonErrorCode.NOT_FOUND, "Product not found: " + request.productId()));
             entity.restoreInventory(request.quantity());
             repository.save(entity);
+            metrics.increment("shop_inventory_restored_total", "product_id", request.productId());
         });
     }
 

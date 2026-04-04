@@ -3,6 +3,7 @@ package dev.meirong.shop.sellerbff.service;
 import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
+import dev.meirong.shop.common.metrics.MetricsHelper;
 import dev.meirong.shop.common.resilience.ResilienceHelper;
 import dev.meirong.shop.contracts.api.MarketplaceApi;
 import dev.meirong.shop.contracts.api.OrderApi;
@@ -12,6 +13,8 @@ import dev.meirong.shop.contracts.api.SearchApi;
 import dev.meirong.shop.contracts.api.SellerApi;
 import dev.meirong.shop.contracts.api.WalletApi;
 import dev.meirong.shop.sellerbff.config.SellerClientProperties;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,45 +39,76 @@ public class SellerAggregationService {
     private final RestClient searchRestClient;
     private final SellerClientProperties properties;
     private final ResilienceHelper resilienceHelper;
+    private final MetricsHelper metrics;
 
     public SellerAggregationService(RestClient.Builder builder,
                                     @Qualifier("searchRestClient") RestClient searchRestClient,
                                     SellerClientProperties properties,
-                                    ResilienceHelper resilienceHelper) {
+                                    ResilienceHelper resilienceHelper,
+                                    MeterRegistry meterRegistry) {
         this.restClient = builder.build();
         this.searchRestClient = searchRestClient;
         this.properties = properties;
         this.resilienceHelper = resilienceHelper;
+        this.metrics = new MetricsHelper("seller-bff", meterRegistry);
     }
 
     public SellerApi.DashboardResponse loadDashboard(String sellerId) {
-        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var productsFuture = executor.submit(() -> listProductsForSeller(sellerId));
-            var offersFuture = executor.submit(this::listOffersForSeller);
-            List<MarketplaceApi.ProductResponse> products = productsFuture.get();
-            List<PromotionApi.OfferResponse> offers = offersFuture.get();
-            long activePromotionCount = offers.stream().filter(offer -> sellerId.equals(offer.source())).count();
-            return new SellerApi.DashboardResponse(products.size(), activePromotionCount, products, offers);
+        Timer.Sample sample = metrics.startTimer();
+        String result = "success";
+        try {
+            try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                var productsFuture = executor.submit(() -> listProductsForSeller(sellerId));
+                var offersFuture = executor.submit(this::listOffersForSeller);
+                List<MarketplaceApi.ProductResponse> products = productsFuture.get();
+                List<PromotionApi.OfferResponse> offers = offersFuture.get();
+                long activePromotionCount = offers.stream().filter(offer -> sellerId.equals(offer.source())).count();
+                return new SellerApi.DashboardResponse(products.size(), activePromotionCount, products, offers);
+            }
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new BusinessException(CommonErrorCode.INTERNAL_ERROR, "Seller dashboard interrupted", exception);
         } catch (ExecutionException exception) {
+            result = "failure";
             throw new BusinessException(CommonErrorCode.DOWNSTREAM_ERROR, "Seller dashboard aggregation failed", exception);
+        } finally {
+            metrics.increment("shop_seller_dashboard_operation_total", "operation", "load", "result", result);
+            sample.stop(metrics.timer("shop_seller_dashboard_operation_duration_seconds", "operation", "load", "result", result));
         }
     }
 
     public MarketplaceApi.ProductResponse createProduct(MarketplaceApi.UpsertProductRequest request) {
-        return call("marketplaceService", false,
-                () -> post(properties.marketplaceServiceUrl() + MarketplaceApi.CREATE, request,
-                        new ParameterizedTypeReference<ApiResponse<MarketplaceApi.ProductResponse>>() {}),
-                "Marketplace service is temporarily unavailable");
+        Timer.Sample sample = metrics.startTimer();
+        String result = "success";
+        try {
+            return call("marketplaceService", false,
+                    () -> post(properties.marketplaceServiceUrl() + MarketplaceApi.CREATE, request,
+                            new ParameterizedTypeReference<ApiResponse<MarketplaceApi.ProductResponse>>() {}),
+                    "Marketplace service is temporarily unavailable");
+        } catch (RuntimeException e) {
+            result = "failure";
+            throw e;
+        } finally {
+            metrics.increment("shop_seller_product_operation_total", "operation", "create", "result", result);
+            sample.stop(metrics.timer("shop_seller_product_operation_duration_seconds", "operation", "create", "result", result));
+        }
     }
 
     public MarketplaceApi.ProductResponse updateProduct(MarketplaceApi.UpsertProductRequest request) {
-        return call("marketplaceService", false,
-                () -> post(properties.marketplaceServiceUrl() + MarketplaceApi.UPDATE, request,
-                        new ParameterizedTypeReference<ApiResponse<MarketplaceApi.ProductResponse>>() {}),
-                "Marketplace service is temporarily unavailable");
+        Timer.Sample sample = metrics.startTimer();
+        String result = "success";
+        try {
+            return call("marketplaceService", false,
+                    () -> post(properties.marketplaceServiceUrl() + MarketplaceApi.UPDATE, request,
+                            new ParameterizedTypeReference<ApiResponse<MarketplaceApi.ProductResponse>>() {}),
+                    "Marketplace service is temporarily unavailable");
+        } catch (RuntimeException e) {
+            result = "failure";
+            throw e;
+        } finally {
+            metrics.increment("shop_seller_product_operation_total", "operation", "update", "result", result);
+            sample.stop(metrics.timer("shop_seller_product_operation_duration_seconds", "operation", "update", "result", result));
+        }
     }
 
     public PromotionApi.OfferResponse createPromotion(PromotionApi.CreateOfferRequest request) {
@@ -85,74 +119,164 @@ public class SellerAggregationService {
     }
 
     public List<OrderApi.OrderResponse> listOrders(String sellerId) {
-        return call("orderService", false,
-                () -> post(properties.orderServiceUrl() + OrderApi.ORDER_LIST,
-                        new OrderApi.ListOrdersRequest(sellerId, "seller"),
-                        new ParameterizedTypeReference<ApiResponse<List<OrderApi.OrderResponse>>>() {}),
-                "Order service is temporarily unavailable");
+        Timer.Sample sample = metrics.startTimer();
+        String result = "success";
+        try {
+            return call("orderService", false,
+                    () -> post(properties.orderServiceUrl() + OrderApi.ORDER_LIST,
+                            new OrderApi.ListOrdersRequest(sellerId, "seller"),
+                            new ParameterizedTypeReference<ApiResponse<List<OrderApi.OrderResponse>>>() {}),
+                    "Order service is temporarily unavailable");
+        } catch (RuntimeException e) {
+            result = "failure";
+            throw e;
+        } finally {
+            metrics.increment("shop_seller_order_operation_total", "operation", "list", "result", result);
+            sample.stop(metrics.timer("shop_seller_order_operation_duration_seconds", "operation", "list", "result", result));
+        }
     }
 
     public OrderApi.OrderResponse getOrder(String orderId) {
-        return call("orderService", false,
-                () -> post(properties.orderServiceUrl() + OrderApi.ORDER_GET,
-                        new OrderApi.GetOrderRequest(orderId),
-                        new ParameterizedTypeReference<ApiResponse<OrderApi.OrderResponse>>() {}),
-                "Order service is temporarily unavailable");
+        Timer.Sample sample = metrics.startTimer();
+        String result = "success";
+        try {
+            return call("orderService", false,
+                    () -> post(properties.orderServiceUrl() + OrderApi.ORDER_GET,
+                            new OrderApi.GetOrderRequest(orderId),
+                            new ParameterizedTypeReference<ApiResponse<OrderApi.OrderResponse>>() {}),
+                    "Order service is temporarily unavailable");
+        } catch (RuntimeException e) {
+            result = "failure";
+            throw e;
+        } finally {
+            metrics.increment("shop_seller_order_operation_total", "operation", "get", "result", result);
+            sample.stop(metrics.timer("shop_seller_order_operation_duration_seconds", "operation", "get", "result", result));
+        }
     }
 
     public OrderApi.OrderResponse shipOrder(String orderId) {
-        return call("orderService", false,
-                () -> post(properties.orderServiceUrl() + OrderApi.ORDER_SHIP,
-                        new OrderApi.ShipOrderRequest(orderId, null, "PENDING"),
-                        new ParameterizedTypeReference<ApiResponse<OrderApi.OrderResponse>>() {}),
-                "Order service is temporarily unavailable");
+        Timer.Sample sample = metrics.startTimer();
+        String result = "success";
+        try {
+            return call("orderService", false,
+                    () -> post(properties.orderServiceUrl() + OrderApi.ORDER_SHIP,
+                            new OrderApi.ShipOrderRequest(orderId, null, "PENDING"),
+                            new ParameterizedTypeReference<ApiResponse<OrderApi.OrderResponse>>() {}),
+                    "Order service is temporarily unavailable");
+        } catch (RuntimeException e) {
+            result = "failure";
+            throw e;
+        } finally {
+            metrics.increment("shop_seller_order_operation_total", "operation", "ship", "result", result);
+            sample.stop(metrics.timer("shop_seller_order_operation_duration_seconds", "operation", "ship", "result", result));
+        }
     }
 
     public OrderApi.OrderResponse deliverOrder(String orderId) {
-        return call("orderService", false,
-                () -> post(properties.orderServiceUrl() + OrderApi.ORDER_DELIVER,
-                        new OrderApi.ConfirmOrderRequest(orderId),
-                        new ParameterizedTypeReference<ApiResponse<OrderApi.OrderResponse>>() {}),
-                "Order service is temporarily unavailable");
+        Timer.Sample sample = metrics.startTimer();
+        String result = "success";
+        try {
+            return call("orderService", false,
+                    () -> post(properties.orderServiceUrl() + OrderApi.ORDER_DELIVER,
+                            new OrderApi.ConfirmOrderRequest(orderId),
+                            new ParameterizedTypeReference<ApiResponse<OrderApi.OrderResponse>>() {}),
+                    "Order service is temporarily unavailable");
+        } catch (RuntimeException e) {
+            result = "failure";
+            throw e;
+        } finally {
+            metrics.increment("shop_seller_order_operation_total", "operation", "deliver", "result", result);
+            sample.stop(metrics.timer("shop_seller_order_operation_duration_seconds", "operation", "deliver", "result", result));
+        }
     }
 
     public OrderApi.OrderResponse cancelOrder(String orderId, String reason) {
-        return call("orderService", false,
-                () -> post(properties.orderServiceUrl() + OrderApi.ORDER_CANCEL,
-                        new OrderApi.CancelOrderRequest(orderId, reason),
-                        new ParameterizedTypeReference<ApiResponse<OrderApi.OrderResponse>>() {}),
-                "Order service is temporarily unavailable");
+        Timer.Sample sample = metrics.startTimer();
+        String result = "success";
+        try {
+            return call("orderService", false,
+                    () -> post(properties.orderServiceUrl() + OrderApi.ORDER_CANCEL,
+                            new OrderApi.CancelOrderRequest(orderId, reason),
+                            new ParameterizedTypeReference<ApiResponse<OrderApi.OrderResponse>>() {}),
+                    "Order service is temporarily unavailable");
+        } catch (RuntimeException e) {
+            result = "failure";
+            throw e;
+        } finally {
+            metrics.increment("shop_seller_order_operation_total", "operation", "cancel", "result", result);
+            sample.stop(metrics.timer("shop_seller_order_operation_duration_seconds", "operation", "cancel", "result", result));
+        }
     }
 
     public WalletApi.WalletAccountResponse getWallet(String sellerId) {
-        return call("walletService", false,
-                () -> post(properties.walletServiceUrl() + WalletApi.GET,
-                        new WalletApi.GetWalletRequest(sellerId),
-                        new ParameterizedTypeReference<ApiResponse<WalletApi.WalletAccountResponse>>() {}),
-                "Wallet service is temporarily unavailable");
+        Timer.Sample sample = metrics.startTimer();
+        String result = "success";
+        try {
+            return call("walletService", false,
+                    () -> post(properties.walletServiceUrl() + WalletApi.GET,
+                            new WalletApi.GetWalletRequest(sellerId),
+                            new ParameterizedTypeReference<ApiResponse<WalletApi.WalletAccountResponse>>() {}),
+                    "Wallet service is temporarily unavailable");
+        } catch (RuntimeException e) {
+            result = "failure";
+            throw e;
+        } finally {
+            metrics.increment("shop_seller_wallet_operation_total", "operation", "get", "result", result);
+            sample.stop(metrics.timer("shop_seller_wallet_operation_duration_seconds", "operation", "get", "result", result));
+        }
     }
 
     public WalletApi.TransactionResponse withdrawWallet(WalletApi.WithdrawRequest request) {
-        return call("walletService", false,
-                () -> post(properties.walletServiceUrl() + WalletApi.WITHDRAW,
-                        request,
-                        new ParameterizedTypeReference<ApiResponse<WalletApi.TransactionResponse>>() {}),
-                "Wallet service is temporarily unavailable");
+        Timer.Sample sample = metrics.startTimer();
+        String result = "success";
+        try {
+            return call("walletService", false,
+                    () -> post(properties.walletServiceUrl() + WalletApi.WITHDRAW,
+                            request,
+                            new ParameterizedTypeReference<ApiResponse<WalletApi.TransactionResponse>>() {}),
+                    "Wallet service is temporarily unavailable");
+        } catch (RuntimeException e) {
+            result = "failure";
+            throw e;
+        } finally {
+            metrics.increment("shop_seller_wallet_operation_total", "operation", "withdraw", "result", result);
+            sample.stop(metrics.timer("shop_seller_wallet_operation_duration_seconds", "operation", "withdraw", "result", result));
+        }
     }
 
     public ProfileApi.ProfileResponse getProfile(String sellerId) {
-        return call("profileService", true,
-                () -> post(properties.profileServiceUrl() + ProfileApi.SELLER_GET,
-                        new ProfileApi.GetProfileRequest(sellerId),
-                        new ParameterizedTypeReference<ApiResponse<ProfileApi.ProfileResponse>>() {}),
-                "Profile service is temporarily unavailable");
+        Timer.Sample sample = metrics.startTimer();
+        String result = "success";
+        try {
+            return call("profileService", true,
+                    () -> post(properties.profileServiceUrl() + ProfileApi.SELLER_GET,
+                            new ProfileApi.GetProfileRequest(sellerId),
+                            new ParameterizedTypeReference<ApiResponse<ProfileApi.ProfileResponse>>() {}),
+                    "Profile service is temporarily unavailable");
+        } catch (RuntimeException e) {
+            result = "failure";
+            throw e;
+        } finally {
+            metrics.increment("shop_seller_profile_operation_total", "operation", "get", "result", result);
+            sample.stop(metrics.timer("shop_seller_profile_operation_duration_seconds", "operation", "get", "result", result));
+        }
     }
 
     public ProfileApi.ProfileResponse updateProfile(ProfileApi.UpdateProfileRequest request) {
-        return call("profileService", false,
-                () -> post(properties.profileServiceUrl() + ProfileApi.SELLER_UPDATE, request,
-                        new ParameterizedTypeReference<ApiResponse<ProfileApi.ProfileResponse>>() {}),
-                "Profile service is temporarily unavailable");
+        Timer.Sample sample = metrics.startTimer();
+        String result = "success";
+        try {
+            return call("profileService", false,
+                    () -> post(properties.profileServiceUrl() + ProfileApi.SELLER_UPDATE, request,
+                            new ParameterizedTypeReference<ApiResponse<ProfileApi.ProfileResponse>>() {}),
+                    "Profile service is temporarily unavailable");
+        } catch (RuntimeException e) {
+            result = "failure";
+            throw e;
+        } finally {
+            metrics.increment("shop_seller_profile_operation_total", "operation", "update", "result", result);
+            sample.stop(metrics.timer("shop_seller_profile_operation_duration_seconds", "operation", "update", "result", result));
+        }
     }
 
     public ProfileApi.SellerStorefrontResponse getShop(String sellerId) {
@@ -186,9 +310,19 @@ public class SellerAggregationService {
     }
 
     public SearchApi.SearchProductsResponse searchProducts(MarketplaceApi.SearchProductsRequest request) {
-        return call("searchService", true,
-                () -> searchProductsFromSearchService(request),
-                throwable -> searchProductsFallback(request, throwable));
+        Timer.Sample sample = metrics.startTimer();
+        String result = "success";
+        try {
+            return call("searchService", true,
+                    () -> searchProductsFromSearchService(request),
+                    throwable -> searchProductsFallback(request, throwable));
+        } catch (RuntimeException e) {
+            result = "failure";
+            throw e;
+        } finally {
+            metrics.increment("shop_seller_product_operation_total", "operation", "search", "result", result);
+            sample.stop(metrics.timer("shop_seller_product_operation_duration_seconds", "operation", "search", "result", result));
+        }
     }
 
     public SearchApi.SearchProductsResponse searchProductsFallback(MarketplaceApi.SearchProductsRequest request, Throwable throwable) {

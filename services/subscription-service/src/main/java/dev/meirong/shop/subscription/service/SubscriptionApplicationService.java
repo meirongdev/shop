@@ -2,11 +2,13 @@ package dev.meirong.shop.subscription.service;
 
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
+import dev.meirong.shop.common.metrics.MetricsHelper;
 import dev.meirong.shop.contracts.api.SubscriptionApi;
 import dev.meirong.shop.subscription.domain.SubscriptionEntity;
 import dev.meirong.shop.subscription.domain.SubscriptionPlanEntity;
 import dev.meirong.shop.subscription.domain.SubscriptionPlanRepository;
 import dev.meirong.shop.subscription.domain.SubscriptionRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,11 +18,14 @@ public class SubscriptionApplicationService {
 
     private final SubscriptionPlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final MetricsHelper metrics;
 
     public SubscriptionApplicationService(SubscriptionPlanRepository planRepository,
-                                           SubscriptionRepository subscriptionRepository) {
+                                           SubscriptionRepository subscriptionRepository,
+                                           MeterRegistry meterRegistry) {
         this.planRepository = planRepository;
         this.subscriptionRepository = subscriptionRepository;
+        this.metrics = new MetricsHelper("subscription-service", meterRegistry);
     }
 
     @Transactional
@@ -32,6 +37,8 @@ public class SubscriptionApplicationService {
         SubscriptionPlanEntity entity = SubscriptionPlanEntity.create(
                 request.sellerId(), request.productId(), request.name(),
                 request.description(), request.price(), request.frequency());
+        metrics.increment("shop_subscription_plan_created_total",
+                "frequency", request.frequency());
         return toPlanResponse(planRepository.save(entity));
     }
 
@@ -59,6 +66,8 @@ public class SubscriptionApplicationService {
         }
         SubscriptionEntity sub = SubscriptionEntity.create(
                 request.buyerId(), request.planId(), request.quantity(), plan.getFrequency());
+        metrics.increment("shop_subscription_created_total",
+                "frequency", plan.getFrequency());
         return toSubResponse(subscriptionRepository.save(sub));
     }
 
@@ -73,6 +82,7 @@ public class SubscriptionApplicationService {
     public SubscriptionApi.SubscriptionResponse pause(String subscriptionId) {
         SubscriptionEntity sub = findSubscription(subscriptionId);
         sub.pause();
+        metrics.increment("shop_subscription_paused_total");
         return toSubResponse(subscriptionRepository.save(sub));
     }
 
@@ -83,6 +93,7 @@ public class SubscriptionApplicationService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.NOT_FOUND,
                         "Plan not found: " + sub.getPlanId()));
         sub.resume(plan.getFrequency());
+        metrics.increment("shop_subscription_resumed_total");
         return toSubResponse(subscriptionRepository.save(sub));
     }
 
@@ -90,6 +101,7 @@ public class SubscriptionApplicationService {
     public SubscriptionApi.SubscriptionResponse cancel(String subscriptionId) {
         SubscriptionEntity sub = findSubscription(subscriptionId);
         sub.cancel();
+        metrics.increment("shop_subscription_cancelled_total");
         return toSubResponse(subscriptionRepository.save(sub));
     }
 

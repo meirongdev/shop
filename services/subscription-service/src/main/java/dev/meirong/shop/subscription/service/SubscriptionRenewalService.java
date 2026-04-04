@@ -1,11 +1,14 @@
 package dev.meirong.shop.subscription.service;
 
+import dev.meirong.shop.common.metrics.MetricsHelper;
 import dev.meirong.shop.subscription.domain.SubscriptionEntity;
 import dev.meirong.shop.subscription.domain.SubscriptionOrderLogEntity;
 import dev.meirong.shop.subscription.domain.SubscriptionOrderLogRepository;
 import dev.meirong.shop.subscription.domain.SubscriptionPlanEntity;
 import dev.meirong.shop.subscription.domain.SubscriptionPlanRepository;
 import dev.meirong.shop.subscription.domain.SubscriptionRepository;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -29,28 +32,34 @@ public class SubscriptionRenewalService {
     private final SubscriptionPlanRepository planRepository;
     private final SubscriptionOrderLogRepository orderLogRepository;
     private final RedissonClient redissonClient;
+    private final MetricsHelper metrics;
 
     public SubscriptionRenewalService(SubscriptionRepository subscriptionRepository,
                                        SubscriptionPlanRepository planRepository,
                                        SubscriptionOrderLogRepository orderLogRepository,
-                                       RedissonClient redissonClient) {
+                                       RedissonClient redissonClient,
+                                       MeterRegistry meterRegistry) {
         this.subscriptionRepository = subscriptionRepository;
         this.planRepository = planRepository;
         this.orderLogRepository = orderLogRepository;
         this.redissonClient = redissonClient;
+        this.metrics = new MetricsHelper("subscription-service", meterRegistry);
     }
 
     @Scheduled(cron = "${shop.subscription.renewal-cron:0 0 2 * * ?}")
     @Transactional
     public void processRenewals() {
+        Timer.Sample sample = metrics.startTimer();
         RLock lock = redissonClient.getLock(RENEWAL_LOCK);
         boolean acquired = false;
         try {
             acquired = lock.tryLock(0, RENEWAL_LOCK_LEASE_SECONDS, TimeUnit.SECONDS);
             if (!acquired) {
                 log.debug("Skipping subscription renewal because lock {} is held by another instance", RENEWAL_LOCK);
+                metrics.increment("shop_subscription_renewal_skipped_total");
                 return;
             }
+            metrics.increment("shop_subscription_renewal_locked_total");
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             log.warn("Interrupted while acquiring renewal lock {}", RENEWAL_LOCK);
@@ -63,13 +72,25 @@ public class SubscriptionRenewalService {
             if (dueSubscriptions.isEmpty()) return;
 
             log.info("Processing {} subscription renewals", dueSubscriptions.size());
+            int successCount = 0;
+            int failureCount = 0;
             for (SubscriptionEntity sub : dueSubscriptions) {
+                Timer.Sample renewSample = metrics.startTimer();
                 try {
                     renewSubscription(sub);
+                    successCount++;
+                    metrics.recordTimer(renewSample, "shop_subscription_single_renewal_duration_seconds", "success",
+                            "frequency", sub.getPlanId());
                 } catch (RuntimeException exception) {
+                    failureCount++;
                     log.error("Failed to renew subscription {}: {}", sub.getId(), exception.getMessage());
+                    metrics.recordTimer(renewSample, "shop_subscription_single_renewal_duration_seconds", "failure",
+                            "frequency", sub.getPlanId());
                 }
             }
+            metrics.increment("shop_subscription_renewal_processed_total",
+                    "status", successCount > 0 ? "success" : "skipped");
+            sample.stop(metrics.timer("shop_subscription_renewal_duration_seconds"));
         } finally {
             if (acquired) {
                 lock.unlock();

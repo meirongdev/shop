@@ -1,10 +1,13 @@
 package dev.meirong.shop.webhook.service;
 
+import dev.meirong.shop.common.metrics.MetricsHelper;
 import dev.meirong.shop.webhook.config.WebhookProperties;
 import dev.meirong.shop.webhook.domain.WebhookDeliveryEntity;
 import dev.meirong.shop.webhook.domain.WebhookDeliveryRepository;
 import dev.meirong.shop.webhook.domain.WebhookEndpointEntity;
 import dev.meirong.shop.webhook.domain.WebhookEndpointRepository;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -28,16 +31,19 @@ public class WebhookDeliveryService {
     private final WebhookDeliveryRepository deliveryRepository;
     private final WebhookProperties properties;
     private final HttpClient httpClient;
+    private final MetricsHelper metrics;
 
     public WebhookDeliveryService(WebhookEndpointRepository endpointRepository,
                                    WebhookDeliveryRepository deliveryRepository,
-                                   WebhookProperties properties) {
+                                   WebhookProperties properties,
+                                   MeterRegistry meterRegistry) {
         this.endpointRepository = endpointRepository;
         this.deliveryRepository = deliveryRepository;
         this.properties = properties;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(properties.deliveryTimeoutSeconds()))
                 .build();
+        this.metrics = new MetricsHelper("webhook-service", meterRegistry);
     }
 
     @Transactional
@@ -55,6 +61,7 @@ public class WebhookDeliveryService {
     }
 
     private void deliver(WebhookDeliveryEntity delivery, WebhookEndpointEntity endpoint) {
+        Timer.Sample sample = metrics.startTimer();
         String signature = WebhookSigner.sign(delivery.getPayload(), endpoint.getSecret());
         try {
             HttpRequest request = HttpRequest.newBuilder()
@@ -71,10 +78,18 @@ public class WebhookDeliveryService {
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 delivery.markSuccess(response.statusCode(), response.body());
+                metrics.increment("shop_webhook_delivery_total",
+                        "result", "success", "event_type", delivery.getEventType());
+                sample.stop(metrics.timer("shop_webhook_delivery_duration_seconds",
+                        "result", "success", "event_type", delivery.getEventType()));
                 log.info("Webhook delivered: endpoint={} event={}", endpoint.getId(), delivery.getEventType());
             } else {
                 delivery.markFailed(response.statusCode(), response.body(),
                         properties.retryMaxAttempts(), properties.retryIntervalSeconds());
+                metrics.increment("shop_webhook_delivery_total",
+                        "result", "failed", "event_type", delivery.getEventType());
+                sample.stop(metrics.timer("shop_webhook_delivery_duration_seconds",
+                        "result", "failed", "event_type", delivery.getEventType()));
                 log.warn("Webhook delivery failed: endpoint={} status={}",
                         endpoint.getId(), response.statusCode());
             }
@@ -84,6 +99,10 @@ public class WebhookDeliveryService {
             }
             delivery.markFailedNoResponse(exception.getMessage(),
                     properties.retryMaxAttempts(), properties.retryIntervalSeconds());
+            metrics.increment("shop_webhook_delivery_total",
+                    "result", "error", "event_type", delivery.getEventType());
+            sample.stop(metrics.timer("shop_webhook_delivery_duration_seconds",
+                    "result", "error", "event_type", delivery.getEventType()));
             log.warn("Webhook delivery error: endpoint={} error={}", endpoint.getId(), exception.getMessage());
         }
         deliveryRepository.save(delivery);
@@ -97,6 +116,11 @@ public class WebhookDeliveryService {
         if (retryable.isEmpty()) return;
 
         log.info("Retrying {} webhook deliveries", retryable.size());
+        final int retryCount = (int) retryable.stream()
+                .map(d -> deliveryRepository.findById(d.getId()))
+                .filter(opt -> opt.isPresent())
+                .count();
+        metrics.increment("shop_webhook_delivery_retry_total");
         for (WebhookDeliveryEntity delivery : retryable) {
             endpointRepository.findById(delivery.getEndpointId()).ifPresent(endpoint -> {
                 if (endpoint.isActive()) {

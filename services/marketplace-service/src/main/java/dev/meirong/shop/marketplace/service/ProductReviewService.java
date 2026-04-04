@@ -1,7 +1,9 @@
 package dev.meirong.shop.marketplace.service;
 
+import dev.meirong.shop.common.metrics.MetricsHelper;
 import dev.meirong.shop.contracts.api.MarketplaceApi;
 import dev.meirong.shop.marketplace.domain.*;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -19,11 +21,14 @@ public class ProductReviewService {
 
     private final ProductReviewRepository reviewRepository;
     private final MarketplaceProductRepository productRepository;
+    private final MetricsHelper metrics;
 
     public ProductReviewService(ProductReviewRepository reviewRepository,
-                                 MarketplaceProductRepository productRepository) {
+                                 MarketplaceProductRepository productRepository,
+                                 MeterRegistry meterRegistry) {
         this.reviewRepository = reviewRepository;
         this.productRepository = productRepository;
+        this.metrics = new MetricsHelper("marketplace-service", meterRegistry);
     }
 
     @Transactional
@@ -52,6 +57,9 @@ public class ProductReviewService {
 
         // Update product review stats
         updateProductReviewStats(request.productId());
+
+        metrics.increment("shop_product_review_submitted_total",
+                "rating", String.valueOf(request.rating()));
 
         return toResponse(review);
     }

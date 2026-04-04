@@ -1,8 +1,10 @@
 package dev.meirong.shop.notification.service;
 
+import dev.meirong.shop.common.metrics.MetricsHelper;
 import dev.meirong.shop.notification.config.NotificationProperties;
 import dev.meirong.shop.notification.domain.NotificationLogEntity;
 import dev.meirong.shop.notification.domain.NotificationLogRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +19,16 @@ public class NotificationRetryScheduler {
     private final NotificationLogRepository repository;
     private final NotificationApplicationService notificationService;
     private final NotificationProperties properties;
+    private final MetricsHelper metrics;
 
     public NotificationRetryScheduler(NotificationLogRepository repository,
                                        NotificationApplicationService notificationService,
-                                       NotificationProperties properties) {
+                                       NotificationProperties properties,
+                                       MeterRegistry meterRegistry) {
         this.repository = repository;
         this.notificationService = notificationService;
         this.properties = properties;
+        this.metrics = new MetricsHelper("notification-service", meterRegistry);
     }
 
     @Scheduled(fixedDelayString = "${shop.notification.retry-delay-ms:60000}")
@@ -33,6 +38,8 @@ public class NotificationRetryScheduler {
 
         if (!failed.isEmpty()) {
             log.info("Retrying {} failed notifications", failed.size());
+            metrics.increment("shop_notification_retry_total",
+                    "count", String.valueOf(failed.size()));
             for (NotificationLogEntity entry : failed) {
                 notificationService.retryFailed(entry);
             }

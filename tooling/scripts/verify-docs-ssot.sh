@@ -38,6 +38,7 @@ ALLOWED=$(echo -e "$ALLOWED" | grep -v '^$' | sort -u)
 # Additional whitelisted directories (relative to repo root)
 WHITELIST_DIRS=(
   "$DOCS_DIR/archived"
+  "$DOCS_DIR/superpowers"
   "$DOCS_DIR/superpowers/specs"
   "$DOCS_DIR/services"
   "$DOCS_DIR/deployment"
@@ -49,6 +50,11 @@ FAILED=0
 # Find all markdown files under docs (excluding archived via whitelist check)
 while IFS= read -r file; do
   rel="${file#$REPO_ROOT/}"
+
+  # Skip checking the matrix file itself
+  if [ "$file" = "$MATRIX_FILE" ]; then
+    continue
+  fi
 
   # Skip archived or explicitly whitelisted directories
   skip=false

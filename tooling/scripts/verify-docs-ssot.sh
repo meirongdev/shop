@@ -10,8 +10,30 @@ if [ ! -f "$MATRIX_FILE" ]; then
   exit 0
 fi
 
-# Extract allowed doc paths from matrix (matches docs/... .md)
-ALLOWED=$(grep -Eo 'docs/[A-Za-z0-9_./-]+\.md' "$MATRIX_FILE" | sort -u)
+# Extract allowed doc paths from matrix (accepts bare filenames or docs/ paths)
+TOKENS=$(grep -Eo '[A-Za-z0-9_./-]+\.md' "$MATRIX_FILE" | sort -u)
+
+ALLOWED=""
+while IFS= read -r token; do
+  if [[ -z "$token" ]]; then
+    continue
+  fi
+  if [[ "$token" == docs/* ]]; then
+    ALLOWED="$ALLOWED"$'\n'"$token"
+  else
+    # if a bare filename refers to a file in docs/, normalize to docs/<file>
+    if [ -f "$DOCS_DIR/$token" ]; then
+      ALLOWED="$ALLOWED"$'\n'"docs/$token"
+    else
+      # keep token as-is if it exists relative to repo root
+      if [ -f "$REPO_ROOT/$token" ]; then
+        ALLOWED="$ALLOWED"$'\n'"$token"
+      fi
+    fi
+  fi
+done <<< "$TOKENS"
+
+ALLOWED=$(echo -e "$ALLOWED" | grep -v '^$' | sort -u)
 
 # Additional whitelisted directories (relative to repo root)
 WHITELIST_DIRS=(

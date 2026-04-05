@@ -29,3 +29,11 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
 
 Additional archived files moved:
 - FEATURE-TOGGLE-AND-CONFIG-RELOAD.md
+- ARCHETYPE-TESTING-IMPROVEMENT-PLAN.md
+- ARCHETYPE-TUTORIAL.md
+- COMMON-MODULE-ROADMAP.md
+- HARNESS-ENGINEERING-ROADMAP-2026.md
+- MONOREPO-RESTRUCTURING-PLAN-2026.md
+- OBSERVABILITY-IMPROVEMENT-PLAN.md
+- PRODUCT-DESIGN.md
+- superpowers/plans/* → moved to docs/archived/superpowers-plans/

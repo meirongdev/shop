@@ -37,3 +37,4 @@ Additional archived files moved:
 - OBSERVABILITY-IMPROVEMENT-PLAN.md
 - PRODUCT-DESIGN.md
 - superpowers/plans/* → moved to docs/archived/superpowers-plans/
+- superpowers/specs/ → design specs (retain in-place). Approved specs that should be treated as SSOT must be added to docs/SOURCE-OF-TRUTH-MATRIX.md.

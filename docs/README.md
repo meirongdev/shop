@@ -26,3 +26,6 @@
 - 如某文档应被视为权威（SSOT），请在 docs/SOURCE-OF-TRUTH-MATRIX.md 中更新记录。
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+
+Additional archived files moved:
+- FEATURE-TOGGLE-AND-CONFIG-RELOAD.md

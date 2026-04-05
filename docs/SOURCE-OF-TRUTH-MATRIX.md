@@ -6,10 +6,22 @@
 
 ## 一、使用规则
 
+> 注意：归档的文档已移动到 docs/archived/，请参见 docs/README.md 索引。
+
 - 一个主题只能有一个权威文档（Single Source of Truth, SSOT）。
 - 次级文档可以做导航、摘要、教程和阶段性说明，但不得替代权威文档。
 - 当实现、接口、部署方式或交付优先级发生变化时，先更新权威文档，再同步次级文档。
 - 涉及运行行为的变更，文档中必须补充验证方式（测试、命令或 smoke check）。
+
+### 权威文档清单（SSOT）
+
+以下文档在本仓库被视为主题权威文档（位于 docs/ 根目录），如需调整请更新本文件：
+
+- docs/API-DOCUMENTATION-SPRINGDOC-2026.md
+- docs/ARCHUNIT-RULES.md
+- docs/COMPATIBILITY-DEVELOPMENT-STANDARD-2026.md
+- docs/DEVELOPER-EXPERIENCE-STANDARD-2026.md
+- docs/SERVICE-TECH-STACK-AND-EXTENSIBILITY.md
 
 ---
 
@@ -24,7 +36,7 @@
 | 本地开发、Kind/K8s 部署、mirrord 调试与 smoke 流程 | `docs-site/docs/getting-started/local-deployment.md` | `kind/setup.sh`、`kind/teardown.sh`、`k8s/**`、`Tiltfile`、`.mirrord/**`、`docs/superpowers/specs/2026-03-28-local-cicd-concepts.md` | 部署步骤、环境变量、访问方式、端口、调试命令或验证命令变化 |
 | 可观测性基线（指标、追踪、SLO、告警） | `docs/OBSERVABILITY-ALERTING-SLO.md` | `docs-site/docs/engineering/observability.md`、`docs/ENGINEERING-STANDARDS-2026.md` | 新指标、Tracing 方案、Prometheus/OTLP 暴露方式变化 |
 | 安全边界（北南向 / 东西向） | `docs/SECURITY-BASELINE-2026.md` | `docs-site/docs/architecture/index.md`、`docs/ARCHITECTURE-DESIGN.md` | JWT、Trusted Headers、内部 token、安全边界变化 |
-| Feature Toggle 与配置热更新基线 | `docs/FEATURE-TOGGLE-AND-CONFIG-RELOAD.md` | `docs/ENGINEERING-STANDARDS-2026.md`、`docs-site/docs/getting-started/local-deployment.md`、`k8s/**` | 开关框架、ConfigMap 注入方式、refresh 链路、vendor 选择变化 |
+| Feature Toggle 与配置热更新基线 | `docs/ENGINEERING-STANDARDS-2026.md` | `docs/ENGINEERING-STANDARDS-2026.md`、`docs-site/docs/getting-started/local-deployment.md`、`k8s/**` | 开关框架、ConfigMap 注入方式、refresh 链路、vendor 选择变化 |
 | K8s 应用交付契约 | `docs/deployment/APPLICATION-CONTRACT-K8S.md` | `docs-site/docs/getting-started/local-deployment.md`、`k8s/apps/base/platform.yaml`、`k8s/apps/overlays/dev` | 新服务接入 K8s、探针、端口、配置注入方式变化 |
 | 服务依赖关系 | `docs/services/SERVICE-DEPENDENCY-MAP.md` | `docs-site/docs/architecture/index.md` | 新增同步/异步调用、事件订阅关系变化 |
 | 服务级功能说明 | `docs/services/*.md`（对应服务文档） | `docs-site/docs/services/*.md` | 服务职责、接口、事件、数据流变化 |

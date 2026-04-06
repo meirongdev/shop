@@ -43,7 +43,7 @@ if kind get clusters 2>/dev/null | grep -q "^${cluster_name}$"; then
   fi
 else
   echo "📦 Creating Kind cluster '${cluster_name}'..."
-  kind create cluster --name "${cluster_name}" --config kind/cluster-config.yaml
+  kind create cluster --name "${cluster_name}" --config "${repo_root}/kind/cluster-config.yaml"
   echo "✅ Kind cluster created"
 fi
 

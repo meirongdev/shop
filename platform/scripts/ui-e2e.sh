@@ -7,11 +7,11 @@ UI_E2E_PORT_FORWARD_CONTEXT="${UI_E2E_PORT_FORWARD_CONTEXT:-$(kubectl config cur
 UI_E2E_PORT_FORWARD_NAMESPACE="${UI_E2E_PORT_FORWARD_NAMESPACE:-shop}"
 UI_E2E_GATEWAY_LOCAL_PORT="${UI_E2E_GATEWAY_LOCAL_PORT:-18080}"
 SELLER_WASM_BUILD_TASK="${SELLER_WASM_BUILD_TASK:-:kmp:seller-app:wasmJsBrowserDevelopmentExecutableDistribution}"
-SELLER_WASM_DIST_DIR="${SELLER_WASM_DIST_DIR:-kmp/seller-app/build/dist/wasmJs/developmentExecutable}"
+SELLER_WASM_DIST_DIR="${SELLER_WASM_DIST_DIR:-frontend/kmp/seller-app/build/dist/wasmJs/developmentExecutable}"
 SELLER_WEB_PORT="${SELLER_WEB_PORT:-18181}"
 SELLER_CHROME_VIRTUAL_TIME_BUDGET_MS="${SELLER_CHROME_VIRTUAL_TIME_BUDGET_MS:-20000}"
 BUYER_APP_WASM_BUILD_TASK="${BUYER_APP_WASM_BUILD_TASK:-:kmp:buyer-app:wasmJsBrowserDevelopmentExecutableDistribution}"
-BUYER_APP_WASM_DIST_DIR="${BUYER_APP_WASM_DIST_DIR:-kmp/buyer-app/build/dist/wasmJs/developmentExecutable}"
+BUYER_APP_WASM_DIST_DIR="${BUYER_APP_WASM_DIST_DIR:-frontend/kmp/buyer-app/build/dist/wasmJs/developmentExecutable}"
 BUYER_APP_WEB_PORT="${BUYER_APP_WEB_PORT:-18182}"
 BUYER_APP_CHROME_VIRTUAL_TIME_BUDGET_MS="${BUYER_APP_CHROME_VIRTUAL_TIME_BUDGET_MS:-20000}"
 

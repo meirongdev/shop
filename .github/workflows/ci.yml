@@ -45,6 +45,14 @@ jobs:
               - '.mvn/**'
               - 'mvnw'
               - 'mvnw.cmd'
+              - 'frontend/build.gradle.kts'
+              - 'frontend/settings.gradle.kts'
+              - 'frontend/gradle.properties'
+              - 'frontend/gradle/**'
+              - 'frontend/gradlew'
+              - 'frontend/gradlew.bat'
+              - 'frontend/kmp/**/*.kt'
+              - 'frontend/kmp/**/*.kts'
               - 'platform/scripts/**'
               - 'Makefile'
               - '.editorconfig'
@@ -122,20 +130,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
       - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
           java-version: '25'
           distribution: 'temurin'
           cache: 'maven'
-      
+
       - name: Install archetypes
         run: ./mvnw -pl shared/shop-common,shared/shop-contracts,tooling/shop-archetypes -am install -B -ntp
 
       - name: Run archetype tests
         run: ./mvnw -pl tooling/archetype-tests test -B -ntp
-      
+
       - name: Upload archetype test results
         if: always()
         uses: actions/upload-artifact@v4

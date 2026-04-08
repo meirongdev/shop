@@ -56,7 +56,7 @@ for path in "${changed_files[@]}"; do
     docs-site/*)
       run_docs=true
       ;;
-    frontend/kmp/*|frontend/*.gradle.kts|frontend/gradle.properties)
+    frontend/kmp/*|frontend/*.gradle.kts|frontend/gradle.properties|frontend/gradlew|frontend/gradlew.bat|frontend/gradle/*)
       run_gradle=true
       ;;
     platform/docker/*|platform/k8s/*|platform/kind/*|Tiltfile|.mirrord/*)

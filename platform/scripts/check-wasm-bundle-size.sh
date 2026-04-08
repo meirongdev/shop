@@ -4,9 +4,9 @@ set -euo pipefail
 MAX_SIZE_MB=5
 
 for app in buyer-app seller-app; do
-  WASM_DIR="kmp/$app/build/kotlin-webpack/wasmJs/productionExecutable"
+  WASM_DIR="frontend/kmp/$app/build/kotlin-webpack/wasmJs/productionExecutable"
   if [[ ! -d "${WASM_DIR}" ]]; then
-    WASM_DIR="kmp/$app/build/compileSync/wasmJs/main/productionExecutable/optimized"
+    WASM_DIR="frontend/kmp/$app/build/compileSync/wasmJs/main/productionExecutable/optimized"
   fi
 
   if [[ ! -d "${WASM_DIR}" ]]; then

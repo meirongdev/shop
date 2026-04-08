@@ -16,3 +16,4 @@ kmp/*/build/
 local.properties
 .tilt/
 tilt_modules/
+*.bak

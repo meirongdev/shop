@@ -436,7 +436,7 @@ else
   fi
 
   echo "==> Building KMP web bundles with Gradle"
-  ./gradlew -q "${SELLER_WASM_BUILD_TASK}" "${BUYER_APP_WASM_BUILD_TASK}"
+  (cd frontend && ./gradlew -q "${SELLER_WASM_BUILD_TASK}" "${BUYER_APP_WASM_BUILD_TASK}")
 
   if [[ ! -f "${SELLER_WASM_DIST_DIR}/index.html" ]]; then
     echo "error: seller web dist was not generated at ${SELLER_WASM_DIST_DIR}" >&2

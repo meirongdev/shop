@@ -140,7 +140,7 @@ build_seller_portal() {
 
   if [[ ! -d "${dist_dir}" ]]; then
     echo "==> Building seller-portal WASM (first time, may take several minutes)..."
-    ./gradlew :kmp:seller-app:wasmJsBrowserProductionWebpack --no-daemon -q
+    (cd frontend && ./gradlew :kmp:seller-app:wasmJsBrowserProductionWebpack --no-daemon -q)
   fi
 
   echo "==> Building $(module_local_image_ref "seller-portal") with platform/docker/Dockerfile.seller-portal"
@@ -156,7 +156,7 @@ build_buyer_app() {
 
   if [[ ! -d "${dist_dir}" ]]; then
     echo "==> Building buyer-app WASM (first time, may take several minutes)..."
-    ./gradlew :kmp:buyer-app:wasmJsBrowserProductionWebpack --no-daemon -q
+    (cd frontend && ./gradlew :kmp:buyer-app:wasmJsBrowserProductionWebpack --no-daemon -q)
   fi
 
   echo "==> Building $(module_local_image_ref "buyer-app") with platform/docker/Dockerfile.buyer-app"

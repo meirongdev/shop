@@ -274,9 +274,9 @@ kubectl -n shop port-forward svc/prometheus 19090:9090
 make local-access
 
 # 终端 B
-./gradlew :kmp:seller-app:wasmJsBrowserDevelopmentExecutableDistribution
-node ./scripts/seller-web-proxy.mjs \
-  kmp/seller-app/build/dist/wasmJs/developmentExecutable \
+(cd frontend && ./gradlew :kmp:seller-app:wasmJsBrowserDevelopmentExecutableDistribution)
+node ./platform/scripts/seller-web-proxy.mjs \
+  frontend/kmp/seller-app/build/dist/wasmJs/developmentExecutable \
   http://127.0.0.1:18080 \
   18181
 ```

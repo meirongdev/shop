@@ -105,7 +105,7 @@ make arch-test
 **必须遵守的规则：**
 
 1. **构建规范**
-   - ✅ 使用 `./gradlew` 从项目根目录执行
+   - ✅ 使用 `./gradlew` 从 `frontend/` 目录执行
    - ✅ 模块引用使用 `project(":kmp:module-name")`
    - ✅ WASM 构建输出到 `frontend/kmp/<app>/build/dist/wasmJs/`
 
@@ -118,10 +118,10 @@ make arch-test
 
 ```bash
 # Kotlin 编译检查
-./gradlew :kmp:core:compileKotlinWasmJs --quiet
+(cd frontend && ./gradlew :kmp:core:compileKotlinWasmJs --quiet)
 
 # 运行测试
-./gradlew :kmp:core:test
+(cd frontend && ./gradlew :kmp:core:test)
 ```
 
 ### 3.3 前端 E2E Agent（`frontend/e2e-tests/`）

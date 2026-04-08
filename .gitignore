@@ -10,10 +10,11 @@ docs-site/build/
 docs-site/.docusaurus/
 .worktrees/
 # Gradle / KMP
-build/
-.gradle/
-kmp/*/build/
-local.properties
+frontend/build/
+frontend/.gradle/
+frontend/kmp/*/build/
+frontend/local.properties
+frontend/kotlin-js-store/
 .tilt/
 tilt_modules/
 *.bak

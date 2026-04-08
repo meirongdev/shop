@@ -56,7 +56,7 @@ for path in "${changed_files[@]}"; do
     docs-site/*)
       run_docs=true
       ;;
-    frontend/kmp/*|*.gradle.kts|gradle.properties)
+    frontend/kmp/*|frontend/*.gradle.kts|frontend/gradle.properties)
       run_gradle=true
       ;;
     platform/docker/*|platform/k8s/*|platform/kind/*|Tiltfile|.mirrord/*)
@@ -129,7 +129,10 @@ fi
 
 if [[ "${run_gradle}" == "true" ]]; then
   echo "==> Running Gradle compile check"
-  ./gradlew :kmp:core:compileKotlinWasmJs --quiet 2>&1 || {
+  (
+    cd frontend
+    ./gradlew :kmp:core:compileKotlinWasmJs --quiet 2>&1
+  ) || {
     echo "ERROR: Gradle compilation failed for KMP core module"
     exit 1
   }

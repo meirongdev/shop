@@ -91,7 +91,7 @@ fi
 
 if (( ${#build_tasks[@]} > 0 )); then
   echo "==> Building KMP WASM bundles"
-  ./gradlew -q "${build_tasks[@]}"
+  (cd "${repo_root}/frontend" && ./gradlew -q "${build_tasks[@]}")
   echo "  Build complete"
   echo ""
 fi

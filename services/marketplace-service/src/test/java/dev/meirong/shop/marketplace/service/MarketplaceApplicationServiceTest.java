@@ -16,6 +16,7 @@ import dev.meirong.shop.marketplace.domain.MarketplaceOutboxEventRepository;
 import dev.meirong.shop.marketplace.domain.MarketplaceProductEntity;
 import dev.meirong.shop.marketplace.domain.MarketplaceProductRepository;
 import dev.meirong.shop.marketplace.domain.ProductCategoryRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +52,9 @@ class MarketplaceApplicationServiceTest {
     @Mock
     private RLock inventoryLock;
 
+    @Mock
+    private MeterRegistry meterRegistry;
+
     private MarketplaceApplicationService service;
 
     @BeforeEach
@@ -61,7 +65,8 @@ class MarketplaceApplicationServiceTest {
                 outboxRepository,
                 objectMapper,
                 redissonClient,
-                "marketplace.product.events.v1"
+                "marketplace.product.events.v1",
+                meterRegistry
         );
         lenient().when(objectMapper.writeValueAsString(any())).thenReturn("{}");
         lenient().when(outboxRepository.save(any(MarketplaceOutboxEventEntity.class)))

@@ -91,6 +91,13 @@ fi
 if [[ "${run_platform}" == "true" ]]; then
   echo "==> Validating platform assets"
   bash ./platform/scripts/validate-platform-assets.sh
+  if [[ "${k8s_changed}" == "true" ]]; then
+    echo "==> Verifying observability (requires cluster access)"
+    # Use a subshell to avoid exit on failure if cluster not ready
+    ( bash ./platform/scripts/verify-observability.sh ) || echo "   Warning: verify-observability skipped or failed (cluster/pf issues)"
+    echo "==> Running smoke tests (requires cluster access)"
+    ( bash ./platform/scripts/smoke-test.sh ) || echo "   Warning: smoke-test skipped or failed (cluster/pf issues)"
+  fi
 fi
 
 if [[ "${run_maven}" == "true" ]]; then

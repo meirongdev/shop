@@ -15,9 +15,13 @@ data:
             labels:
               severity: critical
               team: platform
+              owner: infra-team
             annotations:
               summary: "{{ $labels.instance }} is DOWN"
               description: "Service {{ $labels.instance }} has been unreachable for > 1 minute."
+              dashboard_url: "/grafana/d/shop-service-health"
+              runbook_url: "docs/runbooks/SERVICE_DOWN.md"
+              diagnosis_hint: "Check pod status: kubectl get pods -n shop -l app={{ $labels.instance }}"
 
           - alert: HighHttpErrorRate
             expr: |
@@ -32,9 +36,13 @@ data:
             labels:
               severity: critical
               team: platform
+              owner: infra-team
             annotations:
               summary: "High 5xx rate on {{ $labels.instance }}"
               description: "5xx error rate is {{ $value | humanizePercentage }} (> 5%) for 2 min."
+              dashboard_url: "/grafana/d/shop-service-health"
+              runbook_url: "docs/runbooks/HIGH_ERROR_RATE.md"
+              diagnosis_hint: "Search logs for 5xx: Loki query {job=\"shop-apps\", instance=\"{{ $labels.instance }}\"} |= \" 5\""
 
           - alert: CheckoutServiceDown
             expr: |
@@ -44,9 +52,13 @@ data:
             labels:
               severity: critical
               team: backend
+              owner: buyer-team
             annotations:
               summary: "Buyer BFF (checkout gateway) is DOWN"
               description: "buyers cannot place orders."
+              dashboard_url: "/grafana/d/shop-business"
+              runbook_url: "docs/runbooks/SERVICE_DOWN.md"
+              diagnosis_hint: "Check buyer-bff logs immediately."
 
       # ──────────────── P2: Warning — notify within 30 min ─────────────
       - name: shop.p2.alerts
@@ -87,9 +99,13 @@ data:
             labels:
               severity: warning
               team: backend
+              owner: infra-team
             annotations:
               summary: "Kafka consumer lag > 1000 ({{ $labels.consumergroup }})"
               description: "Group {{ $labels.consumergroup }} on {{ $labels.topic }} has lag {{ $value }}."
+              dashboard_url: "/grafana/d/shop-service-health"
+              runbook_url: "docs/runbooks/KAFKA_LAG.md"
+              diagnosis_hint: "Check consumer process and Kafka connectivity."
 
           - alert: KafkaConsumerLagCritical
             expr: kafka_consumergroup_lag > 10000
@@ -97,9 +113,13 @@ data:
             labels:
               severity: critical
               team: backend
+              owner: infra-team
             annotations:
               summary: "Kafka consumer lag CRITICAL > 10000 ({{ $labels.consumergroup }})"
               description: "Group {{ $labels.consumergroup }} on {{ $labels.topic }} has lag {{ $value }}. Possible consumer failure."
+              dashboard_url: "/grafana/d/shop-service-health"
+              runbook_url: "docs/runbooks/KAFKA_LAG.md"
+              diagnosis_hint: "Check if consumer pods are crashing or stuck."
 
           - alert: CircuitBreakerOpen
             expr: resilience4j_circuitbreaker_state{state="open"} == 1
@@ -107,9 +127,13 @@ data:
             labels:
               severity: warning
               team: backend
+              owner: buyer-team
             annotations:
               summary: "CircuitBreaker {{ $labels.name }} is OPEN"
               description: "CircuitBreaker {{ $labels.name }} on {{ $labels.application }} has been open for > 5 minutes."
+              dashboard_url: "/grafana/d/shop-service-health"
+              runbook_url: "docs/runbooks/HIGH_ERROR_RATE.md"
+              diagnosis_hint: "Downstream {{ $labels.name }} is failing. Check downstream service health."
 
           - alert: HighJvmHeapUsage
             expr: |

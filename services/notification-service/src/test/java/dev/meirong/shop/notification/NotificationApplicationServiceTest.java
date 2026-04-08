@@ -6,6 +6,7 @@ import dev.meirong.shop.notification.channel.NotificationRequest;
 import dev.meirong.shop.notification.domain.NotificationLogEntity;
 import dev.meirong.shop.notification.domain.NotificationLogRepository;
 import dev.meirong.shop.notification.service.NotificationApplicationService;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,9 @@ class NotificationApplicationServiceTest {
     @Mock
     private NotificationLogRepository repository;
 
+    @Mock
+    private MeterRegistry meterRegistry;
+
     private NotificationApplicationService service;
 
     @BeforeEach
@@ -39,7 +43,7 @@ class NotificationApplicationServiceTest {
             }
         };
 
-        ChannelDispatcher dispatcher = new ChannelDispatcher(List.of(emailChannel));
+        ChannelDispatcher dispatcher = new ChannelDispatcher(List.of(emailChannel), meterRegistry);
         service = new NotificationApplicationService(repository, dispatcher);
     }
 
@@ -91,7 +95,7 @@ class NotificationApplicationServiceTest {
             }
         };
 
-        ChannelDispatcher failingDispatcher = new ChannelDispatcher(List.of(failingChannel));
+        ChannelDispatcher failingDispatcher = new ChannelDispatcher(List.of(failingChannel), meterRegistry);
         NotificationApplicationService failingService =
                 new NotificationApplicationService(repository, failingDispatcher);
 

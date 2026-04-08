@@ -4,10 +4,14 @@ import dev.meirong.shop.common.error.BusinessErrorCode;
 import dev.meirong.shop.common.trace.TraceIdExtractor;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
+import org.slf4j.MDC;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.HttpStatusCode;
 
 public final class ShopProblemDetails {
+
+    private static final String SERVICE_NAME = System.getProperty("spring.application.name",
+            System.getenv("SPRING_APPLICATION_NAME") != null ? System.getenv("SPRING_APPLICATION_NAME") : "unknown-service");
 
     private ShopProblemDetails() {
     }
@@ -23,6 +27,25 @@ public final class ShopProblemDetails {
         problemDetail.setProperty("code", errorCode.getCode());
         problemDetail.setProperty("message", detail);
         problemDetail.setProperty("traceId", TraceIdExtractor.currentTraceId());
+        problemDetail.setProperty("requestId", TraceIdExtractor.currentRequestId());
+        problemDetail.setProperty("service", SERVICE_NAME);
+
+        // Optional fields from MDC if they exist
+        String operation = MDC.get("operation");
+        if (operation != null) {
+            problemDetail.setProperty("operation", operation);
+        }
+
+        String retryable = MDC.get("retryable");
+        if (retryable != null) {
+            problemDetail.setProperty("retryable", Boolean.valueOf(retryable));
+        }
+
+        String downstreamService = MDC.get("downstreamService");
+        if (downstreamService != null) {
+            problemDetail.setProperty("downstreamService", downstreamService);
+        }
+
         return problemDetail;
     }
 }

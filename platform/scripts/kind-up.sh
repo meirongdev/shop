@@ -3,7 +3,7 @@ set -euo pipefail
 
 cluster_name="${1:-shop-kind}"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "${script_dir}/.." && pwd)"
+repo_root="$(cd "${script_dir}/../.." && pwd)"
 context_name="kind-${cluster_name}"
 
 wait_for_deployment() {
@@ -43,13 +43,13 @@ if kind get clusters 2>/dev/null | grep -q "^${cluster_name}$"; then
   fi
 else
   echo "📦 Creating Kind cluster '${cluster_name}'..."
-  kind create cluster --name "${cluster_name}" --config "${repo_root}/kind/cluster-config.yaml"
+  kind create cluster --name "${cluster_name}" --config "${repo_root}/platform/kind/cluster-config.yaml"
   echo "✅ Kind cluster created"
 fi
 
 kubectl config use-context "${context_name}" >/dev/null
 
-bash "${repo_root}/scripts/setup-local-registry.sh" "${cluster_name}"
+bash "${repo_root}/platform/scripts/setup-local-registry.sh" "${cluster_name}"
 
 control_plane_node="$(kind get nodes --name "${cluster_name}" | head -n 1)"
 if ! kubectl --context "${context_name}" -n kube-system get daemonset cilium >/dev/null 2>&1; then
@@ -67,9 +67,9 @@ echo "⏳ Waiting for Cilium and node readiness..."
 cilium status --context "${context_name}" --wait
 kubectl --context "${context_name}" wait --for=condition=Ready "node/${control_plane_node}" --timeout=300s
 
-kubectl --context "${context_name}" apply -f "${repo_root}/k8s/namespace.yaml"
-kubectl --context "${context_name}" apply -f "${repo_root}/k8s/infra/base.yaml"
-kubectl --context "${context_name}" apply -k "${repo_root}/k8s/observability"
+kubectl --context "${context_name}" apply -f "${repo_root}/platform/k8s/namespace.yaml"
+kubectl --context "${context_name}" apply -f "${repo_root}/platform/k8s/infra/base.yaml"
+kubectl --context "${context_name}" apply -k "${repo_root}/platform/k8s/observability"
 
 echo "⏳ Waiting for infrastructure deployments..."
 wait_for_deployment shop mysql &

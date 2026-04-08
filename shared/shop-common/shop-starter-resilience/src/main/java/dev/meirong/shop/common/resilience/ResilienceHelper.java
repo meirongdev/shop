@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.slf4j.MDC;
 
 public class ResilienceHelper implements AutoCloseable {
 
@@ -71,6 +72,8 @@ public class ResilienceHelper implements AutoCloseable {
                           boolean retryEnabled,
                           Supplier<T> supplier,
                           Function<Throwable, T> fallback) {
+        MDC.put("downstreamService", instanceName);
+        MDC.put("retryable", String.valueOf(retryEnabled));
         try {
             Supplier<T> retryDecorated = supplier;
             if (retryEnabled) {
@@ -87,6 +90,9 @@ public class ResilienceHelper implements AutoCloseable {
             return timeLimiter.executeFutureSupplier(() -> executorService.submit(bulkheadDecorated::get));
         } catch (Throwable throwable) {
             return fallback.apply(unwrap(throwable));
+        } finally {
+            MDC.remove("downstreamService");
+            MDC.remove("retryable");
         }
     }
 

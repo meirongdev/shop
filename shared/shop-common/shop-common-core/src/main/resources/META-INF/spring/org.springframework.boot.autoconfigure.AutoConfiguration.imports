@@ -1,3 +1,5 @@
 dev.meirong.shop.common.json.JacksonCompatibilityAutoConfiguration
 dev.meirong.shop.common.observability.ObservabilityAutoConfiguration
 dev.meirong.shop.common.web.TomcatHttp2AutoConfiguration
+dev.meirong.shop.common.http.HeaderPropagationAutoConfiguration
+dev.meirong.shop.common.metrics.MetricsAutoConfiguration

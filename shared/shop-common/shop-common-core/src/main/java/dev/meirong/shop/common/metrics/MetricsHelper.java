@@ -1,8 +1,10 @@
 package dev.meirong.shop.common.metrics;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import java.util.function.Supplier;
 
 /**
  * Helper for creating consistent metrics across services.
@@ -64,5 +66,28 @@ public final class MetricsHelper {
     public void recordTimer(Timer.Sample sample, String timerName, String result, String... extraTags) {
         Timer timer = timer(timerName, extraTags);
         sample.stop(timer);
+    }
+
+    /**
+     * Create a gauge with service tag.
+     */
+    public <T extends Number> void gauge(String name, T value, String... extraTags) {
+        var builder = Gauge.builder(name, () -> value).tag("service", serviceName);
+        for (int i = 0; i < extraTags.length; i += 2) {
+            builder.tag(extraTags[i], extraTags[i + 1]);
+        }
+        builder.register(meterRegistry);
+    }
+
+    /**
+     * Create a gauge with supplier and service tag.
+     */
+    public <T extends Number> void gauge(String name, Supplier<T> supplier, String... extraTags) {
+        var builder = Gauge.builder(name, supplier)
+            .tag("service", serviceName);
+        for (int i = 0; i < extraTags.length; i += 2) {
+            builder.tag(extraTags[i], extraTags[i + 1]);
+        }
+        builder.register(meterRegistry);
     }
 }

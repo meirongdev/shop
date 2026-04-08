@@ -72,6 +72,9 @@ module_jar_path() {
     auth-server|api-gateway|buyer-bff|seller-bff|profile-service|promotion-service|wallet-service|marketplace-service|order-service|search-service|notification-service|loyalty-service|activity-service|webhook-service|subscription-service)
       printf 'services/%s/target/%s-0.1.0-SNAPSHOT.jar\n' "${module}" "${module}"
       ;;
+    buyer-portal)
+      printf 'frontend/buyer-portal/target/%s-0.1.0-SNAPSHOT.jar\n' "${module}"
+      ;;
     *)
       printf '%s/target/%s-0.1.0-SNAPSHOT.jar\n' "${module}" "${module}"
       ;;

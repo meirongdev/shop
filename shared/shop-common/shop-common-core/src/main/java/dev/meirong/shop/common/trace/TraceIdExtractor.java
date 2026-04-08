@@ -11,4 +11,9 @@ public final class TraceIdExtractor {
         String traceId = MDC.get("traceId");
         return (traceId != null && !traceId.isBlank()) ? traceId : "";
     }
+
+    public static String currentRequestId() {
+        String requestId = MDC.get("requestId");
+        return (requestId != null && !requestId.isBlank()) ? requestId : "";
+    }
 }

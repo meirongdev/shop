@@ -31,11 +31,6 @@ public class TrustedHeadersFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/api/");
-    }
-
-    @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
@@ -45,10 +40,14 @@ public class TrustedHeadersFilter extends OncePerRequestFilter {
             return;
         }
 
-        String incomingRequestId = request.getHeader(REQUEST_ID);
-        String requestId = (incomingRequestId == null || incomingRequestId.isBlank())
-                ? UUID.randomUUID().toString()
-                : incomingRequestId;
+        String requestId = MDC.get("requestId");
+        if (requestId == null || requestId.isBlank()) {
+            requestId = request.getHeader(REQUEST_ID);
+        }
+        if (requestId == null || requestId.isBlank()) {
+            requestId = UUID.randomUUID().toString();
+        }
+
         List<String> roles = Optional.ofNullable(jwt.getClaimAsStringList("roles")).orElse(List.of());
 
         TrustedHeadersRequestWrapper wrapped = new TrustedHeadersRequestWrapper(
@@ -58,11 +57,34 @@ public class TrustedHeadersFilter extends OncePerRequestFilter {
                 jwt.getClaimAsString("username"),
                 String.join(",", roles),
                 jwt.getClaimAsString("portal"));
-        MDC.put("requestId", requestId);
+
+        String principalId = jwt.getClaimAsString("principalId");
+        String username = jwt.getClaimAsString("username");
+        String portal = jwt.getClaimAsString("portal");
+
+        if (principalId != null) {
+            MDC.put("principalId", principalId);
+            if ("BUYER".equalsIgnoreCase(portal)) {
+                MDC.put("buyerId", principalId);
+            } else if ("SELLER".equalsIgnoreCase(portal)) {
+                MDC.put("sellerId", principalId);
+            }
+        }
+        if (username != null) {
+            MDC.put("username", username);
+        }
+        if (portal != null) {
+            MDC.put("portal", portal);
+        }
+
         try {
             chain.doFilter(wrapped, response);
         } finally {
-            MDC.remove("requestId");
+            MDC.remove("principalId");
+            MDC.remove("buyerId");
+            MDC.remove("sellerId");
+            MDC.remove("username");
+            MDC.remove("portal");
         }
     }
 }

@@ -24,7 +24,7 @@ BUYER_APP_WASM_BUILD_TASK="${BUYER_APP_WASM_BUILD_TASK:-:kmp:buyer-app:wasmJsBro
 BUYER_APP_WASM_DIST_DIR="${BUYER_APP_WASM_DIST_DIR:-frontend/kmp/buyer-app/build/dist/wasmJs/developmentExecutable}"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "${script_dir}/.." && pwd)"
+repo_root="$(cd "${script_dir}/../.." && pwd)"
 
 run_seller=true
 run_buyer_app=true
@@ -105,7 +105,7 @@ if [[ "${run_seller}" == "true" ]]; then
     exit 1
   fi
   echo "==> Starting seller proxy on port ${SELLER_WEB_PORT}"
-  node "${repo_root}/scripts/seller-web-proxy.mjs" "${SELLER_WASM_DIST_DIR}" "${GATEWAY_URL}" "${SELLER_WEB_PORT}" &
+  node "${repo_root}/platform/scripts/seller-web-proxy.mjs" "${SELLER_WASM_DIST_DIR}" "${GATEWAY_URL}" "${SELLER_WEB_PORT}" &
   seller_proxy_pid=$!
   wait_for_proxy "${SELLER_WEB_PORT}" "Seller"
 fi
@@ -116,7 +116,7 @@ if [[ "${run_buyer_app}" == "true" ]]; then
     exit 1
   fi
   echo "==> Starting buyer-app proxy on port ${BUYER_APP_WEB_PORT}"
-  node "${repo_root}/scripts/seller-web-proxy.mjs" "${BUYER_APP_WASM_DIST_DIR}" "${GATEWAY_URL}" "${BUYER_APP_WEB_PORT}" &
+  node "${repo_root}/platform/scripts/seller-web-proxy.mjs" "${BUYER_APP_WASM_DIST_DIR}" "${GATEWAY_URL}" "${BUYER_APP_WEB_PORT}" &
   buyer_app_proxy_pid=$!
   wait_for_proxy "${BUYER_APP_WEB_PORT}" "Buyer-app"
 fi
@@ -134,7 +134,7 @@ if [[ "${run_buyer_app}" == "true" ]]; then
 fi
 
 echo "==> Running Playwright KMP tests"
-cd "${repo_root}/e2e-tests"
+cd "${repo_root}/frontend/e2e-tests"
 
 GATEWAY_URL="${GATEWAY_URL}" \
   SELLER_PROXY_URL="http://127.0.0.1:${SELLER_WEB_PORT}" \

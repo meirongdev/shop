@@ -86,7 +86,23 @@ build_host_jars() {
 
   [[ "${#maven_modules[@]}" -eq 0 ]] && return 0
 
-  modules_csv="$(IFS=,; printf '%s' "${maven_modules[*]}")"
+  # Convert short module names to full Maven paths for services
+  local maven_paths=()
+  for m in "${maven_modules[@]}"; do
+    case "${m}" in
+      auth-server|api-gateway|buyer-bff|seller-bff|profile-service|promotion-service|wallet-service|marketplace-service|order-service|search-service|notification-service|loyalty-service|activity-service|webhook-service|subscription-service)
+        maven_paths+=("services/${m}")
+        ;;
+      buyer-portal)
+        maven_paths+=("frontend/buyer-portal")
+        ;;
+      *)
+        maven_paths+=("${m}")
+        ;;
+    esac
+  done
+
+  modules_csv="$(IFS=,; printf '%s' "${maven_paths[*]}")"
   # Include 'clean' so renamed/deleted resource files never ghost into the JAR.
   ./mvnw -q --no-transfer-progress -T 1C -pl "${modules_csv}" -am -DskipTests clean package
 }

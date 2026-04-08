@@ -10,10 +10,13 @@ OVERLAY ?= dev
 TILT_REGISTRY ?= localhost:5000
 ARCHETYPE_MODULES := shared/shop-common,shared/shop-contracts,tooling/shop-archetypes/gateway-service-archetype,tooling/shop-archetypes/auth-service-archetype,tooling/shop-archetypes/bff-service-archetype,tooling/shop-archetypes/domain-service-archetype,tooling/shop-archetypes/event-worker-archetype,tooling/shop-archetypes/portal-service-archetype
 
-.PHONY: help test build verify arch-test archetype-test docs-install docs-build docs-start archetypes-install install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed redeploy smoke-test verify-observability ui-e2e e2e-playwright e2e-playwright-seller e2e-playwright-buyer-app e2e-playwright-kmp local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap kind-teardown clean-images clean-all
+.PHONY: help test build verify arch-test archetype-install archetype-test docs-install docs-build docs-start archetypes-install install-deps install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed redeploy smoke-test verify-observability ui-e2e e2e-playwright e2e-playwright-seller e2e-playwright-buyer-app e2e-playwright-kmp local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap kind-teardown clean-images clean-all
 
 help: ## Show available developer commands
 	@awk 'BEGIN {FS = ":.*## "; printf "\nUsage:\n  make <target>\n\nTargets:\n"} /^[a-zA-Z0-9_.-]+:.*## / { printf "  %-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+
+install-deps: ## Check and install required dependencies for e2e
+	bash platform/scripts/install-deps.sh
 
 test: ## Run full repository Maven tests
 	$(MVNW) -q test

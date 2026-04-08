@@ -112,6 +112,46 @@ check() {
   ((failures += 1))
 }
 
+check_correlation() {
+  local name="$1"
+  local path="$2"
+  local url="${GATEWAY_URL%/}${path}"
+  local response_headers
+  response_headers=$(curl -s -I "${url}")
+
+  if echo "${response_headers}" | grep -qi "X-Request-Id" && echo "${response_headers}" | grep -qi "X-Trace-Id"; then
+    echo "[PASS] ${name} (X-Request-Id and X-Trace-Id present)"
+  else
+    echo "[FAIL] ${name} (Missing correlation headers)"
+    ((failures += 1))
+  fi
+}
+
+check_problem_detail() {
+  local name="$1"
+  local method="$2"
+  local path="$3"
+  local body="${4:-}"
+  local content_type="${5:-application/json}"
+  local url="${GATEWAY_URL%/}${path}"
+  local response_body
+  response_body=$(curl -s -X "${method}" -H "Content-Type: ${content_type}" -d "${body}" "${url}")
+
+  local missing=0
+  for field in "traceId" "requestId" "code" "service"; do
+    if ! echo "${response_body}" | grep -q "\"${field}\""; then
+      echo "[FAIL] ${name} (Missing ProblemDetail field: ${field})"
+      missing=$((missing + 1))
+    fi
+  done
+
+  if [ "${missing}" -eq 0 ]; then
+    echo "[PASS] ${name} (All ProblemDetail fields present)"
+  else
+    ((failures += 1))
+  fi
+}
+
 if [[ "${SMOKE_AUTO_PORT_FORWARD}" == "true" && \
       "$(request_status "GET" "${GATEWAY_URL%/}/v3/api-docs/gateway")" == "000" ]]; then
   if start_gateway_port_forward; then
@@ -128,6 +168,11 @@ check "Buyer public marketplace" "POST" "/public/buyer/v1/marketplace/list" "200
 check "Seller API requires authentication" "POST" "/api/seller/v1/dashboard/get" "401" "{}" "application/json"
 check "Seller portal SPA shell" "GET" "/seller/" "200"
 check "Buyer KMP app SPA shell" "GET" "/buyer-app/" "200"
+echo ""
+
+echo "Verifying observability correlation"
+check_correlation "Gateway correlation" "/v3/api-docs/gateway"
+check_problem_detail "Auth login error correlation" "POST" "/auth/v1/token/login" "{}"
 echo ""
 
 if (( failures > 0 )); then

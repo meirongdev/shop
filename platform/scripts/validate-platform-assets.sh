@@ -10,6 +10,7 @@ script_files=(
   platform/scripts/local-cicd-modules.sh
   platform/scripts/run-local-checks.sh
   platform/scripts/smoke-test.sh
+  platform/scripts/verify-observability.sh
   platform/scripts/setup-local-registry.sh
   platform/scripts/argocd-bootstrap.sh
   platform/scripts/deploy-kind.sh

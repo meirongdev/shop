@@ -215,6 +215,13 @@ check_http "Loki ready" "${LOKI_URL}/ready" "200"
 # ── 7. Tempo direct check ────────────────────────────────────────────────────
 check_http "Tempo ready" "${TEMPO_URL}/ready" "200"
 
+# ── 8. Prometheus Alert Rules metadata check ─────────────────────────────────
+check_json_contains "Prometheus alerts have dashboard_url" \
+  "${PROMETHEUS_URL}/api/v1/rules" '"dashboard_url"'
+
+check_json_contains "Prometheus alerts have runbook_url" \
+  "${PROMETHEUS_URL}/api/v1/rules" '"runbook_url"'
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo ""
 if (( failures > 0 )); then

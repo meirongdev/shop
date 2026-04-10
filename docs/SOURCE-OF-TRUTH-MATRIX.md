@@ -43,6 +43,11 @@
 | 新用户增长链路 | `docs/services/new-user-onboarding.md` | `docs/services/loyalty-service.md`、`docs/services/promotion-service.md`、`docs/services/profile-service.md` | 注册赠礼、引导任务、欢迎券、欢迎邮件流程变化 |
 | 交付优先级与依赖队列 | `docs/DELIVERY-PRIORITY-AND-DEPENDENCY-MAP.md` | `docs/ROADMAP-2026.md` | 新任务进入执行队列、依赖顺序调整 |
 | 会话交接与执行上下文 | `docs/handoff/PROJECT-MAP.md` | `docs/handoff/PROJECT-STATUS.md`、`docs/handoff/CONTINUATION-CHECKLIST.md` | 交接对象、当前 workstream、执行约束变化 |
+| Marketplace 搜索与商品列表架构 | `docs/MARKETPLACE-SEARCH-DESIGN.md` | `docs-site/docs/services/search.md` | 搜索架构、商品展示逻辑、筛选排序策略变化 |
+| 运维 Runbooks - 高错误率 | `docs/runbooks/HIGH_ERROR_RATE.md` | N/A | 诊断流程、应急处理步骤变化 |
+| 运维 Runbooks - Kafka 延迟 | `docs/runbooks/KAFKA_LAG.md` | N/A | 诊断流程、应急处理步骤变化 |
+| 运维 Runbooks - 支付失败 | `docs/runbooks/PAYMENT_FAILURE.md` | N/A | 诊断流程、应急处理步骤变化 |
+| 运维 Runbooks - 服务下线 | `docs/runbooks/SERVICE_DOWN.md` | N/A | 诊断流程、应急处理步骤变化 |
 
 ---
 

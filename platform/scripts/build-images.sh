@@ -7,13 +7,11 @@ source "${script_dir}/local-cicd-modules.sh"
 
 usage() {
   cat <<'EOF' >&2
-Usage: ./scripts/build-images.sh [--all|--changed|--module MODULE] [--fast|--legacy] [-j N] [--base REF]
+Usage: ./scripts/build-images.sh [--all|--changed|--module MODULE] [-j N] [--base REF]
 
   --all           Build all module images (default)
   --changed       Build only module images affected by Git changes
   --module MODULE Build a single named module (e.g. --module buyer-bff)
-  --fast          Build host-packaged jars into images (default)
-  --legacy        Build module images with docker/Dockerfile.module
   -j N            Parallel Docker build jobs (default: 4)
   --base REF      Git ref used for change detection (default: origin/main)
 EOF
@@ -43,11 +41,7 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --fast)
-      build_mode="fast"
-      shift
-      ;;
-    --legacy)
-      build_mode="legacy"
+      # fast is the only mode; flag accepted for backwards compat and ignored
       shift
       ;;
     -j)
@@ -167,19 +161,8 @@ build_buyer_app() {
     .
 }
 
-build_legacy_module() {
-  local module="$1"
-
-  echo "==> Building $(module_local_image_ref "${module}") with platform/docker/Dockerfile.module"
-  docker build \
-    --build-arg MODULE="${module}" \
-    -f platform/docker/Dockerfile.module \
-    -t "$(module_local_image_ref "${module}")" \
-    .
-}
-
 export LOCAL_IMAGE_TAG LOCAL_REGISTRY
-export -f module_local_image_ref module_jar_path build_host_jars build_fast_module build_seller_portal build_buyer_app build_legacy_module
+export -f module_local_image_ref module_jar_path build_host_jars build_fast_module build_seller_portal build_buyer_app
 
 if [[ "${mode}" == "changed" ]]; then
   modules=()
@@ -201,17 +184,9 @@ if [[ "${#modules[@]}" -eq 0 ]]; then
   exit 0
 fi
 
-if [[ "${build_mode}" == "fast" && "${#modules[@]}" -gt 0 ]]; then
-  echo "==> Running host Maven package for: ${modules[*]}"
-  build_host_jars
-fi
+echo "==> Running host Maven package for: ${modules[*]}"
+build_host_jars
 
 echo "Building ${#modules[@]} module(s) with ${jobs} parallel job(s): ${modules[*]}"
-if [[ "${build_mode}" == "fast" ]]; then
-  build_function="build_fast_module"
-else
-  build_function="build_legacy_module"
-fi
-
-printf '%s\n' "${modules[@]}" | xargs -n 1 -P "${jobs}" bash -c "${build_function} \"\$1\"" _
+printf '%s\n' "${modules[@]}" | xargs -n 1 -P "${jobs}" bash -c 'build_fast_module "$1"' _
 echo "Docker image build completed."

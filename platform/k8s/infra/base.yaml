@@ -57,6 +57,18 @@ data:
     GRANT ALL PRIVILEGES ON shop_auth.* TO 'shop'@'%';
     FLUSH PRIVILEGES;
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+  namespace: shop
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -67,6 +79,8 @@ spec:
   selector:
     matchLabels:
       app: mysql
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -80,11 +94,49 @@ spec:
           envFrom:
             - secretRef:
                 name: mysql-auth
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+          startupProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - mysqladmin ping -h localhost -u root --password=$MYSQL_ROOT_PASSWORD | grep -q 'mysqld is alive'
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - mysqladmin ping -h localhost -u root --password=$MYSQL_ROOT_PASSWORD | grep -q 'mysqld is alive'
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - mysqladmin ping -h localhost -u root --password=$MYSQL_ROOT_PASSWORD | grep -q 'mysqld is alive'
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 10
           volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
             - name: mysql-init-scripts
               mountPath: /docker-entrypoint-initdb.d/01-create-databases.sql
               subPath: 01-create-databases.sql
       volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-data
         - name: mysql-init-scripts
           configMap:
             name: mysql-init-scripts
@@ -121,6 +173,28 @@ spec:
           image: redis:7.4
           ports:
             - containerPort: 6379
+          startupProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 15
+            periodSeconds: 15
 ---
 apiVersion: v1
 kind: Service
@@ -176,6 +250,31 @@ spec:
               value: "1"
             - name: CLUSTER_ID
               value: shop-kafka-cluster-id-0001
+          startupProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+            initialDelaySeconds: 30
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+            initialDelaySeconds: 30
+            periodSeconds: 30
 ---
 apiVersion: v1
 kind: Service

@@ -8,7 +8,6 @@ repo_root="$(cd "${script_dir}/../.." && pwd)"
 source "${script_dir}/local-cicd-modules.sh"
 
 mode="all"
-deploy_mode="${SHOP_LOCAL_DEPLOY_MODE:-fast}"
 base_ref="$(default_base_ref)"
 cluster_name="${SHOP_LOCAL_CLUSTER:-shop-kind}"
 context_name="kind-${cluster_name}"
@@ -18,17 +17,26 @@ while [[ $# -gt 0 ]]; do
     --all) mode="all"; shift ;;
     --changed) mode="changed"; shift ;;
     --base) base_ref="$2"; shift 2 ;;
-    --legacy) deploy_mode="legacy"; shift ;;
     *) echo "error: unknown argument $1" >&2; exit 1 ;;
   esac
 done
 
+# Content-addressable image tags: use sed to update all newTag values in the
+# kustomization.yaml before apply, then restore after. This ensures kubectl apply
+# sees changed pod template hashes and triggers native rolling updates automatically.
+echo "==> Updating kustomize image tags to '${LOCAL_IMAGE_TAG}'"
+kustomization_file="${repo_root}/platform/k8s/apps/overlays/${overlay}/kustomization.yaml"
+
+# Save original content, update in-place with sed, restore after apply.
+original_kustomization="$(cat "${kustomization_file}")"
+sed -i.bak "s|^\([[:space:]]*newTag:[[:space:]]*\).*|\1${LOCAL_IMAGE_TAG}|g" "${kustomization_file}"
+rm -f "${kustomization_file}.bak"
+
+# Cleanup: restore original kustomization.yaml after apply (keeps git status clean).
+trap 'echo "${original_kustomization}" > "${kustomization_file}"' EXIT
+
 echo "==> Deploying overlay '${overlay}'"
-if [[ "${deploy_mode}" == "legacy" ]]; then
-  kubectl --context "${context_name}" apply -f "${repo_root}/platform/k8s/apps/platform.yaml"
-else
-  kubectl --context "${context_name}" apply -k "${repo_root}/platform/k8s/apps/overlays/${overlay}"
-fi
+kubectl --context "${context_name}" apply -k "${repo_root}/platform/k8s/apps/overlays/${overlay}"
 
 if [[ "${mode}" == "changed" ]]; then
   deployments=()
@@ -39,74 +47,33 @@ else
   deployments=("${ALL_MODULES[@]}")
 fi
 
-if [[ "${#deployments[@]}" -eq 0 || "${deploy_mode}" == "legacy" ]]; then
+if [[ "${#deployments[@]}" -eq 0 ]]; then
   deployments=("${ALL_MODULES[@]}")
 fi
 
-# Wave-based restart reduces peak CPU contention on single-node Kind clusters.
-# Wave 1: domain/auth services (DB-dependent; init containers ensure MySQL is ready)
-# Wave 2: BFFs, search, notification, portal (no direct DB; can overlap with wave 1 tail)
-# Wave 3: api-gateway (depends on auth-server being healthy for first-request JWT validation)
-WAVE1=(auth-server profile-service promotion-service wallet-service marketplace-service
-       order-service loyalty-service activity-service webhook-service subscription-service)
-WAVE2=(buyer-bff seller-bff search-service notification-service buyer-portal seller-portal)
-WAVE3=(api-gateway)
+# Wait for all deployments to roll out using native kubectl wait.
+# With content-addressable image tags, kubectl apply triggers rolling updates automatically.
+# We wait in parallel (up to 18 concurrent) since Kubernetes handles the rollout scheduling.
+echo "==> Waiting for ${#deployments[@]} deployment(s) to roll out..."
+rollout_timeout="390s"  # Matches startupProbe budget: 60s initialDelay + 30*10s + 30s safety
 
-rollout_wait() {
-  local timeout="${1}"; shift
-  local deps=("$@")
-  local pids=() failed=()
-  for d in "${deps[@]}"; do
-    kubectl --context "${context_name}" -n shop rollout status \
-      "deployment/${d}" --timeout="${timeout}" &
-    pids+=($!)
-  done
-  for i in "${!pids[@]}"; do
-    if ! wait "${pids[$i]}"; then
-      failed+=("${deps[$i]}")
-    fi
-  done
-  if [[ "${#failed[@]}" -gt 0 ]]; then
-    echo "error: rollout timed out for: ${failed[*]}" >&2
-    return 1
+failed=()
+pids=()
+for d in "${deployments[@]}"; do
+  kubectl --context "${context_name}" -n shop rollout status \
+    "deployment/${d}" --timeout="${rollout_timeout}" &
+  pids+=($!)
+done
+
+for i in "${!pids[@]}"; do
+  if ! wait "${pids[$i]}"; then
+    failed+=("${deployments[$i]}")
   fi
-}
+done
 
-restart_deployments() {
-  local deps=("$@")
-  for d in "${deps[@]}"; do
-    if array_contains "${d}" "${deployments[@]}"; then
-      kubectl --context "${context_name}" -n shop rollout restart "deployment/${d}"
-    fi
-  done
-}
-
-wait_wave() {
-  local timeout="${1}"; shift
-  local deps=("$@")
-  local filtered=()
-  for d in "${deps[@]}"; do
-    if array_contains "${d}" "${deployments[@]}"; then
-      filtered+=("${d}")
-    fi
-  done
-  if [[ "${#filtered[@]}" -gt 0 ]]; then
-    echo "  ↳ waiting for: ${filtered[*]}"
-    rollout_wait "${timeout}" "${filtered[@]}"
-  fi
-}
-
-if [[ "${deploy_mode}" == "fast" ]]; then
-  # Stagger restarts: let wave-1 JVMs claim CPU before subsequent waves start.
-  restart_deployments "${WAVE1[@]}"
-  if [[ "${#deployments[@]}" -gt 5 ]]; then
-    sleep 20  # Only stagger on full restarts (>5 services at once)
-  fi
-  restart_deployments "${WAVE2[@]}"
-  restart_deployments "${WAVE3[@]}"
+if [[ "${#failed[@]}" -gt 0 ]]; then
+  echo "error: rollout timed out for: ${failed[*]}" >&2
+  exit 1
 fi
 
-echo "Waiting for ${#deployments[@]} deployment(s) to roll out (3-wave schedule)…"
-wait_wave 240s "${WAVE1[@]}"
-wait_wave 180s "${WAVE2[@]}"
-wait_wave 120s "${WAVE3[@]}"
+echo "✅ All deployments rolled out successfully."

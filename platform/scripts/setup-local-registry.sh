@@ -42,7 +42,7 @@ EOF
   done
 
   echo "==> Publishing local registry ConfigMap to cluster '${CLUSTER_NAME}'"
-  cat <<EOF | kubectl apply -f -
+  cat <<EOF | kubectl apply --validate=false -f -
 apiVersion: v1
 kind: ConfigMap
 metadata:

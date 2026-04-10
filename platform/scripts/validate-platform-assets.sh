@@ -85,12 +85,4 @@ docker run --rm --entrypoint sh "${fast_context_image}" -c 'test -s /app/app.jar
   exit 1
 }
 
-echo "==> Validating legacy platform manifest stays in sync"
-cmp -s platform/k8s/apps/platform.yaml platform/k8s/apps/base/platform.yaml || {
-  echo "error: platform/k8s/apps/platform.yaml and platform/k8s/apps/base/platform.yaml differ." >&2
-  echo "Keep the compatibility copy in sync with:" >&2
-  echo "  cp platform/k8s/apps/base/platform.yaml platform/k8s/apps/platform.yaml" >&2
-  exit 1
-}
-
 echo "Platform asset validation completed successfully."

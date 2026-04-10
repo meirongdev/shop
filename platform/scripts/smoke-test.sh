@@ -145,6 +145,10 @@ check_problem_detail() {
     fi
   done
 
+  if [ "${missing}" -gt 0 ]; then
+    echo "  ↳ Response body: ${response_body}"
+  fi
+
   if [ "${missing}" -eq 0 ]; then
     echo "[PASS] ${name} (All ProblemDetail fields present)"
   else

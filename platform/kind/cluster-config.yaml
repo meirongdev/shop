@@ -2,18 +2,23 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 networking:
   disableDefaultCNI: true
-  kubeProxyMode: none
 nodes:
   - role: control-plane
     extraPortMappings:
+      # Gateway — random high hostPort to avoid conflicts with local services.
+      # Users access via `make local-access` (port-forward to 18080).
       - containerPort: 30080
-        hostPort: 8080
+        hostPort: 28080
         protocol: TCP
+      # Mailpit SMTP/Web UI — random high hostPort.
+      # Users access via `make local-access` (port-forward to 18025).
       - containerPort: 30025
-        hostPort: 8025
+        hostPort: 28025
         protocol: TCP
+      # Prometheus — random high hostPort.
+      # Users access via `make local-access` (port-forward to 19090).
       - containerPort: 30090
-        hostPort: 9090
+        hostPort: 28090
         protocol: TCP
     kubeadmConfigPatches:
       - |
@@ -21,6 +26,8 @@ nodes:
         nodeRegistration:
           kubeletExtraArgs:
             node-labels: "ingress-ready=true"
+  - role: worker
+  - role: worker
 containerdConfigPatches:
   - |-
     [plugins."io.containerd.grpc.v1.cri".registry]

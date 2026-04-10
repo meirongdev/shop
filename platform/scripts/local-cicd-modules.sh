@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 
 LOCAL_REGISTRY="${SHOP_LOCAL_REGISTRY:-localhost:5000}"
-LOCAL_IMAGE_TAG="${SHOP_LOCAL_IMAGE_TAG:-dev}"
+# Content-addressable image tag: dev-<git-sha>.
+# If SHOP_LOCAL_IMAGE_TAG is set externally (e.g. by e2e.sh), use it.
+# Otherwise generate one based on current git SHA for standalone invocations.
+if [[ -n "${SHOP_LOCAL_IMAGE_TAG:-}" ]]; then
+  LOCAL_IMAGE_TAG="${SHOP_LOCAL_IMAGE_TAG}"
+else
+  git_sha="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+  LOCAL_IMAGE_TAG="dev-${git_sha}"
+fi
 
 ALL_MODULES=(
   auth-server
@@ -28,8 +36,30 @@ SHARED_PATHS=(
   shared/shop-common
   shared/shop-contracts
   pom.xml
-  platform/docker/Dockerfile.module
   platform/docker/Dockerfile.fast
+)
+
+# Fine-grained shared module → dependent modules mapping.
+# Avoids rebuilding all 19 modules when only one shared sub-module changes.
+# Format: associative array mapping shared module path to comma-separated dependents.
+declare -A SHARED_MODULE_DEPS=(
+  # shop-common-core is used by all Java services + buyer-portal
+  ["shared/shop-common"]="auth-server,api-gateway,buyer-bff,seller-bff,profile-service,promotion-service,wallet-service,marketplace-service,order-service,search-service,notification-service,loyalty-service,activity-service,webhook-service,subscription-service,buyer-portal"
+
+  # shop-contracts is split by domain — only services that import a specific contract need rebuild
+  ["shared/shop-contracts/shop-contracts-auth"]="auth-server,buyer-portal,promotion-service,notification-service"
+  ["shared/shop-contracts/shop-contracts-profile"]="auth-server,profile-service"
+  ["shared/shop-contracts/shop-contracts-order"]="order-service,seller-bff,notification-service"
+  ["shared/shop-contracts/shop-contracts-activity"]="activity-service,buyer-portal"
+  ["shared/shop-contracts/shop-contracts-buyer"]="buyer-bff"
+  ["shared/shop-contracts/shop-contracts-loyalty"]="buyer-bff,loyalty-service"
+  ["shared/shop-contracts/shop-contracts-marketplace"]="marketplace-service,seller-bff,search-service"
+  ["shared/shop-contracts/shop-contracts-promotion"]="promotion-service"
+  ["shared/shop-contracts/shop-contracts-wallet"]="wallet-service"
+  ["shared/shop-contracts/shop-contracts-webhook"]="webhook-service"
+  ["shared/shop-contracts/shop-contracts-subscription"]="subscription-service"
+  ["shared/shop-contracts/shop-contracts-search"]="search-service"
+  ["shared/shop-contracts/shop-contracts-event-common"]="api-gateway,loyalty-service,marketplace-service,order-service,wallet-service"
 )
 
 # Returns space-separated extra source paths for KMP modules whose source
@@ -231,16 +261,56 @@ detect_changed_modules() {
     return 0
   fi
 
+  # Track which shared modules changed — used for fine-grained dependency resolution.
+  local -A shared_modules_changed=()
+
+  # Check shared module changes first.
   for path in "${changed_files[@]}"; do
-    for shared_path in "${SHARED_PATHS[@]}"; do
+    # Check fine-grained shared module mappings.
+    for shared_path in "${!SHARED_MODULE_DEPS[@]}"; do
       if path_matches_target "${path}" "${shared_path}"; then
-        printf '%s\n' "${ALL_MODULES[@]}"
-        return 0
+        shared_modules_changed["${shared_path}"]=1
       fi
     done
   done
 
-  for module in "${ALL_MODULES[@]}"; do
+  # If fine-grained shared module mappings were hit, add only their dependents.
+  if [[ "${#shared_modules_changed[@]}" -gt 0 ]]; then
+    local -A affected_modules=()
+    for shared_path in "${!shared_modules_changed[@]}"; do
+      local deps="${SHARED_MODULE_DEPS[${shared_path}]}"
+      IFS=',' read -ra dep_array <<< "${deps}"
+      for dep in "${dep_array[@]}"; do
+        affected_modules["${dep}"]=1
+      done
+    done
+    for mod in "${!affected_modules[@]}"; do
+      modules+=("${mod}")
+    done
+  fi
+
+  # Check for root-level shared path changes (pom.xml, Dockerfile.fast).
+  # These affect ALL modules.
+  for path in "${changed_files[@]}"; do
+    if path_matches_target "${path}" "pom.xml" || path_matches_target "${path}" "platform/docker/Dockerfile.fast"; then
+      # pom.xml or Dockerfile changed — rebuild everything.
+      printf '%s\n' "${ALL_MODULES[@]}"
+      return 0
+    fi
+  done
+
+  # Deduplicate modules list (may have duplicates from multiple shared paths).
+  local -A seen_modules=()
+  local -a unique_modules=()
+  for mod in "${modules[@]}"; do
+    if [[ -z "${seen_modules[${mod}]:-}" ]]; then
+      seen_modules["${mod}"]=1
+      unique_modules+=("${mod}")
+    fi
+  done
+
+  # Now check for direct module changes (independent of shared modules).
+  for module in "${unique_modules[@]}"; do
     matched=false
     for path in "${changed_files[@]}"; do
       if path_matches_target "${path}" "${module}"; then
@@ -261,12 +331,16 @@ detect_changed_modules() {
     done
 
     if [[ "${matched}" == "true" ]]; then
-      modules+=("${module}")
+      # Only add if not already in unique_modules.
+      if [[ -z "${seen_modules[${module}]:-}" ]]; then
+        seen_modules["${module}"]=1
+        unique_modules+=("${module}")
+      fi
     fi
   done
 
-  if [[ "${#modules[@]}" -gt 0 ]]; then
-    printf '%s\n' "${modules[@]}"
+  if [[ "${#unique_modules[@]}" -gt 0 ]]; then
+    printf '%s\n' "${unique_modules[@]}"
   fi
 }
 

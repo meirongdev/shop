@@ -68,14 +68,16 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/imagePullPolicy
         value: Always
-      - op: add
+      - op: replace
         path: /spec/progressDeadlineSeconds
-        value: 300
+        value: 480
       - op: add
-        path: /spec/template/spec/containers/0/resources
-        value:
-          requests:
-            memory: "256Mi"
-            cpu: "50m"
-          limits:
-            memory: "512Mi"
+        path: /spec/template/spec/terminationGracePeriodSeconds
+        value: 60
+  - target:
+      kind: ConfigMap
+      name: shop-shared-config
+    patch: |-
+      - op: replace
+        path: /data/JAVA_TOOL_OPTIONS
+        value: "-XX:MaxRAMPercentage=75 -XX:InitialRAMPercentage=30 -XX:TieredStopAtLevel=1 -Xss512k"

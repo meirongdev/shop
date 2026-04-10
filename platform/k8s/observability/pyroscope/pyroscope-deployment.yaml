@@ -19,6 +19,19 @@ spec:
           args: ["server"]
           ports:
             - containerPort: 4040
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4040
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 4040
+            initialDelaySeconds: 10
+            failureThreshold: 30
+            periodSeconds: 5
           resources:
             requests:
               cpu: 100m

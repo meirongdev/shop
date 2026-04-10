@@ -51,21 +51,23 @@ kubectl config use-context "${context_name}" >/dev/null
 
 bash "${repo_root}/platform/scripts/setup-local-registry.sh" "${cluster_name}"
 
-control_plane_node="$(kind get nodes --name "${cluster_name}" | head -n 1)"
-if ! kubectl --context "${context_name}" -n kube-system get daemonset cilium >/dev/null 2>&1; then
-  echo "🔒 Installing Cilium CNI..."
-  cilium install \
-    --context "${context_name}" \
-    --set kubeProxyReplacement=true \
-    --set k8sServiceHost="${control_plane_node}" \
-    --set k8sServicePort=6443
+if ! kubectl --context "${context_name}" -n kube-system get daemonset calico-node >/dev/null 2>&1; then
+  echo "🔒 Installing Calico CNI for Kind multi-node..."
+  # Calico is the recommended CNI for Kind multi-node (works reliably in containerized nodes).
+  # Cilium with kubeProxyReplacement=true requires eBPF support that Docker containers lack.
+  calico_version="v3.29.3"
+  calico_manifest="https://raw.githubusercontent.com/projectcalico/calico/${calico_version}/manifests/calico.yaml"
+
+  kubectl apply -f "${calico_manifest}"
 else
-  echo "✅ Cilium already installed"
+  echo "✅ Calico already installed"
 fi
 
-echo "⏳ Waiting for Cilium and node readiness..."
-cilium status --context "${context_name}" --wait
-kubectl --context "${context_name}" wait --for=condition=Ready "node/${control_plane_node}" --timeout=300s
+echo "⏳ Waiting for Calico and node readiness..."
+kubectl --context "${context_name}" -n kube-system rollout status daemonset/calico-node --timeout=300s
+
+# Wait for all nodes to be Ready (control-plane + workers on multi-node clusters)
+kubectl --context "${context_name}" wait --for=condition=Ready nodes --all --timeout=300s
 
 kubectl --context "${context_name}" apply -f "${repo_root}/platform/k8s/namespace.yaml"
 kubectl --context "${context_name}" apply -f "${repo_root}/platform/k8s/infra/base.yaml"

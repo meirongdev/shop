@@ -6,7 +6,7 @@ source "${script_dir}/local-cicd-modules.sh"
 
 usage() {
   cat <<'EOF' >&2
-Usage: ./scripts/load-images-kind.sh [cluster-name] [--all|--changed|--module MODULE] [--base REF] [--registry|--kind-load]
+Usage: ./scripts/load-images-kind.sh [cluster-name] [--all|--changed|--module MODULE] [--base REF] [--registry]
 
   cluster-name    Kind cluster name (default: shop-kind)
   --all           Load all module images (default)
@@ -14,7 +14,6 @@ Usage: ./scripts/load-images-kind.sh [cluster-name] [--all|--changed|--module MO
   --module MODULE Load a single named module (e.g. --module buyer-bff)
   --base REF      Git ref used for change detection (default: origin/main)
   --registry      Push images to the local registry and let pods pull them (default)
-  --kind-load     Load local images directly into the Kind nodes
 EOF
   exit 1
 }
@@ -24,7 +23,7 @@ mode="all"
 single_module=""
 base_ref="$(default_base_ref)"
 cluster_name_set=false
-transport="${SHOP_LOCAL_IMAGE_TRANSPORT:-registry}"
+transport="registry"
 
 sync_module() {
   local module="$1"
@@ -37,13 +36,9 @@ sync_module() {
     return 1
   }
 
-  if [[ "${transport}" == "registry" ]]; then
-    bash "${script_dir}/setup-local-registry.sh" "${cluster_name}" >/dev/null
-    docker tag "${local_ref}" "${registry_ref}"
-    docker push "${registry_ref}"
-  else
-    kind load docker-image "${local_ref}" --name "${cluster_name}"
-  fi
+  bash "${script_dir}/setup-local-registry.sh" "${cluster_name}" >/dev/null
+  docker tag "${local_ref}" "${registry_ref}"
+  docker push "${registry_ref}"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -69,10 +64,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --registry)
       transport="registry"
-      shift
-      ;;
-    --kind-load)
-      transport="kind-load"
       shift
       ;;
     -h|--help)

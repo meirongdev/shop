@@ -63,6 +63,13 @@ start_gateway_port_forward() {
     port-forward svc/api-gateway "${PORT_FORWARD_GATEWAY_LOCAL_PORT}:8080" >"${port_forward_log}" 2>&1 &
   port_forward_pid=$!
 
+  # Allow kubectl time to bind the port or fail fast (e.g., port already in use by another process).
+  sleep 1
+  if ! kill -0 "${port_forward_pid}" >/dev/null 2>&1; then
+    cat "${port_forward_log}" >&2
+    return 1
+  fi
+
   for _ in $(seq 1 20); do
     if ! kill -0 "${port_forward_pid}" >/dev/null 2>&1; then
       cat "${port_forward_log}" >&2
@@ -70,7 +77,13 @@ start_gateway_port_forward() {
     fi
 
     if [[ "$(request_status "GET" "http://127.0.0.1:${PORT_FORWARD_GATEWAY_LOCAL_PORT}/v3/api-docs/gateway")" != "000" ]]; then
-      return 0
+      # Re-verify kubectl is still alive: if the port was already occupied by another process,
+      # kubectl will have exited by now and we must not treat that process as the gateway.
+      if kill -0 "${port_forward_pid}" >/dev/null 2>&1; then
+        return 0
+      fi
+      cat "${port_forward_log}" >&2
+      return 1
     fi
 
     sleep 1

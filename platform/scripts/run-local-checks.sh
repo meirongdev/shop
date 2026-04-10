@@ -92,11 +92,18 @@ if [[ "${run_platform}" == "true" ]]; then
   echo "==> Validating platform assets"
   bash ./platform/scripts/validate-platform-assets.sh
   if [[ "${k8s_changed}" == "true" ]]; then
-    echo "==> Verifying observability (requires cluster access)"
-    # Use a subshell to avoid exit on failure if cluster not ready
-    ( bash ./platform/scripts/verify-observability.sh ) || echo "   Warning: verify-observability skipped or failed (cluster/pf issues)"
-    echo "==> Running smoke tests (requires cluster access)"
-    ( bash ./platform/scripts/smoke-test.sh ) || echo "   Warning: smoke-test skipped or failed (cluster/pf issues)"
+    # Only run cluster-dependent checks if a Kind cluster with the shop namespace exists.
+    cluster_name="${SHOP_LOCAL_CLUSTER:-shop-kind}"
+    context_name="kind-${cluster_name}"
+    if kind get clusters 2>/dev/null | grep -q "^${cluster_name}$" && \
+       kubectl --context "${context_name}" get namespace shop >/dev/null 2>&1; then
+      echo "==> Verifying observability (requires cluster access)"
+      ( PORT_FORWARD_CONTEXT="${context_name}" bash ./platform/scripts/verify-observability.sh ) || echo "   Warning: verify-observability skipped or failed (cluster/pf issues)"
+      echo "==> Running smoke tests (requires cluster access)"
+      ( PORT_FORWARD_CONTEXT="${context_name}" bash ./platform/scripts/smoke-test.sh ) || echo "   Warning: smoke-test skipped or failed (cluster/pf issues)"
+    else
+      echo "==> Skipping cluster-dependent checks (no Kind cluster '${cluster_name}' with 'shop' namespace found)"
+    fi
   fi
 fi
 

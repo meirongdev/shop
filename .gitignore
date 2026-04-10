@@ -10,6 +10,7 @@ docs-site/build/
 docs-site/.docusaurus/
 .worktrees/
 # Gradle / KMP
+build/
 frontend/build/
 frontend/.gradle/
 frontend/kmp/*/build/

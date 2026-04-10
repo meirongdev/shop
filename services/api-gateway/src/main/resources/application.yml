@@ -42,6 +42,15 @@ spring:
               predicates:
                 - Path=/auth/**
 
+            # More specific routes must come before generic ones
+            - id: buyer-app
+              uri: ${BUYER_APP_URI:http://buyer-app:80}
+              predicates:
+                - Path=/buyer-app/**
+              filters:
+                - StripPrefix=1
+                - PreserveHost
+
             - id: buyer-portal
               uri: ${BUYER_PORTAL_URI:http://buyer-portal:8080}
               predicates:
@@ -53,14 +62,6 @@ spring:
               uri: ${SELLER_PORTAL_URI:http://seller-portal:80}
               predicates:
                 - Path=/seller/**
-              filters:
-                - StripPrefix=1
-                - PreserveHost
-
-            - id: buyer-app
-              uri: ${BUYER_APP_URI:http://buyer-app:80}
-              predicates:
-                - Path=/buyer-app/**
               filters:
                 - StripPrefix=1
                 - PreserveHost
@@ -229,37 +230,40 @@ springdoc:
     enabled: ${SPRINGDOC_ENABLED:true}
     path: /swagger-ui.html
     urls:
-      - name: API Gateway
-        url: /v3/api-docs/gateway
-      - name: Buyer BFF
+      # ── BFF Layer ──
+      - name: "[BFF] Buyer"
         url: /v3/api-docs/buyer
-      - name: Seller BFF
+      - name: "[BFF] Seller"
         url: /v3/api-docs/seller
-      - name: Auth Server
-        url: /v3/api-docs/auth
-      - name: Activity Service
+      # ── Domain Services ──
+      - name: "[MS] Activity"
         url: /v3/api-docs/activity
-      - name: Loyalty Service
+      - name: "[MS] Auth"
+        url: /v3/api-docs/auth
+      - name: "[MS] Loyalty"
         url: /v3/api-docs/loyalty
-      - name: Marketplace Service
+      - name: "[MS] Marketplace"
         url: /v3/api-docs/marketplace
-      - name: Notification Service
+      - name: "[MS] Notification"
         url: /v3/api-docs/notification
-      - name: Order Service
+      - name: "[MS] Order"
         url: /v3/api-docs/order
-      - name: Profile Service
+      - name: "[MS] Profile"
         url: /v3/api-docs/profile
-      - name: Promotion Service
+      - name: "[MS] Promotion"
         url: /v3/api-docs/promotion
-      - name: Search Service
+      - name: "[MS] Search"
         url: /v3/api-docs/search
-      - name: Subscription Service
+      - name: "[MS] Subscription"
         url: /v3/api-docs/subscription
-      - name: Wallet Service
+      - name: "[MS] Wallet"
         url: /v3/api-docs/wallet
-      - name: Webhook Service
+      - name: "[MS] Webhook"
         url: /v3/api-docs/webhook
-    urls-primary-name: Buyer BFF
+      # ── Gateway Self ──
+      - name: "Gateway Self"
+        url: /v3/api-docs/gateway
+    urls-primary-name: "[BFF] Buyer"
     persist-authorization: true
     operations-sorter: alpha
     tags-sorter: alpha

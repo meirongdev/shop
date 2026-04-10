@@ -3,7 +3,7 @@ package dev.meirong.shop.search.client;
 import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
-import dev.meirong.shop.contracts.api.MarketplaceInternalApi;
+import dev.meirong.shop.contracts.marketplace.MarketplaceInternalApi;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;

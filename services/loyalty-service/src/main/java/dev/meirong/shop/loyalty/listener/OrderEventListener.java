@@ -7,7 +7,7 @@ import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.idempotency.IdempotencyGuard;
 import dev.meirong.shop.common.kafka.NonRetryableKafkaConsumerException;
 import dev.meirong.shop.common.kafka.RetryableKafkaConsumerException;
-import dev.meirong.shop.contracts.api.ProfileInternalApi;
+import dev.meirong.shop.contracts.profile.ProfileInternalApi;
 import dev.meirong.shop.contracts.event.EventEnvelope;
 import dev.meirong.shop.contracts.event.OrderEventData;
 import dev.meirong.shop.loyalty.config.LoyaltyProperties;

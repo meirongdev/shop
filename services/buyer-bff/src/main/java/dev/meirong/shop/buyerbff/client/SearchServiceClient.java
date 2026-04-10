@@ -1,7 +1,7 @@
 package dev.meirong.shop.buyerbff.client;
 
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.SearchApi;
+import dev.meirong.shop.contracts.search.SearchApi;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.annotation.HttpExchange;

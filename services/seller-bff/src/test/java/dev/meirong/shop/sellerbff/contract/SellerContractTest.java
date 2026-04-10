@@ -9,9 +9,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.resilience.ResilienceHelper;
-import dev.meirong.shop.contracts.api.OrderApi;
-import dev.meirong.shop.contracts.api.ProfileApi;
-import dev.meirong.shop.contracts.api.WalletApi;
+import dev.meirong.shop.contracts.order.OrderApi;
+import dev.meirong.shop.contracts.profile.ProfileApi;
+import dev.meirong.shop.contracts.wallet.WalletApi;
 import dev.meirong.shop.sellerbff.config.SellerClientProperties;
 import dev.meirong.shop.sellerbff.service.SellerAggregationService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -70,7 +70,7 @@ class SellerContractTest {
                 .write(Mockito.anyString(), Mockito.<Supplier<Object>>any(), Mockito.<Function<Throwable, Object>>any());
 
         aggregationService = new SellerAggregationService(
-                RestClient.builder(), RestClient.builder().build(), properties, resilienceHelper, 
+                RestClient.builder(), RestClient.builder().build(), properties, resilienceHelper,
                 new SimpleMeterRegistry());
     }
 

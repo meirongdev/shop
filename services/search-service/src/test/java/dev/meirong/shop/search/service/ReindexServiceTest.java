@@ -5,8 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import dev.meirong.shop.contracts.api.MarketplaceApi;
-import dev.meirong.shop.contracts.api.MarketplaceInternalApi;
+import dev.meirong.shop.contracts.marketplace.MarketplaceApi;
+import dev.meirong.shop.contracts.marketplace.MarketplaceInternalApi;
 import dev.meirong.shop.search.client.MarketplaceInternalClient;
 import dev.meirong.shop.search.index.ProductIndexSettings;
 import dev.meirong.shop.search.index.ProductIndexer;

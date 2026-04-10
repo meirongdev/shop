@@ -1,14 +1,16 @@
 package dev.meirong.shop.sellerbff.controller;
 
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.meirong.shop.common.http.TrustedHeaderNames;
 import dev.meirong.shop.common.web.GlobalExceptionHandler;
-import dev.meirong.shop.contracts.api.ProfileApi;
-import dev.meirong.shop.contracts.api.SellerApi;
+import dev.meirong.shop.contracts.profile.ProfileApi;
+import dev.meirong.shop.contracts.seller.SellerApi;
 import dev.meirong.shop.sellerbff.service.SellerAggregationService;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,18 @@ class SellerControllerProfileTest {
     private SellerAggregationService service;
 
     @Test
+    void getProfile_withoutSellerRole_returnsForbidden() throws Exception {
+        mockMvc.perform(post(SellerApi.PROFILE_GET)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new SellerApi.SellerContextRequest("seller-2001"))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("SC_FORBIDDEN"))
+                .andExpect(jsonPath("$.message").value("Seller profile requires a signed-in seller account"));
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
     void getProfile_usesResolvedSellerId() throws Exception {
         ProfileApi.ProfileResponse response = new ProfileApi.ProfileResponse(
                 "seller-2001",
@@ -46,6 +60,7 @@ class SellerControllerProfileTest {
         when(service.getProfile("seller-2001")).thenReturn(response);
 
         mockMvc.perform(post(SellerApi.PROFILE_GET)
+                        .header(TrustedHeaderNames.ROLES, "ROLE_SELLER")
                         .header("X-Buyer-Id", "seller-2001")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SellerApi.SellerContextRequest("seller-body"))))
@@ -80,6 +95,7 @@ class SellerControllerProfileTest {
         ))).thenReturn(response);
 
         mockMvc.perform(post(SellerApi.PROFILE_UPDATE)
+                        .header(TrustedHeaderNames.ROLES, "ROLE_SELLER")
                         .header("X-Buyer-Id", "seller-2001")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))

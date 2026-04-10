@@ -3,7 +3,7 @@ package dev.meirong.shop.subscription.service;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
 import dev.meirong.shop.common.metrics.MetricsHelper;
-import dev.meirong.shop.contracts.api.SubscriptionApi;
+import dev.meirong.shop.contracts.subscription.SubscriptionApi;
 import dev.meirong.shop.subscription.domain.SubscriptionEntity;
 import dev.meirong.shop.subscription.domain.SubscriptionPlanEntity;
 import dev.meirong.shop.subscription.domain.SubscriptionPlanRepository;

@@ -1,7 +1,7 @@
 package dev.meirong.shop.subscription.controller;
 
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.SubscriptionApi;
+import dev.meirong.shop.contracts.subscription.SubscriptionApi;
 import dev.meirong.shop.subscription.service.SubscriptionApplicationService;
 import jakarta.validation.Valid;
 import java.util.List;

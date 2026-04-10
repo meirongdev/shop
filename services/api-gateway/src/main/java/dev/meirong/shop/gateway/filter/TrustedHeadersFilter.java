@@ -47,6 +47,7 @@ public class TrustedHeadersFilter extends OncePerRequestFilter {
         if (requestId == null || requestId.isBlank()) {
             requestId = UUID.randomUUID().toString();
         }
+        String previousRequestId = MDC.get("requestId");
 
         List<String> roles = Optional.ofNullable(jwt.getClaimAsStringList("roles")).orElse(List.of());
 
@@ -76,15 +77,25 @@ public class TrustedHeadersFilter extends OncePerRequestFilter {
         if (portal != null) {
             MDC.put("portal", portal);
         }
+        MDC.put("requestId", requestId);
 
         try {
             chain.doFilter(wrapped, response);
         } finally {
+            restoreMdcValue("requestId", previousRequestId);
             MDC.remove("principalId");
             MDC.remove("buyerId");
             MDC.remove("sellerId");
             MDC.remove("username");
             MDC.remove("portal");
         }
+    }
+
+    private static void restoreMdcValue(String key, String previousValue) {
+        if (previousValue == null || previousValue.isBlank()) {
+            MDC.remove(key);
+            return;
+        }
+        MDC.put(key, previousValue);
     }
 }

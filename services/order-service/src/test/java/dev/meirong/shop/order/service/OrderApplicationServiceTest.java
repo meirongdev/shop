@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.common.error.BusinessException;
-import dev.meirong.shop.contracts.api.OrderApi;
+import dev.meirong.shop.contracts.order.OrderApi;
 import dev.meirong.shop.order.domain.OrderItemEntity;
 import dev.meirong.shop.order.domain.OrderItemRepository;
 import dev.meirong.shop.order.domain.OrderOutboxEventEntity;

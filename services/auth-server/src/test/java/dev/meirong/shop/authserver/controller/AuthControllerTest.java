@@ -12,7 +12,7 @@ import dev.meirong.shop.authserver.service.JwtTokenService;
 import dev.meirong.shop.authserver.service.OtpChallengeService;
 import dev.meirong.shop.authserver.service.SocialLoginService;
 import dev.meirong.shop.common.web.GlobalExceptionHandler;
-import dev.meirong.shop.contracts.api.AuthApi;
+import dev.meirong.shop.contracts.auth.AuthApi;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;

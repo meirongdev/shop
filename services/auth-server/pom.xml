@@ -82,7 +82,17 @@
         </dependency>
         <dependency>
             <groupId>dev.meirong.shop</groupId>
-            <artifactId>shop-contracts</artifactId>
+            <artifactId>shop-contracts-auth</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-contracts-profile</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-contracts-event-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

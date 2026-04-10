@@ -12,7 +12,7 @@ import dev.meirong.shop.buyerbff.service.BuyerAggregationService;
 import dev.meirong.shop.buyerbff.service.GuestCartStore;
 import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.resilience.ResilienceHelper;
-import dev.meirong.shop.contracts.api.LoyaltyApi;
+import dev.meirong.shop.contracts.loyalty.LoyaltyApi;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;

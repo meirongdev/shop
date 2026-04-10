@@ -1,6 +1,6 @@
 package dev.meirong.shop.search.service;
 
-import dev.meirong.shop.contracts.api.SearchApi;
+import dev.meirong.shop.contracts.search.SearchApi;
 import dev.meirong.shop.search.index.ProductIndexSettings;
 import com.meilisearch.sdk.Client;
 import com.meilisearch.sdk.SearchRequest;

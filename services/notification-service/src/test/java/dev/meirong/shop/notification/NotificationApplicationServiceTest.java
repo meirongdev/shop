@@ -7,6 +7,7 @@ import dev.meirong.shop.notification.domain.NotificationLogEntity;
 import dev.meirong.shop.notification.domain.NotificationLogRepository;
 import dev.meirong.shop.notification.service.NotificationApplicationService;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,13 +27,13 @@ class NotificationApplicationServiceTest {
     @Mock
     private NotificationLogRepository repository;
 
-    @Mock
     private MeterRegistry meterRegistry;
 
     private NotificationApplicationService service;
 
     @BeforeEach
     void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
         NotificationChannel emailChannel = new NotificationChannel() {
             @Override
             public String channelType() { return "EMAIL"; }

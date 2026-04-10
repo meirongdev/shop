@@ -2,7 +2,7 @@ package dev.meirong.shop.promotion.service;
 
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
-import dev.meirong.shop.contracts.api.PromotionApi;
+import dev.meirong.shop.contracts.promotion.PromotionApi;
 import dev.meirong.shop.promotion.domain.CouponEntity;
 import dev.meirong.shop.promotion.domain.CouponRepository;
 import dev.meirong.shop.promotion.domain.CouponUsageEntity;

@@ -1,7 +1,7 @@
 package dev.meirong.shop.order.controller;
 
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.OrderApi;
+import dev.meirong.shop.contracts.order.OrderApi;
 import dev.meirong.shop.order.service.OrderApplicationService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;

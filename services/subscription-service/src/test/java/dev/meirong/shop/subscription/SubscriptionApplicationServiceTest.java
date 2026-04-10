@@ -6,7 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import dev.meirong.shop.common.error.BusinessException;
-import dev.meirong.shop.contracts.api.SubscriptionApi;
+import dev.meirong.shop.contracts.subscription.SubscriptionApi;
 import dev.meirong.shop.subscription.domain.SubscriptionPlanEntity;
 import dev.meirong.shop.subscription.domain.SubscriptionPlanRepository;
 import dev.meirong.shop.subscription.domain.SubscriptionRepository;

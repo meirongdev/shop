@@ -10,7 +10,7 @@ import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
 import dev.meirong.shop.common.http.TrustedHeaderNames;
-import dev.meirong.shop.contracts.api.ActivityApi;
+import dev.meirong.shop.contracts.activity.ActivityApi;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;

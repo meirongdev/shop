@@ -3,7 +3,7 @@ package dev.meirong.shop.promotion.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-import dev.meirong.shop.contracts.api.PromotionApi;
+import dev.meirong.shop.contracts.promotion.PromotionApi;
 import dev.meirong.shop.promotion.domain.CouponEntity;
 import dev.meirong.shop.promotion.domain.CouponRepository;
 import dev.meirong.shop.promotion.domain.CouponUsageRepository;

@@ -1,7 +1,7 @@
 package dev.meirong.shop.profile.controller;
 
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.ProfileInternalApi;
+import dev.meirong.shop.contracts.profile.ProfileInternalApi;
 import dev.meirong.shop.profile.service.ProfileReferralService;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;

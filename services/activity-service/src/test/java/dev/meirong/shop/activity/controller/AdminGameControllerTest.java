@@ -15,7 +15,7 @@ import dev.meirong.shop.activity.service.ActivityAdminService;
 import dev.meirong.shop.activity.service.ActivityQueryService;
 import dev.meirong.shop.common.http.TrustedHeaderNames;
 import dev.meirong.shop.common.web.GlobalExceptionHandler;
-import dev.meirong.shop.contracts.api.ActivityApi;
+import dev.meirong.shop.contracts.activity.ActivityApi;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;

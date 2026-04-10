@@ -2,7 +2,7 @@ package dev.meirong.shop.loyalty.controller;
 
 import dev.meirong.shop.common.http.TrustedHeaderNames;
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.LoyaltyApi;
+import dev.meirong.shop.contracts.loyalty.LoyaltyApi;
 import dev.meirong.shop.loyalty.domain.LoyaltyAccountEntity;
 import dev.meirong.shop.loyalty.domain.LoyaltyCheckinEntity;
 import dev.meirong.shop.loyalty.domain.LoyaltyRedemptionEntity;

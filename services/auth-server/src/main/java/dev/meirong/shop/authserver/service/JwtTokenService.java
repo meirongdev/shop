@@ -2,7 +2,7 @@ package dev.meirong.shop.authserver.service;
 
 import dev.meirong.shop.authserver.config.AuthProperties;
 import dev.meirong.shop.authserver.domain.UserAccountEntity;
-import dev.meirong.shop.contracts.api.AuthApi;
+import dev.meirong.shop.contracts.auth.AuthApi;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.proc.SecurityContext;
 import java.nio.charset.StandardCharsets;

@@ -2,7 +2,7 @@ package dev.meirong.shop.search.controller;
 
 import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.feature.FeatureToggleService;
-import dev.meirong.shop.contracts.api.SearchApi;
+import dev.meirong.shop.contracts.search.SearchApi;
 import dev.meirong.shop.search.config.SearchFeatureFlags;
 import dev.meirong.shop.search.service.ProductSearchService;
 import dev.meirong.shop.search.service.ReindexService;

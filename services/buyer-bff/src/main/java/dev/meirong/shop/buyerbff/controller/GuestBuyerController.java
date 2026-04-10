@@ -2,8 +2,8 @@ package dev.meirong.shop.buyerbff.controller;
 
 import dev.meirong.shop.buyerbff.service.BuyerAggregationService;
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.BuyerApi;
-import dev.meirong.shop.contracts.api.OrderApi;
+import dev.meirong.shop.contracts.buyer.BuyerApi;
+import dev.meirong.shop.contracts.order.OrderApi;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;

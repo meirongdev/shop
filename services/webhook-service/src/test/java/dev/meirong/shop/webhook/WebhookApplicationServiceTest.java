@@ -6,7 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import dev.meirong.shop.common.error.BusinessException;
-import dev.meirong.shop.contracts.api.WebhookApi;
+import dev.meirong.shop.contracts.webhook.WebhookApi;
 import dev.meirong.shop.webhook.domain.WebhookDeliveryEntity;
 import dev.meirong.shop.webhook.domain.WebhookDeliveryRepository;
 import dev.meirong.shop.webhook.domain.WebhookEndpointEntity;

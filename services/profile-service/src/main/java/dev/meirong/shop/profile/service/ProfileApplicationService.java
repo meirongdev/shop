@@ -2,7 +2,7 @@ package dev.meirong.shop.profile.service;
 
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
-import dev.meirong.shop.contracts.api.ProfileApi;
+import dev.meirong.shop.contracts.profile.ProfileApi;
 import dev.meirong.shop.profile.domain.BuyerProfileEntity;
 import dev.meirong.shop.profile.domain.BuyerProfileRepository;
 import dev.meirong.shop.profile.domain.SellerProfileEntity;

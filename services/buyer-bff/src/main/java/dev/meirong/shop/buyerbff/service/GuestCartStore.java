@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.buyerbff.config.BuyerClientProperties;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
-import dev.meirong.shop.contracts.api.OrderApi;
+import dev.meirong.shop.contracts.order.OrderApi;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;

@@ -64,7 +64,7 @@
         </dependency>
         <dependency>
             <groupId>dev.meirong.shop</groupId>
-            <artifactId>shop-contracts</artifactId>
+            <artifactId>shop-contracts-profile</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

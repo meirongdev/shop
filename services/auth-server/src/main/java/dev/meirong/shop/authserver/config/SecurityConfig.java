@@ -4,7 +4,7 @@ import dev.meirong.shop.authserver.service.DemoUserDirectory;
 import dev.meirong.shop.authserver.service.JwtTokenService;
 import dev.meirong.shop.authserver.domain.UserAccountEntity;
 import dev.meirong.shop.authserver.domain.UserAccountRepository;
-import dev.meirong.shop.contracts.api.AuthApi;
+import dev.meirong.shop.contracts.auth.AuthApi;
 import java.util.List;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;

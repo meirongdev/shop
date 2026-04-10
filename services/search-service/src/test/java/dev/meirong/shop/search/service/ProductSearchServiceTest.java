@@ -6,7 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import dev.meirong.shop.contracts.api.SearchApi;
+import dev.meirong.shop.contracts.search.SearchApi;
 import dev.meirong.shop.search.index.ProductIndexSettings;
 import com.meilisearch.sdk.Client;
 import com.meilisearch.sdk.Index;

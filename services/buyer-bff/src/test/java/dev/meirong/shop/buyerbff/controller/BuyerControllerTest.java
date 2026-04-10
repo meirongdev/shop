@@ -12,9 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.buyerbff.service.BuyerAggregationService;
 import dev.meirong.shop.common.web.GlobalExceptionHandler;
-import dev.meirong.shop.contracts.api.BuyerApi;
-import dev.meirong.shop.contracts.api.OrderApi;
-import dev.meirong.shop.contracts.api.PromotionApi;
+import dev.meirong.shop.contracts.buyer.BuyerApi;
+import dev.meirong.shop.contracts.order.OrderApi;
+import dev.meirong.shop.contracts.promotion.PromotionApi;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
@@ -170,7 +170,7 @@ class BuyerControllerTest {
     @Test
     void wallet_withBuyerRole_returnsWallet() throws Exception {
         BuyerApi.BuyerContextRequest request = new BuyerApi.BuyerContextRequest("buyer-1001");
-        when(service.getWallet("buyer-1001")).thenReturn(new dev.meirong.shop.contracts.api.WalletApi.WalletAccountResponse(
+        when(service.getWallet("buyer-1001")).thenReturn(new dev.meirong.shop.contracts.wallet.WalletApi.WalletAccountResponse(
                 "buyer-1001",
                 BigDecimal.valueOf(25.00),
                 Instant.parse("2026-03-20T00:00:00Z"),

@@ -3,7 +3,7 @@ package dev.meirong.shop.search.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.meirong.shop.contracts.api.SearchApi;
+import dev.meirong.shop.contracts.search.SearchApi;
 import dev.meirong.shop.contracts.event.EventEnvelope;
 import dev.meirong.shop.contracts.event.MarketplaceProductEventData;
 import dev.meirong.shop.search.index.ProductIndexSettings;

@@ -2,7 +2,7 @@ package dev.meirong.shop.marketplace.service;
 
 import dev.meirong.shop.marketplace.domain.CompensationTaskEntity;
 import dev.meirong.shop.marketplace.domain.CompensationTaskRepository;
-import dev.meirong.shop.contracts.api.MarketplaceApi;
+import dev.meirong.shop.contracts.marketplace.MarketplaceApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;

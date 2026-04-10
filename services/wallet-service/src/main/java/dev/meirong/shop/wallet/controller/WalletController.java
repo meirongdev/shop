@@ -2,7 +2,7 @@ package dev.meirong.shop.wallet.controller;
 
 import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.idempotency.IdempotencyGuard;
-import dev.meirong.shop.contracts.api.WalletApi;
+import dev.meirong.shop.contracts.wallet.WalletApi;
 import dev.meirong.shop.wallet.service.PaymentProviderService;
 import dev.meirong.shop.wallet.service.WalletApplicationService;
 import jakarta.validation.Valid;

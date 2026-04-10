@@ -6,7 +6,7 @@ import static org.mockito.Mockito.when;
 
 import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.error.BusinessException;
-import dev.meirong.shop.contracts.api.MarketplaceInternalApi;
+import dev.meirong.shop.contracts.marketplace.MarketplaceInternalApi;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

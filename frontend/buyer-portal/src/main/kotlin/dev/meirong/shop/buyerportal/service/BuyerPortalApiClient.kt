@@ -5,7 +5,15 @@ import dev.meirong.shop.buyerportal.model.BuyerRegistrationForm
 import dev.meirong.shop.buyerportal.model.BuyerSession
 import dev.meirong.shop.buyerportal.model.ProfileForm
 import dev.meirong.shop.common.api.ApiResponse
-import dev.meirong.shop.contracts.api.*
+import dev.meirong.shop.contracts.activity.ActivityApi
+import dev.meirong.shop.contracts.auth.AuthApi
+import dev.meirong.shop.contracts.buyer.BuyerApi
+import dev.meirong.shop.contracts.loyalty.LoyaltyApi
+import dev.meirong.shop.contracts.marketplace.MarketplaceApi
+import dev.meirong.shop.contracts.order.OrderApi
+import dev.meirong.shop.contracts.profile.ProfileApi
+import dev.meirong.shop.contracts.search.SearchApi
+import dev.meirong.shop.contracts.wallet.WalletApi
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient

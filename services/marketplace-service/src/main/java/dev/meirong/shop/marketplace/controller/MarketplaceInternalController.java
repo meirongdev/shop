@@ -1,7 +1,7 @@
 package dev.meirong.shop.marketplace.controller;
 
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.MarketplaceInternalApi;
+import dev.meirong.shop.contracts.marketplace.MarketplaceInternalApi;
 import dev.meirong.shop.marketplace.service.MarketplaceApplicationService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

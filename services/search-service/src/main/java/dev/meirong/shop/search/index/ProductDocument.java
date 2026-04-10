@@ -1,6 +1,6 @@
 package dev.meirong.shop.search.index;
 
-import dev.meirong.shop.contracts.api.MarketplaceApi;
+import dev.meirong.shop.contracts.marketplace.MarketplaceApi;
 import dev.meirong.shop.contracts.event.MarketplaceProductEventData;
 import java.time.Instant;
 

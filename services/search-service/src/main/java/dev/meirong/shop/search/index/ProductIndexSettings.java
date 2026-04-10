@@ -6,11 +6,13 @@ import com.meilisearch.sdk.model.TaskInfo;
 import com.meilisearch.sdk.model.Faceting;
 import com.meilisearch.sdk.model.Pagination;
 import com.meilisearch.sdk.model.TypoTolerance;
+import dev.meirong.shop.search.service.ReindexService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -21,15 +23,27 @@ public class ProductIndexSettings {
     public static final String INDEX_NAME = "products";
 
     private final Client adminClient;
+    private final ReindexService reindexService;
 
-    public ProductIndexSettings(@Qualifier("meilisearchAdminClient") Client adminClient) {
+    public ProductIndexSettings(@Qualifier("meilisearchAdminClient") Client adminClient,
+                                @Lazy ReindexService reindexService) {
         this.adminClient = adminClient;
+        this.reindexService = reindexService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     public void initializeIndex() {
         ensureIndex(INDEX_NAME);
         log.info("Meilisearch index '{}' settings initialized", INDEX_NAME);
+
+        // Perform initial full sync from marketplace service to MeiliSearch.
+        // This seeds the index with Flyway-inserted products that never emitted Kafka events.
+        log.info("Starting initial product index sync from marketplace service...");
+        try {
+            reindexService.reindex();
+        } catch (Exception e) {
+            log.warn("Initial sync failed (marketplace may be starting up). Will rely on Kafka events for eventual consistency.", e.getMessage());
+        }
     }
 
     public void ensureIndex(String indexName) {

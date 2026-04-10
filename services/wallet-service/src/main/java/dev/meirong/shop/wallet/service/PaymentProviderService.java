@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
-import dev.meirong.shop.contracts.api.WalletApi;
+import dev.meirong.shop.contracts.wallet.WalletApi;
 import dev.meirong.shop.wallet.config.WalletProperties;
 import java.math.BigDecimal;
 import java.util.ArrayList;

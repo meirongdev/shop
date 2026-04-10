@@ -2,7 +2,7 @@ package dev.meirong.shop.activity.controller;
 
 import dev.meirong.shop.activity.service.ActivityAdminService;
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.ActivityApi;
+import dev.meirong.shop.contracts.activity.ActivityApi;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;

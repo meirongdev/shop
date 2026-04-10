@@ -1,6 +1,6 @@
 package dev.meirong.shop.marketplace.service;
 
-import dev.meirong.shop.contracts.api.MarketplaceApi;
+import dev.meirong.shop.contracts.marketplace.MarketplaceApi;
 import dev.meirong.shop.marketplace.domain.ProductVariantEntity;
 import dev.meirong.shop.marketplace.domain.ProductVariantRepository;
 import org.springframework.stereotype.Service;

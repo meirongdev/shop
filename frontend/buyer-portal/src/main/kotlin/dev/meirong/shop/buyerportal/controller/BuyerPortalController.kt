@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import dev.meirong.shop.buyerportal.config.BuyerPortalProperties
 import dev.meirong.shop.buyerportal.model.*
 import dev.meirong.shop.buyerportal.service.BuyerPortalApiClient
-import dev.meirong.shop.contracts.api.ActivityApi
+import dev.meirong.shop.contracts.activity.ActivityApi
 import jakarta.servlet.http.HttpSession
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Controller

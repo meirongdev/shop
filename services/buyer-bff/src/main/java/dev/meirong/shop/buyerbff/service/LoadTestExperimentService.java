@@ -5,7 +5,7 @@ import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
 import dev.meirong.shop.common.http.TrustedHeaderNames;
-import dev.meirong.shop.contracts.api.MarketplaceApi;
+import dev.meirong.shop.contracts.marketplace.MarketplaceApi;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;

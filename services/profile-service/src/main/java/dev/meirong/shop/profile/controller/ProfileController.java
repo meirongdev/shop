@@ -1,7 +1,7 @@
 package dev.meirong.shop.profile.controller;
 
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.ProfileApi;
+import dev.meirong.shop.contracts.profile.ProfileApi;
 import dev.meirong.shop.profile.service.ProfileApplicationService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;

@@ -7,7 +7,7 @@ import dev.meirong.shop.authserver.domain.UserAccountEntity;
 import dev.meirong.shop.authserver.domain.UserAccountRepository;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
-import dev.meirong.shop.contracts.api.AuthApi;
+import dev.meirong.shop.contracts.auth.AuthApi;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;

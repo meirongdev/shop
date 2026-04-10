@@ -1,7 +1,7 @@
 package dev.meirong.shop.loyalty.controller;
 
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.LoyaltyApi;
+import dev.meirong.shop.contracts.loyalty.LoyaltyApi;
 import dev.meirong.shop.loyalty.domain.LoyaltyAccountEntity;
 import dev.meirong.shop.loyalty.domain.LoyaltyTransactionEntity;
 import dev.meirong.shop.loyalty.service.LoyaltyAccountService;

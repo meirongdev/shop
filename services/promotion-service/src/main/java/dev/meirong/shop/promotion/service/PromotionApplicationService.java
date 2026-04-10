@@ -1,6 +1,6 @@
 package dev.meirong.shop.promotion.service;
 
-import dev.meirong.shop.contracts.api.PromotionApi;
+import dev.meirong.shop.contracts.promotion.PromotionApi;
 import dev.meirong.shop.promotion.domain.PromotionOfferEntity;
 import dev.meirong.shop.promotion.domain.PromotionOfferRepository;
 import java.util.List;

@@ -1,7 +1,7 @@
 package dev.meirong.shop.webhook.controller;
 
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.WebhookApi;
+import dev.meirong.shop.contracts.webhook.WebhookApi;
 import dev.meirong.shop.webhook.service.WebhookApplicationService;
 import jakarta.validation.Valid;
 import java.util.List;

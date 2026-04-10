@@ -1,7 +1,7 @@
 package dev.meirong.shop.marketplace.service;
 
 import dev.meirong.shop.common.metrics.MetricsHelper;
-import dev.meirong.shop.contracts.api.MarketplaceApi;
+import dev.meirong.shop.contracts.marketplace.MarketplaceApi;
 import dev.meirong.shop.marketplace.domain.*;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.data.domain.Page;

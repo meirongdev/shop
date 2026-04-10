@@ -7,7 +7,7 @@ import dev.meirong.shop.authserver.service.BuyerAccountProvisioningService;
 import dev.meirong.shop.authserver.service.OtpChallengeService;
 import dev.meirong.shop.authserver.service.SocialLoginService;
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.AuthApi;
+import dev.meirong.shop.contracts.auth.AuthApi;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;

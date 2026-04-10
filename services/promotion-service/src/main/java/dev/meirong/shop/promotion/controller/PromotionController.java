@@ -1,7 +1,7 @@
 package dev.meirong.shop.promotion.controller;
 
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.PromotionApi;
+import dev.meirong.shop.contracts.promotion.PromotionApi;
 import dev.meirong.shop.promotion.engine.PromotionContext;
 import dev.meirong.shop.promotion.engine.PromotionEngine;
 import dev.meirong.shop.promotion.service.CouponApplicationService;

@@ -2,7 +2,7 @@ package dev.meirong.shop.buyerbff.controller;
 
 import dev.meirong.shop.buyerbff.service.LoadTestExperimentService;
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.BuyerApi;
+import dev.meirong.shop.contracts.buyer.BuyerApi;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

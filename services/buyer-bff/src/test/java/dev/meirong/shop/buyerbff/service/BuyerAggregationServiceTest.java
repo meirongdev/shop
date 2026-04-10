@@ -16,7 +16,7 @@ import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
 import dev.meirong.shop.common.resilience.ResilienceHelper;
-import dev.meirong.shop.contracts.api.MarketplaceApi;
+import dev.meirong.shop.contracts.marketplace.MarketplaceApi;
 import java.net.http.HttpClient;
 import java.math.BigDecimal;
 import java.time.Duration;

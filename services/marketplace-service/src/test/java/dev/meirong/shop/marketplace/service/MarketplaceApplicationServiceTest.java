@@ -10,13 +10,14 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.common.error.BusinessException;
-import dev.meirong.shop.contracts.api.MarketplaceApi;
+import dev.meirong.shop.contracts.marketplace.MarketplaceApi;
 import dev.meirong.shop.marketplace.domain.MarketplaceOutboxEventEntity;
 import dev.meirong.shop.marketplace.domain.MarketplaceOutboxEventRepository;
 import dev.meirong.shop.marketplace.domain.MarketplaceProductEntity;
 import dev.meirong.shop.marketplace.domain.MarketplaceProductRepository;
 import dev.meirong.shop.marketplace.domain.ProductCategoryRepository;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -52,13 +53,13 @@ class MarketplaceApplicationServiceTest {
     @Mock
     private RLock inventoryLock;
 
-    @Mock
     private MeterRegistry meterRegistry;
 
     private MarketplaceApplicationService service;
 
     @BeforeEach
     void setUp() throws Exception {
+        meterRegistry = new SimpleMeterRegistry();
         service = new MarketplaceApplicationService(
                 repository,
                 categoryRepository,

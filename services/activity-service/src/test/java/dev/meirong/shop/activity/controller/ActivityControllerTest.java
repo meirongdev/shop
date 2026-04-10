@@ -16,7 +16,7 @@ import dev.meirong.shop.activity.domain.PrizeType;
 import dev.meirong.shop.activity.service.ActivityQueryService;
 import dev.meirong.shop.common.http.TrustedHeaderNames;
 import dev.meirong.shop.common.web.GlobalExceptionHandler;
-import dev.meirong.shop.contracts.api.ActivityApi;
+import dev.meirong.shop.contracts.activity.ActivityApi;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.Test;

@@ -1,7 +1,7 @@
 package dev.meirong.shop.promotion.controller;
 
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.PromotionInternalApi;
+import dev.meirong.shop.contracts.promotion.PromotionInternalApi;
 import dev.meirong.shop.promotion.service.CouponTemplateService;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;

@@ -1,7 +1,7 @@
 package dev.meirong.shop.authserver.service;
 
 import dev.meirong.shop.authserver.domain.UserAccountRepository;
-import dev.meirong.shop.contracts.api.AuthApi;
+import dev.meirong.shop.contracts.auth.AuthApi;
 import org.springframework.stereotype.Service;
 
 @Service

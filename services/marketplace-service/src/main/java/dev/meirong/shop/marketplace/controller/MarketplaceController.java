@@ -1,7 +1,7 @@
 package dev.meirong.shop.marketplace.controller;
 
 import dev.meirong.shop.common.api.ApiResponse;
-import dev.meirong.shop.contracts.api.MarketplaceApi;
+import dev.meirong.shop.contracts.marketplace.MarketplaceApi;
 import dev.meirong.shop.marketplace.service.MarketplaceApplicationService;
 import dev.meirong.shop.marketplace.service.ProductReviewService;
 import dev.meirong.shop.marketplace.service.ProductVariantService;

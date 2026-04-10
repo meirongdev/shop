@@ -120,8 +120,8 @@ make arch-test
 # Kotlin 编译检查
 (cd frontend && ./gradlew :kmp:core:compileKotlinWasmJs --quiet)
 
-# 运行测试
-(cd frontend && ./gradlew :kmp:core:test)
+# 运行测试（始终包含 WASM；若本机安装了 Android SDK / Xcode，则自动追加对应原生测试）
+(cd frontend && ./gradlew test)
 ```
 
 ### 3.3 前端 E2E Agent（`frontend/e2e-tests/`）

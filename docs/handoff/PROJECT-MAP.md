@@ -200,10 +200,9 @@
 
 ### Docker / Kind / K8s
 
-- `docker/Dockerfile.module`
+- `platform/docker/Dockerfile.fast`
 - `kind/cluster-config.yaml`
 - `k8s/infra/base.yaml`
-- `k8s/apps/platform.yaml`
 - `k8s/apps/base/platform.yaml`
 - `k8s/apps/overlays/dev/kustomization.yaml`
 - `Tiltfile`

@@ -1,0 +1,1 @@
+../../../../services/promotion-service/docs/README.md

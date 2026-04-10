@@ -56,7 +56,7 @@ Buyer BFF  Seller BFF
 ## 扩展时优先复用的平台积木
 
 - `shop-common`：响应、异常、安全过滤、可观测自举。
-- `shop-contracts`：path 常量、共享 DTO、event envelope。
+- `shop-contracts`：path 常量、共享 DTO、event envelope；仓库内按领域拆成 `shop-contracts-auth`、`shop-contracts-order`、`shop-contracts-profile`、`shop-contracts-event-common` 等子模块。
 - `shop-archetypes`：新服务脚手架。
 - [`扩展能力与二次开发`](/services/extensibility)：各服务已经预留的 SPI / strategy / template / config 点位。
 

@@ -84,12 +84,8 @@ kubectl apply -f k8s/infra/base.yaml
 
 # 推荐本地链路
 # 1. make registry（首次或重建 Kind 后执行一次）
-# 2. make e2e（默认走 fast：host Maven build + registry push + selective deploy）
-# 3. 如需排障，使用 make e2e-legacy
-# 4. 验证入口保持不变：make local-access、make smoke-test、make ui-e2e
-
-# legacy 排障路径
-./scripts/load-images-kind.sh shop-kind --kind-load
+# 2. make e2e（host Maven build + registry push + sequential wave deploy）
+# 3. 验证入口：make local-access、make smoke-test、make ui-e2e
 
 # 只验证平台资产（shell / overlay / mirrord / Tiltfile）
 make platform-validate
@@ -263,7 +259,7 @@ kubectl -n shop port-forward svc/prometheus 19090:9090
 > 通过网关访问 `buyer-bff`、`subscription-service`、`webhook-service` 等路由时，需要保留服务自身的基础路径，例如：`/api/buyer/v1/...`、`/api/subscription/v1/...`、`/api/webhook/v1/...`。Gateway 只会剥离最前面的 `/api` 段。
 > Redis 在 Kind 路径中仍然是必选基础设施：guest cart、限流、OTP、防作弊、Bloom Filter 幂等以及 Redisson 分布式锁都会依赖它。
 > 下文所有通过 gateway 的 `curl http://127.0.0.1:18080/...` 示例，都默认你已经在另一个终端运行了 `make local-access`。
-> `make e2e` 默认走 fast（host Maven build + registry push + selective deploy）；如需排障可切回 `make e2e-legacy`。`make ui-e2e` / `make e2e` 的 seller Web 校验需要本机存在可执行的 Chrome / Chromium；脚本会优先查找 `CHROME_BIN`、`google-chrome`、`chromium`，在 macOS 上也会自动尝试 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`。
+> `make e2e` 走 host Maven build + registry push + sequential wave deploy。`make ui-e2e` / `make e2e` 的 seller Web 校验需要本机存在可执行的 Chrome / Chromium；脚本会优先查找 `CHROME_BIN`、`google-chrome`、`chromium`，在 macOS 上也会自动尝试 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`。
 
 ### 4.1 手工预览 Seller Web（KMP WASM）
 

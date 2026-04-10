@@ -1,0 +1,1 @@
+../../../../services/loyalty-service/docs/README.md

@@ -62,7 +62,7 @@ Gateway 对 `/api/**` 路径的已认证请求注入以下头：
   - `http://[::1]:*`
 - 默认允许方法：`GET,POST,PUT,PATCH,DELETE,OPTIONS`
 - 默认允许头：`Authorization,Content-Type,X-Request-Id,X-Device-Fingerprint`
-- 默认暴露头：`X-Request-Id`
+- 默认暴露头：`X-Request-Id`, `X-Trace-Id`
 
 ## 流量治理
 

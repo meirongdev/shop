@@ -14,7 +14,7 @@
 | 模块 | 说明 |
 |------|------|
 | `shop-common` | 通用响应封装、错误模型、内部认证过滤 |
-| `shop-contracts` | API 路径常量、DTO、事件契约 |
+| `shop-contracts` | API 路径常量、DTO、事件契约；按领域拆分为 `shop-contracts-auth` / `shop-contracts-order` / `shop-contracts-event-common` 等子模块 |
 | `auth-server` | JWT 认证服务 |
 | `api-gateway` | 统一路由、JWT 校验、Trusted Headers |
 | `buyer-bff` / `seller-bff` | 聚合层 (BFF) |
@@ -113,18 +113,14 @@ kubectl apply -f k8s/infra/base.yaml
 
 # 推荐本地链路
 # 1. make registry（首次或重建 Kind 后执行一次）
-# 2. make e2e（默认走 fast：host Maven build + registry push + selective deploy）
-# 3. 如需排障，使用 make e2e-legacy
-# 4. 验证入口保持不变：make local-access、make smoke-test、make ui-e2e
-
-# legacy 排障路径
-./scripts/load-images-kind.sh shop-kind --kind-load
+# 2. make e2e（host Maven build + registry push + sequential deploy）
+# 3. 验证入口：make local-access、make smoke-test、make ui-e2e
 
 # 只做平台资产校验（shell / Kustomize / Tiltfile / mirrord / overlay 一致性）
 make platform-validate
 ```
 
-> 在 Kind + Cilium（尤其 macOS + OrbStack）环境下，`localhost:8080` / `8025` / `9090` 的直连映射不一定稳定。仓库当前**已验证**的访问路径是 `make local-access` 提供的 `18080` / `18025` / `19090` 端口。`make e2e` 默认走 fast（host Maven build + registry push + selective deploy），并继续执行 buyer SSR 页面与 seller KMP Web 页面回归；如需排障可切回 `make e2e-legacy`。其中 seller Web 校验依赖本机可用的 Chrome / Chromium。
+> 在 Kind + Cilium（尤其 macOS + OrbStack）环境下，`localhost:8080` / `8025` / `9090` 的直连映射不一定稳定。仓库当前**已验证**的访问路径是 `make local-access` 提供的 `18080` / `18025` / `19090` 端口。`make e2e` 走 host Maven build + registry push + sequential wave deploy，并继续执行 buyer SSR 页面与 seller KMP Web 页面回归。其中 seller Web 校验依赖本机可用的 Chrome / Chromium。
 
 ## Inner-loop 与 GitOps 可选增强
 
@@ -165,9 +161,6 @@ make build-changed && make load-changed
 
 # 完整本地流水线（首次或重建集群时）
 make e2e
-
-# legacy 排障
-make e2e-legacy
 ```
 
 ## 演示账号
@@ -212,4 +205,9 @@ make install-hooks
 
 ```bash
 ./mvnw test
+
+# KMP / Compose Multiplatform 前端测试
+cd frontend && ./gradlew test
 ```
+
+`cd frontend && ./gradlew test` 会始终运行可移植的 WASM 测试；当本机同时具备 Android SDK 或 Xcode Command Line Tools 时，会自动把对应原生测试一起纳入验证。

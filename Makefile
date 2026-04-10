@@ -2,7 +2,9 @@ SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 .DEFAULT_GOAL := help
 
-MVNW := ./mvnw
+# Use mvnd (Maven Daemon) when available for 30-50% faster incremental builds.
+# Falls back to standard Maven wrapper for CI environments without mvnd.
+MVNW := $(shell command -v mvnd 2>/dev/null || echo ./mvnw)
 DOCS_DIR := docs-site
 DOCS_STAMP := $(DOCS_DIR)/node_modules/.package-lock-stamp
 CLUSTER ?= shop-kind
@@ -10,7 +12,7 @@ OVERLAY ?= dev
 TILT_REGISTRY ?= localhost:5000
 ARCHETYPE_MODULES := shared/shop-common,shared/shop-contracts,tooling/shop-archetypes/gateway-service-archetype,tooling/shop-archetypes/auth-service-archetype,tooling/shop-archetypes/bff-service-archetype,tooling/shop-archetypes/domain-service-archetype,tooling/shop-archetypes/event-worker-archetype,tooling/shop-archetypes/portal-service-archetype
 
-.PHONY: help test build verify arch-test archetype-install archetype-test docs-install docs-build docs-start archetypes-install install-deps install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-images-legacy load-images load-images-legacy build-changed load-changed redeploy smoke-test verify-observability ui-e2e e2e-playwright e2e-playwright-seller e2e-playwright-buyer-app e2e-playwright-kmp local-access e2e e2e-legacy registry tilt-up tilt-ci mirrord-run argocd-bootstrap kind-teardown clean-images clean-all
+.PHONY: help test build verify arch-test archetype-install archetype-test docs-install docs-build docs-start archetypes-install install-deps install-hooks local-checks local-checks-all platform-validate kind-bootstrap kind-deploy build-images build-changed load-images load-changed redeploy smoke-test verify-observability ui-e2e e2e-playwright e2e-playwright-seller e2e-playwright-buyer-app e2e-playwright-kmp local-access e2e registry tilt-up tilt-ci mirrord-run argocd-bootstrap kind-teardown clean-images clean-all
 
 help: ## Show available developer commands
 	@awk 'BEGIN {FS = ":.*## "; printf "\nUsage:\n  make <target>\n\nTargets:\n"} /^[a-zA-Z0-9_.-]+:.*## / { printf "  %-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -69,17 +71,11 @@ kind-bootstrap: ## Create the Kind cluster and install infra dependencies
 kind-deploy: ## Apply platform manifests to the current cluster
 	platform/scripts/deploy-kind.sh $(OVERLAY)
 
-build-images: ## Build service images for local/Kind use (fast by default)
-	platform/scripts/build-images.sh --fast
+build-images: ## Build service images for local/Kind use
+	platform/scripts/build-images.sh
 
-build-images-legacy: ## Build service images with the legacy Docker-in-Docker path
-	platform/scripts/build-images.sh --legacy
-
-load-images: ## Sync built images into the Kind cluster (registry push by default)
+load-images: ## Sync built images into the Kind cluster via local registry
 	platform/scripts/load-images-kind.sh $(CLUSTER) --registry
-
-load-images-legacy: ## Load built images into the Kind cluster with kind load
-	platform/scripts/load-images-kind.sh $(CLUSTER) --kind-load
 
 build-changed: ## Build only Docker images for changed modules
 	platform/scripts/build-images.sh --changed -j 4
@@ -118,11 +114,8 @@ e2e-playwright-kmp: ## Build all KMP WASM, start proxies, run all KMP Playwright
 local-access: ## Open stable local access to gateway, Mailpit, and Prometheus via port-forward
 	platform/scripts/local-access.sh
 
-e2e: ## Bootstrap Kind, run fast local build/deploy, and verify buyer/seller flows
+e2e: ## Bootstrap Kind, build+push changed images, deploy, and verify buyer/seller flows
 	bash platform/scripts/e2e.sh $(CLUSTER) $(OVERLAY)
-
-e2e-legacy: ## Run the legacy Docker build + kind load loop
-	E2E_FLOW=legacy bash platform/scripts/e2e.sh $(CLUSTER) $(OVERLAY)
 
 registry: ## Start a local Docker registry for faster Kind/Tilt image cycles
 	platform/scripts/setup-local-registry.sh $(CLUSTER)

@@ -58,7 +58,7 @@
 | 维度 | 当前实现 | 当前状态 |
 |------|----------|----------|
 | Kubernetes | Kind + `k8s/**` manifests | 本地/验证环境已实测可用 |
-| 容器构建 | `docker/Dockerfile.module` | 单模块参数化镜像构建 |
+| 容器构建 | `platform/docker/Dockerfile.fast` | 分层 JAR 镜像构建（host build + Docker COPY） |
 | 数据库 | MySQL 8.4 | 每服务独立 schema + Flyway |
 | 消息队列 | Kafka 3.9（KRaft） | 订单、钱包、搜索、通知等链路已使用 |
 | 缓存 | Redis 7.4 | 本地/Kind 基线为单实例模式 |

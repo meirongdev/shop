@@ -11,7 +11,7 @@ title: 扩展能力与二次开发
 | 积木 | 用途 | 什么时候先看它 |
 |---|---|---|
 | `shop-common` | 统一响应、异常、安全、可观测基线 | 新服务、新 northbound API、新错误语义 |
-| `shop-contracts` | path 常量、共享 DTO、event envelope | BFF / Portal / Worker 需要复用契约时 |
+| `shop-contracts` | path 常量、共享 DTO、event envelope（按领域子模块拆分） | BFF / Portal / Worker 需要复用契约时 |
 | `shop-archetypes` | 新服务模板 | 新建 domain service 或 event worker 时 |
 | `shop.features.*` | 实验开关和渐进发布 | 新能力要灰度验证时 |
 

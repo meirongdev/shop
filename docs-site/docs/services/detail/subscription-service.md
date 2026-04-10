@@ -1,0 +1,1 @@
+../../../../services/subscription-service/docs/README.md

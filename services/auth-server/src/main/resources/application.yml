@@ -101,6 +101,7 @@ springdoc:
   api-docs:
     enabled: ${SPRINGDOC_ENABLED:true}
     path: /v3/api-docs
+    version: openapi_3_1
   swagger-ui:
     enabled: ${SPRINGDOC_ENABLED:true}
     path: /swagger-ui.html

@@ -35,7 +35,7 @@ class GatewayServiceArchetypeTest extends AbstractArchetypeTest {
         assertFileExists(projectDir, "pom.xml");
         assertFileExists(projectDir, "README.md");
         assertFileExists(projectDir, "src/main/resources/application.yml");
-        
+
         // Verify Gateway specific directories
         assertDirectoryExists(projectDir, "src/main/java/dev/meirong/shop/testgen/config");
         assertDirectoryExists(projectDir, "src/main/java/dev/meirong/shop/testgen/filter");
@@ -58,15 +58,15 @@ class GatewayServiceArchetypeTest extends AbstractArchetypeTest {
     @Test
     void shouldGenerateWithCorrectDependencies() throws Exception {
         Path projectDir = generateProject();
-        
+
         String pomContent = Files.readString(projectDir.resolve("pom.xml"));
-        
+
         assertThat(pomContent).contains("spring-cloud-starter-gateway-server-webflux");
         assertThat(pomContent).contains("spring-boot-starter-oauth2-resource-server");
         assertThat(pomContent).contains("spring-boot-starter-actuator");
         assertThat(pomContent).contains("micrometer-registry-prometheus");
         assertThat(pomContent).contains("micrometer-tracing-bridge-otel");
         assertThat(pomContent).contains("springdoc-openapi-starter-webflux-ui");
-        assertThat(pomContent).contains("shop-contracts");
+        assertThat(pomContent).doesNotContain("<artifactId>shop-contracts</artifactId>");
     }
 }

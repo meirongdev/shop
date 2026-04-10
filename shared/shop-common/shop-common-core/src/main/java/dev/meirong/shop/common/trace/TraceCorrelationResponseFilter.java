@@ -10,6 +10,7 @@ import java.io.IOException;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -21,9 +22,9 @@ public class TraceCorrelationResponseFilter extends OncePerRequestFilter {
     private static final String TRACE_ID_HEADER = "X-Trace-Id";
     private static final String REQUEST_ID_MDC = "requestId";
 
-    private final Tracer tracer;
+    private final @Nullable Tracer tracer;
 
-    public TraceCorrelationResponseFilter(Tracer tracer) {
+    public TraceCorrelationResponseFilter(@Nullable Tracer tracer) {
         this.tracer = tracer;
     }
 
@@ -36,22 +37,31 @@ public class TraceCorrelationResponseFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
+        String requestId = currentRequestId(request);
         String traceId = currentTraceId();
+        setIfPresent(response, REQUEST_ID_HEADER, requestId);
+        setIfPresent(response, TRACE_ID_HEADER, traceId);
         chain.doFilter(request, response);
         if (traceId.isBlank()) {
             traceId = currentTraceId();
         }
-        
-        String requestId = MDC.get(REQUEST_ID_MDC);
-        if (requestId == null || requestId.isBlank()) {
-            requestId = request.getHeader(REQUEST_ID_HEADER);
-        }
-        
+        requestId = currentRequestId(request);
         setIfPresent(response, REQUEST_ID_HEADER, requestId);
         setIfPresent(response, TRACE_ID_HEADER, traceId);
     }
 
+    private static String currentRequestId(HttpServletRequest request) {
+        String requestId = MDC.get(REQUEST_ID_MDC);
+        if (requestId == null || requestId.isBlank()) {
+            requestId = request.getHeader(REQUEST_ID_HEADER);
+        }
+        return requestId;
+    }
+
     private String currentTraceId() {
+        if (tracer == null) {
+            return "";
+        }
         Span span = tracer.currentSpan();
         return span == null ? "" : span.context().traceId();
     }

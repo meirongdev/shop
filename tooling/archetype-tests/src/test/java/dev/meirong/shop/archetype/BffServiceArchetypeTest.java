@@ -47,7 +47,7 @@ class BffServiceArchetypeTest extends AbstractArchetypeTest {
         assertFileExists(projectDir, "pom.xml");
         assertFileExists(projectDir, "README.md");
         assertFileExists(projectDir, "src/main/resources/application.yml");
-        
+
         // Verify Java source files exist
         assertThat(Files.list(projectDir.resolve("src/main/java")).count())
             .isGreaterThan(0);
@@ -61,7 +61,7 @@ class BffServiceArchetypeTest extends AbstractArchetypeTest {
     void shouldGenerateCompilableProject() throws Exception {
         Path projectDir = generateProject();
         compileProject(projectDir);
-        
+
         assertThat(projectDir.resolve("target/classes")).exists();
     }
 
@@ -69,7 +69,7 @@ class BffServiceArchetypeTest extends AbstractArchetypeTest {
     void shouldGenerateProjectWithPassingTests() throws Exception {
         Path projectDir = generateProject();
         testProject(projectDir);
-        
+
         assertThat(projectDir.resolve("target/surefire-reports"))
             .exists()
             .isDirectory();
@@ -78,9 +78,9 @@ class BffServiceArchetypeTest extends AbstractArchetypeTest {
     @Test
     void shouldGenerateWithCorrectDependencies() throws Exception {
         Path projectDir = generateProject();
-        
+
         String pomContent = Files.readString(projectDir.resolve("pom.xml"));
-        
+
         // Verify key dependencies are present
         assertThat(pomContent).contains("spring-boot-starter-web");
         assertThat(pomContent).contains("spring-boot-starter-actuator");
@@ -88,7 +88,7 @@ class BffServiceArchetypeTest extends AbstractArchetypeTest {
         assertThat(pomContent).contains("micrometer-registry-prometheus");
         assertThat(pomContent).contains("micrometer-tracing-bridge-otel");
         assertThat(pomContent).contains("springdoc-openapi");
-        assertThat(pomContent).contains("shop-common");
-        assertThat(pomContent).contains("shop-contracts");
+        assertThat(pomContent).contains("shop-common-core");
+        assertThat(pomContent).doesNotContain("<artifactId>shop-contracts</artifactId>");
     }
 }

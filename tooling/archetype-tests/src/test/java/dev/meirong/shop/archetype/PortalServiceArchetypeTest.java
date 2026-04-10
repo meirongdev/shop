@@ -69,9 +69,9 @@ class PortalServiceArchetypeTest extends AbstractArchetypeTest {
     @Test
     void shouldGenerateWithCorrectDependencies() throws Exception {
         Path projectDir = generateProject();
-        
+
         String pomContent = Files.readString(projectDir.resolve("pom.xml"));
-        
+
         assertThat(pomContent).contains("kotlin-stdlib");
         assertThat(pomContent).contains("kotlin-reflect");
         assertThat(pomContent).contains("jackson-module-kotlin");
@@ -80,7 +80,7 @@ class PortalServiceArchetypeTest extends AbstractArchetypeTest {
         assertThat(pomContent).contains("spring-boot-starter-actuator");
         assertThat(pomContent).contains("micrometer-registry-prometheus");
         assertThat(pomContent).contains("micrometer-tracing-bridge-otel");
-        assertThat(pomContent).contains("shop-common");
-        assertThat(pomContent).contains("shop-contracts");
+        assertThat(pomContent).doesNotContain("<artifactId>shop-common</artifactId>");
+        assertThat(pomContent).doesNotContain("<artifactId>shop-contracts</artifactId>");
     }
 }

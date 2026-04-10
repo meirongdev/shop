@@ -11,21 +11,25 @@
     </parent>
 
     <artifactId>shop-contracts</artifactId>
+    <packaging>pom</packaging>
     <name>shop-contracts</name>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-common</artifactId>
-            <version>${springdoc.version}</version>
-        </dependency>
-    </dependencies>
+    <modules>
+        <module>shop-contracts-bom</module>
+        <module>shop-contracts-event-common</module>
+        <module>shop-contracts-activity</module>
+        <module>shop-contracts-auth</module>
+        <module>shop-contracts-buyer</module>
+        <module>shop-contracts-loyalty</module>
+        <module>shop-contracts-marketplace</module>
+        <module>shop-contracts-order</module>
+        <module>shop-contracts-profile</module>
+        <module>shop-contracts-promotion</module>
+        <module>shop-contracts-search</module>
+        <module>shop-contracts-seller</module>
+        <module>shop-contracts-subscription</module>
+        <module>shop-contracts-wallet</module>
+        <module>shop-contracts-webhook</module>
+    </modules>
+
 </project>

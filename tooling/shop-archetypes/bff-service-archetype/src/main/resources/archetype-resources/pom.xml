@@ -48,12 +48,7 @@
         </dependency>
         <dependency>
             <groupId>dev.meirong.shop</groupId>
-            <artifactId>shop-common</artifactId>
-            <version>${shopPlatformVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>dev.meirong.shop</groupId>
-            <artifactId>shop-contracts</artifactId>
+            <artifactId>shop-common-core</artifactId>
             <version>${shopPlatformVersion}</version>
         </dependency>
         <dependency>

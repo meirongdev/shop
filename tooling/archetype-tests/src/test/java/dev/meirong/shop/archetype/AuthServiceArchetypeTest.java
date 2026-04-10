@@ -35,7 +35,7 @@ class AuthServiceArchetypeTest extends AbstractArchetypeTest {
         assertFileExists(projectDir, "pom.xml");
         assertFileExists(projectDir, "README.md");
         assertFileExists(projectDir, "src/main/resources/application.yml");
-        
+
         // Verify Auth specific directories
         assertDirectoryExists(projectDir, "src/main/java/dev/meirong/shop/testgen/controller");
         assertDirectoryExists(projectDir, "src/main/java/dev/meirong/shop/testgen/service");
@@ -59,16 +59,16 @@ class AuthServiceArchetypeTest extends AbstractArchetypeTest {
     @Test
     void shouldGenerateWithCorrectDependencies() throws Exception {
         Path projectDir = generateProject();
-        
+
         String pomContent = Files.readString(projectDir.resolve("pom.xml"));
-        
+
         assertThat(pomContent).contains("spring-boot-starter-security");
         assertThat(pomContent).contains("spring-boot-starter-web");
         assertThat(pomContent).contains("spring-boot-starter-actuator");
         assertThat(pomContent).contains("micrometer-registry-prometheus");
         assertThat(pomContent).contains("micrometer-tracing-bridge-otel");
         assertThat(pomContent).contains("springdoc-openapi");
-        assertThat(pomContent).contains("shop-common");
-        assertThat(pomContent).contains("shop-contracts");
+        assertThat(pomContent).contains("shop-common-core");
+        assertThat(pomContent).doesNotContain("<artifactId>shop-contracts</artifactId>");
     }
 }

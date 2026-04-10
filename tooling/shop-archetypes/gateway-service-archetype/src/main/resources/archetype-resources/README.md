@@ -26,7 +26,9 @@
 ## 部署
 
 ```bash
-docker build --build-arg MODULE=${artifactId} -f docker/Dockerfile.module -t shop/${artifactId}:dev .
+make build-images
+# or to build and deploy a single module:
+make redeploy MODULE=${artifactId}
 kubectl apply -f k8s/service.yaml
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/hpa.yaml

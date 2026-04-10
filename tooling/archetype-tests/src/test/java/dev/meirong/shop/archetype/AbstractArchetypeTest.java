@@ -30,6 +30,8 @@ public abstract class AbstractArchetypeTest {
     protected static final String ARCHETYPE_VERSION = "0.1.0-SNAPSHOT";
     protected static final String PACKAGE = "dev.meirong.shop.testgen";
     protected static final String SHOP_PLATFORM_VERSION = "0.1.0-SNAPSHOT";
+    private static final Object INSTALL_LOCK = new Object();
+    private static volatile boolean localArtifactsInstalled = false;
 
     @TempDir
     protected Path tempDir;
@@ -59,6 +61,53 @@ public abstract class AbstractArchetypeTest {
         throw new IllegalStateException("Cannot find mvnw in any ancestor of " + System.getProperty("user.dir"));
     }
 
+    private void ensureLocalArtifactsInstalled() throws Exception {
+        if (localArtifactsInstalled) {
+            return;
+        }
+        synchronized (INSTALL_LOCK) {
+            if (localArtifactsInstalled) {
+                return;
+            }
+            File mvnw = findMvnw();
+            File repoRoot = mvnw.getParentFile();
+            runMavenCommand(
+                    mvnw,
+                    repoRoot,
+                    List.of("-q", "-B", "-ntp", "-f", "shared/shop-common/pom.xml", "-DskipTests", "install"),
+                    "Failed to install shop-common artifacts");
+            runMavenCommand(
+                    mvnw,
+                    repoRoot,
+                    List.of("-q", "-B", "-ntp", "-f", "shared/shop-contracts/pom.xml", "-DskipTests", "install"),
+                    "Failed to install shop-contracts artifacts");
+            runMavenCommand(
+                    mvnw,
+                    repoRoot,
+                    List.of("-q", "-B", "-ntp", "-f", "tooling/shop-archetypes/pom.xml", "-DskipTests", "install"),
+                    "Failed to install archetype artifacts");
+            localArtifactsInstalled = true;
+        }
+    }
+
+    private void runMavenCommand(File mvnw, File workingDirectory, List<String> arguments, String failureMessage)
+            throws Exception {
+        List<String> cmd = new ArrayList<>();
+        cmd.add(mvnw.getAbsolutePath());
+        cmd.addAll(arguments);
+
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        pb.directory(workingDirectory);
+        pb.redirectErrorStream(true);
+
+        Process process = pb.start();
+        byte[] output = process.getInputStream().readAllBytes();
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new IllegalStateException(failureMessage + ":\n" + new String(output));
+        }
+    }
+
     /**
      * Generates a project from the archetype and returns the project directory.
      */
@@ -72,6 +121,7 @@ public abstract class AbstractArchetypeTest {
      * generated project lands at {@code tempDir/<artifactId>}.
      */
     protected Path generateProject(String artifactId) throws Exception {
+        ensureLocalArtifactsInstalled();
         List<String> cmd = new ArrayList<>();
         cmd.add(findMvnw().getAbsolutePath());
         cmd.add("archetype:generate");

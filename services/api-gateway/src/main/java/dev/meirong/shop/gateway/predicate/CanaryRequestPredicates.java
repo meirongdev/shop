@@ -7,11 +7,13 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
+import org.redisson.api.RSet;
+import org.redisson.api.RedissonClient;
+import org.redisson.client.RedisException;
+import org.redisson.client.codec.StringCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.server.mvc.predicate.PredicateSupplier;
-import org.springframework.dao.DataAccessException;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.function.RequestPredicate;
 
@@ -34,21 +36,21 @@ public class CanaryRequestPredicates implements PredicateSupplier {
 
     // Static references are required because Spring Cloud Gateway MVC calls the predicate
     // factory methods statically during route resolution.
-    private static final AtomicReference<StringRedisTemplate> redisRef = new AtomicReference<>();
+    private static final AtomicReference<RedissonClient> redissonRef = new AtomicReference<>();
     static final Cache<String, Boolean> localCache = Caffeine.newBuilder()
             .maximumSize(10_000)
             .expireAfterWrite(Duration.ofSeconds(CACHE_TTL_SECONDS))
             .build();
 
-    public CanaryRequestPredicates(StringRedisTemplate redisTemplate) {
-        CanaryRequestPredicates.redisRef.set(redisTemplate);
+    public CanaryRequestPredicates(RedissonClient redissonClient) {
+        CanaryRequestPredicates.redissonRef.set(redissonClient);
     }
 
     // SCG MVC property-based routes invoke predicate operations as static methods.
     public static RequestPredicate canary(String routeId) {
         return request -> {
             String buyerId = request.servletRequest().getHeader(BUYER_ID);
-            if (buyerId == null || buyerId.isBlank() || redisRef.get() == null) {
+            if (buyerId == null || buyerId.isBlank() || redissonRef.get() == null) {
                 return false;
             }
             String cacheKey = routeId + ':' + buyerId;
@@ -57,11 +59,11 @@ public class CanaryRequestPredicates implements PredicateSupplier {
                 return cached;
             }
             try {
-                boolean member = Boolean.TRUE.equals(
-                        redisRef.get().opsForSet().isMember(KEY_PREFIX + routeId, buyerId));
+                RSet<String> set = redissonRef.get().getSet(KEY_PREFIX + routeId, StringCodec.INSTANCE);
+                boolean member = set.contains(buyerId);
                 localCache.put(cacheKey, member);
                 return member;
-            } catch (DataAccessException exception) {
+            } catch (RedisException exception) {
                 log.warn("Canary lookup failed for route {} and buyer {}, routing to stable: {}",
                         routeId, buyerId, exception.getMessage());
                 return false;

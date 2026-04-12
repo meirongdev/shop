@@ -3,15 +3,16 @@ package dev.meirong.shop.gateway.predicate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.data.redis.core.SetOperations;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.redisson.api.RSet;
+import org.redisson.api.RedissonClient;
+import org.redisson.client.RedisException;
+import org.redisson.client.codec.StringCodec;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.servlet.function.RequestPredicate;
 import org.springframework.web.servlet.function.ServerRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -19,20 +20,21 @@ import static org.mockito.Mockito.when;
 
 class CanaryRequestPredicatesTest {
 
-    private final StringRedisTemplate redis = mock(StringRedisTemplate.class);
-    private final SetOperations<String, String> setOperations = mock(SetOperations.class);
+    @SuppressWarnings("unchecked")
+    private final RSet<String> rSet = mock(RSet.class);
+    private final RedissonClient redisson = mock(RedissonClient.class);
 
     @BeforeEach
     void setUp() {
-        new CanaryRequestPredicates(redis);
-        when(redis.opsForSet()).thenReturn(setOperations);
+        new CanaryRequestPredicates(redisson);
+        doReturn(rSet).when(redisson).getSet("gateway:canary:buyer-api", StringCodec.INSTANCE);
         // Invalidate the local cache between tests so each test starts fresh.
         CanaryRequestPredicates.localCache.invalidateAll();
     }
 
     @Test
     void matchesWhenPlayerIsWhitelisted() {
-        when(setOperations.isMember("gateway:canary:buyer-api", "buyer-100")).thenReturn(true);
+        when(rSet.contains("buyer-100")).thenReturn(true);
 
         RequestPredicate predicate = CanaryRequestPredicates.canary("buyer-api");
 
@@ -48,8 +50,8 @@ class CanaryRequestPredicatesTest {
 
     @Test
     void degradesToStableRouteWhenRedisFails() {
-        when(setOperations.isMember("gateway:canary:buyer-api", "buyer-100"))
-                .thenThrow(new DataAccessResourceFailureException("redis down"));
+        when(rSet.contains("buyer-100"))
+                .thenThrow(new RedisException("redis down"));
 
         RequestPredicate predicate = CanaryRequestPredicates.canary("buyer-api");
 
@@ -58,13 +60,13 @@ class CanaryRequestPredicatesTest {
 
     @Test
     void cachesPreviouslyResolvedCanaryDecision() {
-        when(setOperations.isMember("gateway:canary:buyer-api", "buyer-100")).thenReturn(true);
+        when(rSet.contains("buyer-100")).thenReturn(true);
         RequestPredicate predicate = CanaryRequestPredicates.canary("buyer-api");
 
         predicate.test(requestWithBuyer("buyer-100"));
         predicate.test(requestWithBuyer("buyer-100"));
 
-        verify(setOperations, times(1)).isMember("gateway:canary:buyer-api", "buyer-100");
+        verify(rSet, times(1)).contains("buyer-100");
     }
 
     private ServerRequest requestWithBuyer(String buyerId) {

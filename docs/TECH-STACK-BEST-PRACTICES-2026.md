@@ -46,7 +46,7 @@
 
 | 层次 | 当前实现 | 复用建议 |
 |------|----------|----------|
-| Gateway | Spring Cloud Gateway Server Web MVC + Virtual Threads + Redis Lua 限流/Canary | 适合作为统一入口、JWT 校验、Trusted Headers、基础流量治理层 |
+| Gateway | Spring Cloud Gateway Server Web MVC + Virtual Threads + Redis 令牌桶限流/Canary | 适合作为统一入口、JWT 校验、Trusted Headers、基础流量治理层 |
 | Auth | Spring Security + OAuth2 Resource Server + JWT | 当前为 HS256 对称签名；未来可演进到非对称 + JWKS |
 | BFF | Spring MVC + Virtual Threads + 局部 Resilience4j | 聚合编排优先；禁止承载复杂领域规则 |
 | Domain Service | Spring MVC + JPA + Flyway + MySQL | 数据所有权归属单服务，避免跨库写入 |
@@ -118,7 +118,7 @@
 
 | 架构/设计问题 | 当前技术选择 | 为什么是这组技术 |
 |------|----------|------|
-| 外部流量如何统一鉴权、限流和追踪 | Spring Cloud Gateway MVC + Spring Security + Redis Lua | 让 northbound 规则集中落在 edge 层，而不是散在每个服务里 |
+| 外部流量如何统一鉴权、限流和追踪 | Spring Cloud Gateway MVC + Spring Security + Redis 令牌桶（Token Bucket Lua 脚本） | 让 northbound 规则集中落在 edge 层，而不是散在每个服务里 |
 | 多下游聚合如何既保留同步代码可读性，又承受高并发 I/O | RestClient + Virtual Threads + timeout / CircuitBreaker | 代码模型简单，可并发读多个下游，失败边界也更清晰 |
 | 服务数据所有权如何保持清晰 | 每服务独立 schema + Flyway | 事实边界和迁移节奏都能独立演进 |
 | 跨服务事务怎么避免分布式事务 | Outbox Pattern + Kafka + consumer 幂等 | 保住本地事务原子性，同时保留重放与补偿能力 |
@@ -325,10 +325,11 @@
 
 ### P3：面向生产安全与大规模治理
 
-- JWT → 非对称签名 + JWKS
+- JWT → 非对称签名 + JWKS（`auth-server` 暴露 `/jwks.json`，Gateway 切换 `jwk-set-uri`，支持过渡期双密钥）
 - internal token → workload identity / mTLS
 - 更完善的供应链安全（SBOM / 依赖扫描 / 镜像签名）
 - 对 BFF / Gateway 扩展更细粒度的熔断、审计、风控与差异化限流策略
+- Java 25 `ScopedValue` 替代 MDC 做链路上下文传播（需要配合支持 ScopedValue 的 Logback MDCAdapter）
 
 ---
 

@@ -293,10 +293,10 @@ management:
       probability: 1.0
     baggage:
       remote-fields:
-        - x-user-id
+        - x-buyer-id
         - x-order-id
       correlation-fields:
-        - x-user-id
+        - x-buyer-id
         - x-order-id
   otlp:
     tracing:

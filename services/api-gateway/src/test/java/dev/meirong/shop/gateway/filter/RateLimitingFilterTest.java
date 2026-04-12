@@ -17,8 +17,6 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -36,7 +34,7 @@ class RateLimitingFilterTest {
 
     @Test
     void allowsRequestWhenWithinLimit() throws Exception {
-        when(redis.execute(anyScript(), anyList(), eq("120"))).thenReturn(1L);
+        when(redis.execute(anyScript(), anyList(), any(), any(), any())).thenReturn(1L);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/buyer/orders");
         request.addHeader("X-Buyer-Id", "buyer-100");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -46,13 +44,13 @@ class RateLimitingFilterTest {
 
         assertThat(chain.invoked()).isTrue();
         ArgumentCaptor<List<String>> keys = ArgumentCaptor.forClass(List.class);
-        verify(redis).execute(anyScript(), keys.capture(), eq("120"));
-        assertThat(keys.getValue()).singleElement().asString().startsWith("rl:buyer-100:");
+        verify(redis).execute(anyScript(), keys.capture(), any(), any(), any());
+        assertThat(keys.getValue()).containsExactly("rl:buyer-100:tokens", "rl:buyer-100:ts");
     }
 
     @Test
     void rejectsRequestWhenThresholdIsExceeded() throws Exception {
-        when(redis.execute(anyScript(), anyList(), eq("120"))).thenReturn(101L);
+        when(redis.execute(anyScript(), anyList(), any(), any(), any())).thenReturn(0L);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/buyer/orders");
         request.addHeader("X-Buyer-Id", "buyer-100");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -67,7 +65,7 @@ class RateLimitingFilterTest {
 
     @Test
     void fallsBackToClientIpWhenPlayerIdIsMissing() throws Exception {
-        when(redis.execute(anyScript(), anyList(), eq("120"))).thenReturn(1L);
+        when(redis.execute(anyScript(), anyList(), any(), any(), any())).thenReturn(1L);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/buyer/orders");
         request.setRemoteAddr("10.0.0.5");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -76,8 +74,8 @@ class RateLimitingFilterTest {
         filter.doFilter(request, response, chain);
 
         ArgumentCaptor<List<String>> keys = ArgumentCaptor.forClass(List.class);
-        verify(redis).execute(anyScript(), keys.capture(), eq("120"));
-        assertThat(keys.getValue()).singleElement().asString().startsWith("rl:10.0.0.5:");
+        verify(redis).execute(anyScript(), keys.capture(), any(), any(), any());
+        assertThat(keys.getValue()).containsExactly("rl:10.0.0.5:tokens", "rl:10.0.0.5:ts");
         assertThat(chain.invoked()).isTrue();
     }
 
@@ -95,7 +93,7 @@ class RateLimitingFilterTest {
 
     @Test
     void failsOpenWhenRedisErrors() throws Exception {
-        when(redis.execute(anyScript(), anyList(), eq("120")))
+        when(redis.execute(anyScript(), anyList(), any(), any(), any()))
                 .thenThrow(new DataAccessResourceFailureException("redis down"));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/buyer/orders");
         request.addHeader("X-Buyer-Id", "buyer-100");

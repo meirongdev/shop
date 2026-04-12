@@ -40,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
-        properties = "GATEWAY_RATE_LIMIT_RPM=1")
+        properties = {"GATEWAY_RATE_LIMIT_RPM=1", "GATEWAY_RATE_LIMIT_BURST=1"})
 @AutoConfigureMockMvc
 @Testcontainers
 class GatewayRoutingIntegrationTest {

@@ -9,22 +9,26 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.meirong.shop.buyerbff.client.LoyaltyServiceClient;
+import dev.meirong.shop.buyerbff.client.MarketplaceServiceClient;
+import dev.meirong.shop.buyerbff.client.OrderServiceClient;
+import dev.meirong.shop.buyerbff.client.ProfileInternalServiceClient;
+import dev.meirong.shop.buyerbff.client.ProfileServiceClient;
+import dev.meirong.shop.buyerbff.client.PromotionInternalServiceClient;
+import dev.meirong.shop.buyerbff.client.PromotionServiceClient;
 import dev.meirong.shop.buyerbff.client.SearchServiceClient;
-import dev.meirong.shop.buyerbff.config.BuyerClientProperties;
+import dev.meirong.shop.buyerbff.client.WalletServiceClient;
 import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
 import dev.meirong.shop.common.resilience.ResilienceHelper;
 import dev.meirong.shop.contracts.marketplace.MarketplaceApi;
-import java.net.http.HttpClient;
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.web.client.RestClient;
+import org.mockito.ArgumentMatchers;
 
 class BuyerAggregationServiceTest {
 
@@ -33,34 +37,26 @@ class BuyerAggregationServiceTest {
 
     @BeforeEach
     void setUp() {
-        RestClient.Builder builder = mock(RestClient.Builder.class);
-        when(builder.build()).thenReturn(mock(RestClient.class));
         searchServiceClient = mock(SearchServiceClient.class);
         ResilienceHelper resilienceHelper = mock(ResilienceHelper.class);
         doAnswer(invocation -> ((Supplier<?>) invocation.getArgument(1)).get())
-                .when(resilienceHelper).read(anyString(), org.mockito.ArgumentMatchers.<Supplier<Object>>any(),
-                        org.mockito.ArgumentMatchers.<Function<Throwable, Object>>any());
+                .when(resilienceHelper).read(anyString(), ArgumentMatchers.<Supplier<Object>>any(),
+                        ArgumentMatchers.<Function<Throwable, Object>>any());
         doAnswer(invocation -> ((Supplier<?>) invocation.getArgument(1)).get())
-                .when(resilienceHelper).write(anyString(), org.mockito.ArgumentMatchers.<Supplier<Object>>any(),
-                        org.mockito.ArgumentMatchers.<Function<Throwable, Object>>any());
+                .when(resilienceHelper).write(anyString(), ArgumentMatchers.<Supplier<Object>>any(),
+                        ArgumentMatchers.<Function<Throwable, Object>>any());
         service = new BuyerAggregationService(
-                builder,
+                mock(ProfileServiceClient.class),
+                mock(ProfileInternalServiceClient.class),
+                mock(WalletServiceClient.class),
+                mock(PromotionServiceClient.class),
+                mock(PromotionInternalServiceClient.class),
+                mock(MarketplaceServiceClient.class),
+                mock(OrderServiceClient.class),
+                mock(LoyaltyServiceClient.class),
                 searchServiceClient,
-                new BuyerClientProperties(
-                        "http://profile",
-                        "http://promotion",
-                        "http://wallet",
-                        "http://marketplace",
-                        "http://order",
-                        "http://search",
-                        "http://loyalty",
-                        Duration.ofHours(48),
-                        HttpClient.Version.HTTP_1_1,
-                        Duration.ofSeconds(2),
-                        Duration.ofSeconds(5)),
                 resilienceHelper,
-                mock(GuestCartStore.class),
-                new ObjectMapper());
+                mock(GuestCartStore.class));
     }
 
     @Test

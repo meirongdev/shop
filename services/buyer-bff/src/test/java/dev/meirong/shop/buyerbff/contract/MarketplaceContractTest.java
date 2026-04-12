@@ -6,7 +6,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.meirong.shop.buyerbff.config.BuyerClientProperties;
+import dev.meirong.shop.buyerbff.client.LoyaltyServiceClient;
+import dev.meirong.shop.buyerbff.client.MarketplaceServiceClient;
+import dev.meirong.shop.buyerbff.client.OrderServiceClient;
+import dev.meirong.shop.buyerbff.client.ProfileInternalServiceClient;
+import dev.meirong.shop.buyerbff.client.ProfileServiceClient;
+import dev.meirong.shop.buyerbff.client.PromotionInternalServiceClient;
+import dev.meirong.shop.buyerbff.client.PromotionServiceClient;
+import dev.meirong.shop.buyerbff.client.SearchServiceClient;
+import dev.meirong.shop.buyerbff.client.WalletServiceClient;
 import dev.meirong.shop.buyerbff.service.BuyerAggregationService;
 import dev.meirong.shop.buyerbff.service.GuestCartStore;
 import dev.meirong.shop.common.api.ApiResponse;
@@ -15,9 +23,7 @@ import dev.meirong.shop.contracts.marketplace.MarketplaceApi;
 import dev.meirong.shop.contracts.promotion.PromotionApi;
 import dev.meirong.shop.contracts.wallet.WalletApi;
 import com.github.tomakehurst.wiremock.WireMockServer;
-import java.net.http.HttpClient;
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -29,6 +35,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.support.RestClientAdapter;
+import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
 /**
  * WireMock-based contract tests verifying buyer-bff correctly serializes/deserializes
@@ -61,9 +69,6 @@ class MarketplaceContractTest {
         objectMapper = new ObjectMapper().findAndRegisterModules();
 
         String baseUrl = "http://localhost:" + wireMock.port();
-        BuyerClientProperties properties = new BuyerClientProperties(
-                baseUrl, baseUrl, baseUrl, baseUrl, baseUrl, baseUrl, baseUrl,
-                Duration.ofHours(48), HttpClient.Version.HTTP_1_1, Duration.ofSeconds(2), Duration.ofSeconds(5));
 
         ResilienceHelper resilienceHelper = Mockito.mock(ResilienceHelper.class);
         Mockito.doAnswer(inv -> ((Supplier<?>) inv.getArgument(1)).get())
@@ -74,8 +79,23 @@ class MarketplaceContractTest {
                 .write(Mockito.anyString(), Mockito.<Supplier<Object>>any(), Mockito.<Function<Throwable, Object>>any());
 
         aggregationService = new BuyerAggregationService(
-                RestClient.builder(), null, properties, resilienceHelper,
-                Mockito.mock(GuestCartStore.class), objectMapper);
+                createProxy(baseUrl, ProfileServiceClient.class),
+                createProxy(baseUrl, ProfileInternalServiceClient.class),
+                createProxy(baseUrl, WalletServiceClient.class),
+                createProxy(baseUrl, PromotionServiceClient.class),
+                createProxy(baseUrl, PromotionInternalServiceClient.class),
+                createProxy(baseUrl, MarketplaceServiceClient.class),
+                createProxy(baseUrl, OrderServiceClient.class),
+                createProxy(baseUrl, LoyaltyServiceClient.class),
+                createProxy(baseUrl, SearchServiceClient.class),
+                resilienceHelper,
+                Mockito.mock(GuestCartStore.class));
+    }
+
+    private <T> T createProxy(String baseUrl, Class<T> clientClass) {
+        RestClient restClient = RestClient.builder().baseUrl(baseUrl).build();
+        return HttpServiceProxyFactory.builderFor(RestClientAdapter.create(restClient))
+                .build().createClient(clientClass);
     }
 
     @Test

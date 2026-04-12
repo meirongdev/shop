@@ -85,6 +85,7 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
+                                "/.well-known/jwks.json",
                                 AuthApi.LOGIN,
                                 AuthApi.GUEST,
                                 AuthApi.OAUTH2_GOOGLE,

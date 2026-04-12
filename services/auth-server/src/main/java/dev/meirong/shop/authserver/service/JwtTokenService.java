@@ -1,16 +1,18 @@
 package dev.meirong.shop.authserver.service;
 
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import dev.meirong.shop.authserver.config.AuthProperties;
 import dev.meirong.shop.authserver.domain.UserAccountEntity;
 import dev.meirong.shop.contracts.auth.AuthApi;
-import com.nimbusds.jose.jwk.source.ImmutableSecret;
-import com.nimbusds.jose.proc.SecurityContext;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.util.List;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.converter.RsaKeyConverters;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -23,13 +25,26 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtTokenService {
 
+    private static final String KEY_ID = "shop-auth-key";
+
     private final AuthProperties properties;
     private final JwtEncoder jwtEncoder;
+    private final JwtDecoder jwtDecoder;
+    private final JWKSet jwkSet;
 
     public JwtTokenService(AuthProperties properties) {
         this.properties = properties;
-        SecretKey secretKey = new SecretKeySpec(properties.secret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-        this.jwtEncoder = new NimbusJwtEncoder(new ImmutableSecret<SecurityContext>(secretKey));
+        try {
+            RSAPrivateKey privateKey = RsaKeyConverters.pkcs8().convert(properties.rsaPrivateKey().getInputStream());
+            RSAPublicKey publicKey = RsaKeyConverters.x509().convert(properties.rsaPublicKey().getInputStream());
+
+            RSAKey rsaKey = new RSAKey.Builder(publicKey).privateKey(privateKey).keyID(KEY_ID).build();
+            this.jwkSet = new JWKSet(rsaKey);
+            this.jwtEncoder = new NimbusJwtEncoder(new ImmutableJWKSet<>(this.jwkSet));
+            this.jwtDecoder = NimbusJwtDecoder.withPublicKey(publicKey).build();
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load RSA keys for JWT signing", e);
+        }
     }
 
     public AuthApi.TokenResponse issueToken(DemoUserDirectory.UserProfile profile) {
@@ -63,7 +78,7 @@ public class JwtTokenService {
                 .claim("roles", roles)
                 .claim("portal", portal)
                 .build();
-        JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).type("JWT").build();
+        JwsHeader jwsHeader = JwsHeader.with(SignatureAlgorithm.RS256).keyId(KEY_ID).type("JWT").build();
         String token = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claimsSet)).getTokenValue();
         return new AuthApi.TokenResponse(
                 token,
@@ -79,7 +94,10 @@ public class JwtTokenService {
     }
 
     public JwtDecoder jwtDecoder() {
-        SecretKey secretKey = new SecretKeySpec(properties.secret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-        return NimbusJwtDecoder.withSecretKey(secretKey).macAlgorithm(MacAlgorithm.HS256).build();
+        return this.jwtDecoder;
+    }
+
+    public JWKSet getJwkSet() {
+        return this.jwkSet;
     }
 }

@@ -79,7 +79,8 @@ shop:
     server-address: ${PYROSCOPE_SERVER_ADDRESS:http://pyroscope:4040}
   auth:
     issuer: shop-auth-server
-    secret: ${SHOP_AUTH_JWT_SECRET:change-this-to-a-32-byte-demo-secret}
+    rsa-private-key: ${SHOP_AUTH_RSA_PRIVATE_KEY:classpath:jwt-private.pem}
+    rsa-public-key: ${SHOP_AUTH_RSA_PUBLIC_KEY:classpath:jwt-public.pem}
     token-ttl: PT8H
     google-client-id: ${GOOGLE_OAUTH2_CLIENT_ID:placeholder-google-client-id}
     apple-client-id: ${APPLE_OAUTH2_CLIENT_ID:placeholder-apple-client-id}

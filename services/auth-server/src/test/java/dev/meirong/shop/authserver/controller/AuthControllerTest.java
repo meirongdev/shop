@@ -38,7 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({SecurityConfig.class, DemoUserDirectory.class, GuestSessionService.class, JwtTokenService.class, GlobalExceptionHandler.class})
 @TestPropertySource(properties = {
         "shop.auth.issuer=test-issuer",
-        "shop.auth.secret=change-this-to-a-32-byte-demo-secret",
+        "shop.auth.rsa-private-key=classpath:jwt-private.pem",
+        "shop.auth.rsa-public-key=classpath:jwt-public.pem",
         "shop.auth.token-ttl=PT1H",
         "shop.auth.google-client-id=test-google-client-id",
         "shop.auth.apple-client-id=test-apple-client-id",

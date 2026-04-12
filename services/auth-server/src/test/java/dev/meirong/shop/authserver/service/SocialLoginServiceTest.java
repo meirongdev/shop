@@ -39,7 +39,8 @@ class SocialLoginServiceTest {
     @BeforeEach
     void setUp() {
         AuthProperties props = new AuthProperties("test-issuer",
-                "change-this-to-a-32-byte-demo-secret",
+                new org.springframework.core.io.ClassPathResource("jwt-private.pem"),
+                new org.springframework.core.io.ClassPathResource("jwt-public.pem"),
                 Duration.ofHours(1),
                 "test-google-client-id",
                 "test-apple-client-id",

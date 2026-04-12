@@ -15,6 +15,7 @@ spring:
 shop:
   auth:
     issuer: shop-auth-server
-    secret: change-this-to-a-32-byte-demo-secret
+    rsa-private-key: classpath:jwt-private.pem
+    rsa-public-key: classpath:jwt-public.pem
     token-ttl: PT8H
     google-client-id: test-google-client-id

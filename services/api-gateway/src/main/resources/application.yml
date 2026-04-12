@@ -312,7 +312,7 @@ shop:
     enabled: ${PYROSCOPE_ENABLED:false}
     server-address: ${PYROSCOPE_SERVER_ADDRESS:http://pyroscope:4040}
   gateway:
-    jwt-secret: ${SHOP_AUTH_JWT_SECRET:change-this-to-a-32-byte-demo-secret}
+    jwks-uri: ${SHOP_AUTH_JWKS_URI:http://auth-server:8080/.well-known/jwks.json}
     rate-limit:
       requests-per-minute: ${GATEWAY_RATE_LIMIT_RPM:100}
       burst: ${GATEWAY_RATE_LIMIT_BURST:20}

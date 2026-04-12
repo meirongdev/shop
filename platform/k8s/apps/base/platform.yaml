@@ -5,7 +5,6 @@ metadata:
   namespace: shop
 type: Opaque
 stringData:
-  SHOP_AUTH_JWT_SECRET: change-this-to-a-32-byte-demo-secret
   SHOP_INTERNAL_TOKEN: local-dev-internal-token-change-me
   MYSQL_USER: shop
   MYSQL_PASSWORD: shop
@@ -29,6 +28,7 @@ data:
   SEARCH_SERVICE_URL: http://search-service:8080
   MARKETPLACE_PRODUCT_TOPIC: marketplace.product.events.v1
   SHOP_SECURITY_INTERNAL_ENABLED: "false"
+  SHOP_AUTH_JWKS_URI: http://auth-server:8080/.well-known/jwks.json
   JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=60 -XX:InitialRAMPercentage=30"
 ---
 apiVersion: apps/v1

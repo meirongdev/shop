@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TrustedHeadersFilterTest {
 
     private final GatewayProperties properties = new GatewayProperties(
-            "change-this-to-a-32-byte-demo-secret",
+            "http://localhost/.well-known/jwks.json",
             new GatewayProperties.RateLimit(100, 20),
             null);
 

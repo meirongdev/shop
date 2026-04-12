@@ -1,19 +1,30 @@
-# Stage 1: reusable base with curl + non-root user (layer cached separately from app)
+# Stage 1: extract Spring Boot layered JAR
 FROM eclipse-temurin:25-jre AS base
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
-
-# Stage 2: application image with AppCDS training
-FROM base
-ARG JAR_FILE
 WORKDIR /app
+ARG JAR_FILE=target/*.jar
 COPY ${JAR_FILE} app.jar
+RUN java -Djarmode=tools -jar app.jar extract --layers --destination extracted
 
-EXPOSE 8080
-EXPOSE 8081
+# Stage 2: CDS training — generate shared class archive
+FROM eclipse-temurin:25-jre AS cds-training
+WORKDIR /app
+COPY --from=base /app/extracted/dependencies/ ./
+COPY --from=base /app/extracted/spring-boot-loader/ ./
+COPY --from=base /app/extracted/snapshot-dependencies/ ./
+COPY --from=base /app/extracted/application/ ./
+RUN java -XX:ArchiveClassesAtExit=application.jsa \
+    -Dspring.context.exit=onRefresh \
+    org.springframework.boot.loader.launch.JarLauncher
+
+# Stage 3: production image with AppCDS archive
+FROM eclipse-temurin:25-jre
+WORKDIR /app
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+COPY --from=base /app/extracted/dependencies/ ./
+COPY --from=base /app/extracted/spring-boot-loader/ ./
+COPY --from=base /app/extracted/snapshot-dependencies/ ./
+COPY --from=base /app/extracted/application/ ./
+COPY --from=cds-training /app/application.jsa ./
 USER appuser
-ENTRYPOINT ["java", \
-  "-XX:MaxRAMPercentage=70.0", \
-  "-XX:+HeapDumpOnOutOfMemoryError", \
-  "-XX:HeapDumpPath=/tmp/heapdump.hprof", \
-  "-jar", "/app/app.jar"]
+EXPOSE 8080 8081
+ENTRYPOINT ["java", "-XX:SharedArchiveFile=application.jsa", "org.springframework.boot.loader.launch.JarLauncher"]

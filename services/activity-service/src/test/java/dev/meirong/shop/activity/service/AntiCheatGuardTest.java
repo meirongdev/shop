@@ -11,8 +11,9 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -23,29 +24,27 @@ class AntiCheatGuardTest {
     @Container
     static final GenericContainer<?> REDIS = new GenericContainer<>("redis:7.4").withExposedPorts(6379);
 
-    private LettuceConnectionFactory connectionFactory;
-    private StringRedisTemplate redisTemplate;
+    private RedissonClient redissonClient;
 
     @BeforeEach
     void setUp() {
-        connectionFactory = new LettuceConnectionFactory(REDIS.getHost(), REDIS.getMappedPort(6379));
-        connectionFactory.afterPropertiesSet();
-        redisTemplate = new StringRedisTemplate(connectionFactory);
-        redisTemplate.afterPropertiesSet();
-        redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
+        Config config = new Config();
+        config.useSingleServer().setAddress("redis://" + REDIS.getHost() + ":" + REDIS.getMappedPort(6379));
+        redissonClient = Redisson.create(config);
+        redissonClient.getKeys().flushall();
     }
 
     @AfterEach
     void tearDown() {
-        if (connectionFactory != null) {
-            connectionFactory.destroy();
+        if (redissonClient != null) {
+            redissonClient.shutdown();
         }
     }
 
     @Test
     void check_blocksPlayerWhenBurstLimitExceeded() {
         AntiCheatGuard guard = new AntiCheatGuard(
-                redisTemplate,
+                redissonClient,
                 new ActivityProperties("http://loyalty-service:8080",
                         new ActivityProperties.AntiCheat(3, 20, 10, 24, true)),
                 new SimpleMeterRegistry());
@@ -63,7 +62,7 @@ class AntiCheatGuardTest {
     @Test
     void check_blocksSecondAccountOnSameDeviceFingerprint() {
         AntiCheatGuard guard = new AntiCheatGuard(
-                redisTemplate,
+                redissonClient,
                 new ActivityProperties("http://loyalty-service:8080",
                         new ActivityProperties.AntiCheat(10, 20, 10, 24, true)),
                 new SimpleMeterRegistry());

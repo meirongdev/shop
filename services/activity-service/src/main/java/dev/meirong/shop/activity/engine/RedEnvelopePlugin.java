@@ -16,11 +16,13 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.redisson.api.RList;
+import org.redisson.api.RMap;
+import org.redisson.api.RScript;
+import org.redisson.api.RedissonClient;
+import org.redisson.client.codec.StringCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -29,16 +31,26 @@ public class RedEnvelopePlugin implements GamePlugin {
     private static final Logger log = LoggerFactory.getLogger(RedEnvelopePlugin.class);
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int MIN_PACKET_CENTS = 1;
-    private static final RedisScript<List> GRAB_PACKET_SCRIPT = createGrabPacketScript();
+    private static final String GRAB_PACKET_SCRIPT = """
+            if redis.call('HEXISTS', KEYS[2], ARGV[1]) == 1 then
+              return {-1, redis.call('HGET', KEYS[2], ARGV[1])}
+            end
+            local amount = redis.call('LPOP', KEYS[1])
+            if not amount then
+              return {-2}
+            end
+            redis.call('HSET', KEYS[2], ARGV[1], amount)
+            return {1, amount}
+            """;
 
-    private final StringRedisTemplate redisTemplate;
+    private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
     private final ActivityParticipationRepository participationRepository;
 
-    public RedEnvelopePlugin(StringRedisTemplate redisTemplate,
+    public RedEnvelopePlugin(RedissonClient redissonClient,
                              ObjectMapper objectMapper,
                              ActivityParticipationRepository participationRepository) {
-        this.redisTemplate = redisTemplate;
+        this.redissonClient = redissonClient;
         this.objectMapper = objectMapper;
         this.participationRepository = participationRepository;
     }
@@ -54,9 +66,10 @@ public class RedEnvelopePlugin implements GamePlugin {
         List<String> packetValues = generatePackets(config.totalAmount(), config.packetCount()).stream()
                 .map(amount -> amount.setScale(2, RoundingMode.UNNECESSARY).toPlainString())
                 .toList();
-        redisTemplate.delete(List.of(packetsKey(game.getId()), claimsKey(game.getId())));
+        redissonClient.getKeys().delete(packetsKey(game.getId()), claimsKey(game.getId()));
         if (!packetValues.isEmpty()) {
-            redisTemplate.opsForList().rightPushAll(packetsKey(game.getId()), packetValues);
+            RList<String> list = redissonClient.getList(packetsKey(game.getId()), StringCodec.INSTANCE);
+            list.addAll(packetValues);
         }
         log.info("Initialized red envelope game {} with {} packets totaling {}",
                 game.getId(), config.packetCount(), config.totalAmount());
@@ -64,9 +77,9 @@ public class RedEnvelopePlugin implements GamePlugin {
 
     @Override
     public ParticipateResult participate(ParticipateContext ctx) {
-        List<Object> result = redisTemplate.execute(
-                GRAB_PACKET_SCRIPT,
-                List.of(packetsKey(ctx.gameId()), claimsKey(ctx.gameId())),
+        RScript rScript = redissonClient.getScript(StringCodec.INSTANCE);
+        List<Object> result = rScript.eval(RScript.Mode.READ_WRITE, GRAB_PACKET_SCRIPT, RScript.ReturnType.MULTI,
+                List.<Object>of(packetsKey(ctx.gameId()), claimsKey(ctx.gameId())),
                 ctx.buyerId());
         if (result == null || result.isEmpty()) {
             throw new BusinessException(CommonErrorCode.INTERNAL_ERROR, "Red envelope claim returned empty result");
@@ -92,13 +105,14 @@ public class RedEnvelopePlugin implements GamePlugin {
 
     @Override
     public void settle(ActivityGame game) {
-        long redisClaimed = redisTemplate.opsForHash().size(claimsKey(game.getId()));
+        RMap<String, String> claims = redissonClient.getMap(claimsKey(game.getId()), StringCodec.INSTANCE);
+        long redisClaimed = claims.size();
         long persistedWins = participationRepository.countWinningParticipationsByGameId(game.getId());
         if (redisClaimed != persistedWins) {
             log.warn("Red envelope reconcile mismatch: game={}, redisClaimed={}, persistedWins={}",
                     game.getId(), redisClaimed, persistedWins);
         }
-        redisTemplate.delete(List.of(packetsKey(game.getId()), claimsKey(game.getId())));
+        redissonClient.getKeys().delete(packetsKey(game.getId()), claimsKey(game.getId()));
     }
 
     private EnvelopeConfig parseConfig(String configJson) {
@@ -200,23 +214,6 @@ public class RedEnvelopePlugin implements GamePlugin {
 
     private static String claimsKey(String gameId) {
         return "re:claims:" + gameId;
-    }
-
-    private static RedisScript<List> createGrabPacketScript() {
-        DefaultRedisScript<List> script = new DefaultRedisScript<>();
-        script.setResultType(List.class);
-        script.setScriptText("""
-                if redis.call('HEXISTS', KEYS[2], ARGV[1]) == 1 then
-                  return {-1, redis.call('HGET', KEYS[2], ARGV[1])}
-                end
-                local amount = redis.call('LPOP', KEYS[1])
-                if not amount then
-                  return {-2}
-                end
-                redis.call('HSET', KEYS[2], ARGV[1], amount)
-                return {1, amount}
-                """);
-        return script;
     }
 
     private record EnvelopeConfig(int packetCount, BigDecimal totalAmount) {}

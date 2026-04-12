@@ -6,20 +6,23 @@ import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.redisson.api.RAtomicLong;
+import org.redisson.api.RBucket;
+import org.redisson.api.RedissonClient;
+import org.redisson.client.codec.StringCodec;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AntiCheatGuard {
 
-    private final StringRedisTemplate redisTemplate;
+    private final RedissonClient redissonClient;
     private final ActivityProperties properties;
     private final MeterRegistry meterRegistry;
 
-    public AntiCheatGuard(StringRedisTemplate redisTemplate,
+    public AntiCheatGuard(RedissonClient redissonClient,
                           ActivityProperties properties,
                           MeterRegistry meterRegistry) {
-        this.redisTemplate = redisTemplate;
+        this.redissonClient = redissonClient;
         this.properties = properties;
         this.meterRegistry = meterRegistry;
     }
@@ -62,10 +65,10 @@ public class AntiCheatGuard {
             return;
         }
         String key = "activity:ac:device:%s:%s".formatted(gameId, deviceFingerprint);
-        String existingPlayer = redisTemplate.opsForValue().get(key);
+        RBucket<String> bucket = redissonClient.getBucket(key, StringCodec.INSTANCE);
+        String existingPlayer = bucket.get();
         if (existingPlayer == null) {
-            redisTemplate.opsForValue().set(key, buyerId,
-                    Duration.ofHours(properties.antiCheat().deviceFingerprintTtlHours()));
+            bucket.set(buyerId, Duration.ofHours(properties.antiCheat().deviceFingerprintTtlHours()));
             return;
         }
         if (!existingPlayer.equals(buyerId)) {
@@ -76,12 +79,10 @@ public class AntiCheatGuard {
     }
 
     private long incrementWithinWindow(String key) {
-        Long count = redisTemplate.opsForValue().increment(key);
-        if (count == null) {
-            throw new BusinessException(CommonErrorCode.INTERNAL_ERROR, "Anti-cheat counter increment failed");
-        }
+        RAtomicLong counter = redissonClient.getAtomicLong(key);
+        long count = counter.incrementAndGet();
         if (count == 1L) {
-            redisTemplate.expire(key, Duration.ofSeconds(properties.antiCheat().windowSeconds()));
+            counter.expire(Duration.ofSeconds(properties.antiCheat().windowSeconds()));
         }
         return count;
     }

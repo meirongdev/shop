@@ -14,8 +14,10 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.client.codec.StringCodec;
+import org.redisson.config.Config;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -26,29 +28,27 @@ class RedEnvelopePluginTest {
     @Container
     static final GenericContainer<?> REDIS = new GenericContainer<>("redis:7.4").withExposedPorts(6379);
 
-    private LettuceConnectionFactory connectionFactory;
-    private StringRedisTemplate redisTemplate;
+    private RedissonClient redissonClient;
 
     @BeforeEach
     void setUp() {
-        connectionFactory = new LettuceConnectionFactory(REDIS.getHost(), REDIS.getMappedPort(6379));
-        connectionFactory.afterPropertiesSet();
-        redisTemplate = new StringRedisTemplate(connectionFactory);
-        redisTemplate.afterPropertiesSet();
-        redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
+        Config config = new Config();
+        config.useSingleServer().setAddress("redis://" + REDIS.getHost() + ":" + REDIS.getMappedPort(6379));
+        redissonClient = Redisson.create(config);
+        redissonClient.getKeys().flushall();
     }
 
     @AfterEach
     void tearDown() {
-        if (connectionFactory != null) {
-            connectionFactory.destroy();
+        if (redissonClient != null) {
+            redissonClient.shutdown();
         }
     }
 
     @Test
     void initializeParticipateAndSettle_redEnvelopeFlowWorks() {
         ActivityParticipationRepository participationRepository = mock(ActivityParticipationRepository.class);
-        RedEnvelopePlugin plugin = new RedEnvelopePlugin(redisTemplate, new ObjectMapper(), participationRepository);
+        RedEnvelopePlugin plugin = new RedEnvelopePlugin(redissonClient, new ObjectMapper(), participationRepository);
         ActivityGame game = new ActivityGame("game-red-1", GameType.RED_ENVELOPE, "Flash Red Envelope");
         game.setConfig("{\"packet_count\":3,\"total_amount\":6.00}");
 
@@ -78,12 +78,12 @@ class RedEnvelopePluginTest {
         assertThat(claimedAmounts).allMatch(amount -> amount.compareTo(BigDecimal.ZERO) > 0);
         assertThat(claimedAmounts.stream().reduce(BigDecimal.ZERO, BigDecimal::add))
                 .isEqualByComparingTo("6.00");
-        assertThat(redisTemplate.opsForHash().size("re:claims:" + game.getId())).isEqualTo(3L);
+        assertThat(redissonClient.getMap("re:claims:" + game.getId(), StringCodec.INSTANCE).size()).isEqualTo(3);
 
         when(participationRepository.countWinningParticipationsByGameId(game.getId())).thenReturn(3L);
         plugin.settle(game);
 
-        assertThat(redisTemplate.hasKey("re:packets:" + game.getId())).isFalse();
-        assertThat(redisTemplate.hasKey("re:claims:" + game.getId())).isFalse();
+        assertThat(redissonClient.getBucket("re:packets:" + game.getId()).isExists()).isFalse();
+        assertThat(redissonClient.getBucket("re:claims:" + game.getId()).isExists()).isFalse();
     }
 }

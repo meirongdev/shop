@@ -13,7 +13,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import java.util.concurrent.TimeUnit;
+import org.redisson.api.RBucket;
+import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,14 +26,14 @@ public class GuestCartStore {
     private static final TypeReference<List<OrderApi.CartItemResponse>> CART_LIST_TYPE =
             new TypeReference<>() {};
 
-    private final StringRedisTemplate redisTemplate;
+    private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
     private final Duration guestCartTtl;
 
-    public GuestCartStore(StringRedisTemplate redisTemplate,
+    public GuestCartStore(RedissonClient redissonClient,
                           ObjectMapper objectMapper,
                           BuyerClientProperties properties) {
-        this.redisTemplate = redisTemplate;
+        this.redissonClient = redissonClient;
         this.objectMapper = objectMapper;
         this.guestCartTtl = properties.guestCartTtl();
     }
@@ -111,7 +113,7 @@ public class GuestCartStore {
 
     public void clearCart(String buyerId) {
         requireGuestBuyer(buyerId);
-        redisTemplate.delete(cartKey(buyerId));
+        redissonClient.<String>getBucket(cartKey(buyerId)).delete();
     }
 
     private OrderApi.CartView toCartView(List<OrderApi.CartItemResponse> items) {
@@ -123,13 +125,14 @@ public class GuestCartStore {
 
     private List<OrderApi.CartItemResponse> loadItems(String buyerId) {
         requireGuestBuyer(buyerId);
-        String payload = redisTemplate.opsForValue().get(cartKey(buyerId));
+        RBucket<String> bucket = redissonClient.getBucket(cartKey(buyerId));
+        String payload = bucket.get();
         if (payload == null || payload.isBlank()) {
             return new ArrayList<>();
         }
         try {
             List<OrderApi.CartItemResponse> items = objectMapper.readValue(payload, CART_LIST_TYPE);
-            redisTemplate.expire(cartKey(buyerId), guestCartTtl);
+            bucket.expire(guestCartTtl);
             return new ArrayList<>(items);
         } catch (IOException exception) {
             throw new BusinessException(CommonErrorCode.INTERNAL_ERROR,
@@ -140,14 +143,13 @@ public class GuestCartStore {
     private void saveItems(String buyerId, List<OrderApi.CartItemResponse> items) {
         requireGuestBuyer(buyerId);
         if (items.isEmpty()) {
-            redisTemplate.delete(cartKey(buyerId));
+            redissonClient.<String>getBucket(cartKey(buyerId)).delete();
             return;
         }
         try {
-            redisTemplate.opsForValue().set(
-                    cartKey(buyerId),
-                    objectMapper.writeValueAsString(items),
-                    guestCartTtl);
+            redissonClient.<String>getBucket(cartKey(buyerId))
+                    .set(objectMapper.writeValueAsString(items),
+                            guestCartTtl.toMillis(), TimeUnit.MILLISECONDS);
         } catch (IOException exception) {
             throw new BusinessException(CommonErrorCode.INTERNAL_ERROR,
                     "Failed to store guest cart for " + buyerId, exception);

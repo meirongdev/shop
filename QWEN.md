@@ -4,6 +4,28 @@
 
 A **cloud-native microservices e-commerce platform** built on **Java 25 + Spring Boot 3.5.11 + Spring Cloud 2025.0.1 + Kotlin 2.3**. This is a technical validation platform for verifying a **Gateway + Thin BFF + Domain Service** architecture under a 2026 technology baseline.
 
+### Role Separation Policy (Important Architecture Constraint)
+
+**This platform enforces strict Buyer/Seller role separation. Sellers are prohibited from shopping.**
+
+| Role | Capabilities | Entry Points | Restrictions |
+|------|-------------|--------------|--------------|
+| **Buyer** | Browse, cart, checkout, orders, loyalty, activities | `/buyer/**`, `/buyer-app/**`, `/api/buyer/**` | Shopping only |
+| **Seller** | Product management, order fulfillment, promotions, wallet withdrawals | `/seller/**`, `/api/seller/**` | **No shopping allowed** |
+| **Guest** | Browse, guest checkout (no registration) | `/buyer/**` (unauthenticated) | Guest paths only |
+
+**Implementation details:**
+- JWT carries a single role claim (`ROLE_BUYER` or `ROLE_SELLER`)
+- Gateway routes to different BFFs: `/buyer/**` → buyer-bff, `/seller/**` → seller-bff
+- Seller API contract (`SellerApi.java`) contains **no** cart, checkout, or purchasing endpoints
+- Seller BFF exposes **no** shopping-related aggregation endpoints
+- No role-switching mechanism exists; an account is exclusively Buyer or Seller
+
+**Rationale:**
+- Simplifies system boundaries and reduces test complexity
+- Prevents seller privilege abuse (e.g., self-purchasing, order manipulation)
+- Clear separation of duties for audit and compliance
+
 ### Core Architecture
 
 ```

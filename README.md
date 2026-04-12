@@ -6,8 +6,20 @@
 
 - 验证 Gateway + Thin BFF + Domain Service 架构在 2026 技术基线下可行
 - 验证 Spring Security 认证中心、Kotlin Portal、Kafka 事件驱动、Stripe 支付接入
-- Buyer 与 Seller 分离入口
+- **Buyer 与 Seller 严格隔离**：Buyer 负责购物，Seller 仅管理商品与履约，**禁止 Seller 购物**
 - 统一采用 Kind / Kubernetes 本地部署验证
+
+## 角色隔离策略
+
+本平台实施**严格的 Buyer/Seller 角色隔离**：
+
+| 角色 | 能力 | 入口 | 限制 |
+|------|------|------|------|
+| **Buyer** | 浏览、购物车、结算、订单、积分、活动 | `/buyer/**`, `/buyer-app/**` | 仅可购物 |
+| **Seller** | 商品管理、订单履约、促销、钱包提现 | `/seller/**` | **禁止购物** |
+| **Guest** | 游客浏览、游客下单（无需注册） | `/buyer/**` (未登录) | 仅游客通道 |
+
+架构实施细节：用户 JWT 携带单一角色，Gateway 路由至不同 BFF，Seller API 不含任何购物端点，不存在角色切换机制。详见 `docs/ARCHITECTURE-DESIGN.md`。
 
 ## 模块
 

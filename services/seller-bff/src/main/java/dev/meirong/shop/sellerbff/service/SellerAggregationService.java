@@ -12,43 +12,52 @@ import dev.meirong.shop.contracts.promotion.PromotionApi;
 import dev.meirong.shop.contracts.search.SearchApi;
 import dev.meirong.shop.contracts.seller.SellerApi;
 import dev.meirong.shop.contracts.wallet.WalletApi;
-import dev.meirong.shop.sellerbff.config.SellerClientProperties;
+import dev.meirong.shop.sellerbff.client.MarketplaceServiceClient;
+import dev.meirong.shop.sellerbff.client.OrderServiceClient;
+import dev.meirong.shop.sellerbff.client.ProfileServiceClient;
+import dev.meirong.shop.sellerbff.client.PromotionServiceClient;
+import dev.meirong.shop.sellerbff.client.SearchServiceClient;
+import dev.meirong.shop.sellerbff.client.WalletServiceClient;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 public class SellerAggregationService {
 
     private static final Logger log = LoggerFactory.getLogger(SellerAggregationService.class);
 
-    private final RestClient restClient;
-    private final RestClient searchRestClient;
-    private final SellerClientProperties properties;
+    private final ProfileServiceClient profileClient;
+    private final MarketplaceServiceClient marketplaceClient;
+    private final OrderServiceClient orderClient;
+    private final WalletServiceClient walletClient;
+    private final PromotionServiceClient promotionClient;
+    private final SearchServiceClient searchClient;
     private final ResilienceHelper resilienceHelper;
     private final MetricsHelper metrics;
 
-    public SellerAggregationService(RestClient.Builder builder,
-                                    @Qualifier("searchRestClient") RestClient searchRestClient,
-                                    SellerClientProperties properties,
+    public SellerAggregationService(ProfileServiceClient profileClient,
+                                    MarketplaceServiceClient marketplaceClient,
+                                    OrderServiceClient orderClient,
+                                    WalletServiceClient walletClient,
+                                    PromotionServiceClient promotionClient,
+                                    SearchServiceClient searchClient,
                                     ResilienceHelper resilienceHelper,
                                     MeterRegistry meterRegistry) {
-        this.restClient = builder.build();
-        this.searchRestClient = searchRestClient;
-        this.properties = properties;
+        this.profileClient = profileClient;
+        this.marketplaceClient = marketplaceClient;
+        this.orderClient = orderClient;
+        this.walletClient = walletClient;
+        this.promotionClient = promotionClient;
+        this.searchClient = searchClient;
         this.resilienceHelper = resilienceHelper;
         this.metrics = new MetricsHelper("seller-bff", meterRegistry);
     }
@@ -82,8 +91,7 @@ public class SellerAggregationService {
         String result = "success";
         try {
             return call("marketplaceService", false,
-                    () -> post(properties.marketplaceServiceUrl() + MarketplaceApi.CREATE, request,
-                            new ParameterizedTypeReference<ApiResponse<MarketplaceApi.ProductResponse>>() {}),
+                    () -> requireData(marketplaceClient.createProduct(request)),
                     "Marketplace service is temporarily unavailable");
         } catch (RuntimeException e) {
             result = "failure";
@@ -99,8 +107,7 @@ public class SellerAggregationService {
         String result = "success";
         try {
             return call("marketplaceService", false,
-                    () -> post(properties.marketplaceServiceUrl() + MarketplaceApi.UPDATE, request,
-                            new ParameterizedTypeReference<ApiResponse<MarketplaceApi.ProductResponse>>() {}),
+                    () -> requireData(marketplaceClient.updateProduct(request)),
                     "Marketplace service is temporarily unavailable");
         } catch (RuntimeException e) {
             result = "failure";
@@ -113,8 +120,7 @@ public class SellerAggregationService {
 
     public PromotionApi.OfferResponse createPromotion(PromotionApi.CreateOfferRequest request) {
         return call("promotionService", false,
-                () -> post(properties.promotionServiceUrl() + PromotionApi.CREATE, request,
-                        new ParameterizedTypeReference<ApiResponse<PromotionApi.OfferResponse>>() {}),
+                () -> requireData(promotionClient.createOffer(request)),
                 "Promotion service is temporarily unavailable");
     }
 
@@ -123,9 +129,7 @@ public class SellerAggregationService {
         String result = "success";
         try {
             return call("orderService", false,
-                    () -> post(properties.orderServiceUrl() + OrderApi.ORDER_LIST,
-                            new OrderApi.ListOrdersRequest(sellerId, "seller"),
-                            new ParameterizedTypeReference<ApiResponse<List<OrderApi.OrderResponse>>>() {}),
+                    () -> requireData(orderClient.listOrders(new OrderApi.ListOrdersRequest(sellerId, "seller"))),
                     "Order service is temporarily unavailable");
         } catch (RuntimeException e) {
             result = "failure";
@@ -141,9 +145,7 @@ public class SellerAggregationService {
         String result = "success";
         try {
             return call("orderService", false,
-                    () -> post(properties.orderServiceUrl() + OrderApi.ORDER_GET,
-                            new OrderApi.GetOrderRequest(orderId),
-                            new ParameterizedTypeReference<ApiResponse<OrderApi.OrderResponse>>() {}),
+                    () -> requireData(orderClient.getOrder(new OrderApi.GetOrderRequest(orderId))),
                     "Order service is temporarily unavailable");
         } catch (RuntimeException e) {
             result = "failure";
@@ -159,9 +161,7 @@ public class SellerAggregationService {
         String result = "success";
         try {
             return call("orderService", false,
-                    () -> post(properties.orderServiceUrl() + OrderApi.ORDER_SHIP,
-                            new OrderApi.ShipOrderRequest(orderId, null, "PENDING"),
-                            new ParameterizedTypeReference<ApiResponse<OrderApi.OrderResponse>>() {}),
+                    () -> requireData(orderClient.shipOrder(new OrderApi.ShipOrderRequest(orderId, null, "PENDING"))),
                     "Order service is temporarily unavailable");
         } catch (RuntimeException e) {
             result = "failure";
@@ -177,9 +177,7 @@ public class SellerAggregationService {
         String result = "success";
         try {
             return call("orderService", false,
-                    () -> post(properties.orderServiceUrl() + OrderApi.ORDER_DELIVER,
-                            new OrderApi.ConfirmOrderRequest(orderId),
-                            new ParameterizedTypeReference<ApiResponse<OrderApi.OrderResponse>>() {}),
+                    () -> requireData(orderClient.deliverOrder(new OrderApi.ConfirmOrderRequest(orderId))),
                     "Order service is temporarily unavailable");
         } catch (RuntimeException e) {
             result = "failure";
@@ -195,9 +193,7 @@ public class SellerAggregationService {
         String result = "success";
         try {
             return call("orderService", false,
-                    () -> post(properties.orderServiceUrl() + OrderApi.ORDER_CANCEL,
-                            new OrderApi.CancelOrderRequest(orderId, reason),
-                            new ParameterizedTypeReference<ApiResponse<OrderApi.OrderResponse>>() {}),
+                    () -> requireData(orderClient.cancelOrder(new OrderApi.CancelOrderRequest(orderId, reason))),
                     "Order service is temporarily unavailable");
         } catch (RuntimeException e) {
             result = "failure";
@@ -213,9 +209,7 @@ public class SellerAggregationService {
         String result = "success";
         try {
             return call("walletService", false,
-                    () -> post(properties.walletServiceUrl() + WalletApi.GET,
-                            new WalletApi.GetWalletRequest(sellerId),
-                            new ParameterizedTypeReference<ApiResponse<WalletApi.WalletAccountResponse>>() {}),
+                    () -> requireData(walletClient.getWallet(new WalletApi.GetWalletRequest(sellerId))),
                     "Wallet service is temporarily unavailable");
         } catch (RuntimeException e) {
             result = "failure";
@@ -231,9 +225,7 @@ public class SellerAggregationService {
         String result = "success";
         try {
             return call("walletService", false,
-                    () -> post(properties.walletServiceUrl() + WalletApi.WITHDRAW,
-                            request,
-                            new ParameterizedTypeReference<ApiResponse<WalletApi.TransactionResponse>>() {}),
+                    () -> requireData(walletClient.withdraw(request)),
                     "Wallet service is temporarily unavailable");
         } catch (RuntimeException e) {
             result = "failure";
@@ -249,9 +241,7 @@ public class SellerAggregationService {
         String result = "success";
         try {
             return call("profileService", true,
-                    () -> post(properties.profileServiceUrl() + ProfileApi.SELLER_GET,
-                            new ProfileApi.GetProfileRequest(sellerId),
-                            new ParameterizedTypeReference<ApiResponse<ProfileApi.ProfileResponse>>() {}),
+                    () -> requireData(profileClient.getSellerProfile(new ProfileApi.GetProfileRequest(sellerId))),
                     "Profile service is temporarily unavailable");
         } catch (RuntimeException e) {
             result = "failure";
@@ -267,8 +257,7 @@ public class SellerAggregationService {
         String result = "success";
         try {
             return call("profileService", false,
-                    () -> post(properties.profileServiceUrl() + ProfileApi.SELLER_UPDATE, request,
-                            new ParameterizedTypeReference<ApiResponse<ProfileApi.ProfileResponse>>() {}),
+                    () -> requireData(profileClient.updateSellerProfile(request)),
                     "Profile service is temporarily unavailable");
         } catch (RuntimeException e) {
             result = "failure";
@@ -281,31 +270,25 @@ public class SellerAggregationService {
 
     public ProfileApi.SellerStorefrontResponse getShop(String sellerId) {
         return call("profileService", true,
-                () -> post(properties.profileServiceUrl() + ProfileApi.SELLER_STOREFRONT,
-                        new ProfileApi.GetProfileRequest(sellerId),
-                        new ParameterizedTypeReference<ApiResponse<ProfileApi.SellerStorefrontResponse>>() {}),
+                () -> requireData(profileClient.getSellerStorefront(new ProfileApi.GetProfileRequest(sellerId))),
                 "Profile service is temporarily unavailable");
     }
 
     public ProfileApi.SellerStorefrontResponse updateShop(ProfileApi.UpdateShopRequest request) {
         return call("profileService", false,
-                () -> post(properties.profileServiceUrl() + ProfileApi.SELLER_SHOP_UPDATE, request,
-                        new ParameterizedTypeReference<ApiResponse<ProfileApi.SellerStorefrontResponse>>() {}),
+                () -> requireData(profileClient.updateSellerShop(request)),
                 "Profile service is temporarily unavailable");
     }
 
     public PromotionApi.CouponResponse createCoupon(PromotionApi.CreateCouponRequest request) {
         return call("promotionService", false,
-                () -> post(properties.promotionServiceUrl() + PromotionApi.COUPON_CREATE, request,
-                        new ParameterizedTypeReference<ApiResponse<PromotionApi.CouponResponse>>() {}),
+                () -> requireData(promotionClient.createCoupon(request)),
                 "Promotion service is temporarily unavailable");
     }
 
     public List<PromotionApi.CouponResponse> listCoupons(String sellerId) {
         return call("promotionService", true,
-                () -> post(properties.promotionServiceUrl() + PromotionApi.COUPON_LIST,
-                        new PromotionApi.ListCouponsRequest(sellerId),
-                        new ParameterizedTypeReference<ApiResponse<List<PromotionApi.CouponResponse>>>() {}),
+                () -> requireData(promotionClient.listCoupons(new PromotionApi.ListCouponsRequest(sellerId))),
                 "Promotion service is temporarily unavailable");
     }
 
@@ -314,7 +297,8 @@ public class SellerAggregationService {
         String result = "success";
         try {
             return call("searchService", true,
-                    () -> searchProductsFromSearchService(request),
+                    () -> requireData(searchClient.searchProducts(
+                            request.query(), request.categoryId(), request.page(), request.size())),
                     throwable -> searchProductsFallback(request, throwable));
         } catch (RuntimeException e) {
             result = "failure";
@@ -328,10 +312,7 @@ public class SellerAggregationService {
     public SearchApi.SearchProductsResponse searchProductsFallback(MarketplaceApi.SearchProductsRequest request, Throwable throwable) {
         log.warn("search-service unavailable, fallback to marketplace search: {}", throwable.getMessage());
         MarketplaceApi.ProductsPageView fallback = call("marketplaceService", true,
-                () -> post(
-                        properties.marketplaceServiceUrl() + MarketplaceApi.SEARCH,
-                        request,
-                        new ParameterizedTypeReference<ApiResponse<MarketplaceApi.ProductsPageView>>() {}),
+                () -> requireData(marketplaceClient.searchProducts(request)),
                 "Marketplace service is temporarily unavailable");
         List<SearchApi.ProductHit> hits = fallback.products().stream()
                 .map(product -> new SearchApi.ProductHit(
@@ -357,10 +338,7 @@ public class SellerAggregationService {
 
     private List<MarketplaceApi.ProductResponse> listProductsForSeller(String sellerId) {
         MarketplaceApi.ProductsView response = call("marketplaceService", true,
-                () -> post(
-                        properties.marketplaceServiceUrl() + MarketplaceApi.LIST,
-                        new MarketplaceApi.ListProductsRequest(false),
-                        new ParameterizedTypeReference<ApiResponse<MarketplaceApi.ProductsView>>() {}),
+                () -> requireData(marketplaceClient.listProducts(new MarketplaceApi.ListProductsRequest(false))),
                 throwable -> {
                     log.warn("marketplace-service unavailable for seller dashboard products: {}", throwable.getMessage());
                     return new MarketplaceApi.ProductsView(List.of());
@@ -370,10 +348,7 @@ public class SellerAggregationService {
 
     private List<PromotionApi.OfferResponse> listOffersForSeller() {
         PromotionApi.OffersView response = call("promotionService", true,
-                () -> post(
-                        properties.promotionServiceUrl() + PromotionApi.LIST,
-                        new PromotionApi.ListOffersRequest(null),
-                        new ParameterizedTypeReference<ApiResponse<PromotionApi.OffersView>>() {}),
+                () -> requireData(promotionClient.listOffers(new PromotionApi.ListOffersRequest(null))),
                 throwable -> {
                     log.warn("promotion-service unavailable for seller dashboard offers: {}", throwable.getMessage());
                     return new PromotionApi.OffersView(List.of());
@@ -381,20 +356,9 @@ public class SellerAggregationService {
         return response.offers();
     }
 
-    private SearchApi.SearchProductsResponse searchProductsFromSearchService(MarketplaceApi.SearchProductsRequest request) {
-        String uri = UriComponentsBuilder.fromPath(SearchApi.SEARCH_PRODUCTS)
-                .queryParamIfPresent("q", Optional.ofNullable(request.query()))
-                .queryParamIfPresent("categoryId", Optional.ofNullable(request.categoryId()))
-                .queryParam("page", request.page())
-                .queryParam("hitsPerPage", request.size())
-                .build()
-                .toUriString();
-        ApiResponse<SearchApi.SearchProductsResponse> response = searchRestClient.get()
-                .uri(uri)
-                .retrieve()
-                .body(new ParameterizedTypeReference<ApiResponse<SearchApi.SearchProductsResponse>>() {});
+    private <T> T requireData(ApiResponse<T> response) {
         if (response == null || response.data() == null) {
-            throw new BusinessException(CommonErrorCode.DOWNSTREAM_ERROR, "Empty downstream response from " + uri);
+            throw new BusinessException(CommonErrorCode.DOWNSTREAM_ERROR, "Empty downstream response");
         }
         return response.data();
     }
@@ -417,17 +381,5 @@ public class SellerAggregationService {
             throw businessException;
         }
         throw new BusinessException(CommonErrorCode.DOWNSTREAM_ERROR, message, throwable);
-    }
-
-    private <T> T post(String url, Object request, ParameterizedTypeReference<ApiResponse<T>> typeReference) {
-        ApiResponse<T> response = restClient.post()
-                .uri(url)
-                .body(request)
-                .retrieve()
-                .body(typeReference);
-        if (response == null || response.data() == null) {
-            throw new BusinessException(CommonErrorCode.DOWNSTREAM_ERROR, "Empty downstream response from " + url);
-        }
-        return response.data();
     }
 }

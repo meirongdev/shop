@@ -12,11 +12,16 @@ import dev.meirong.shop.common.resilience.ResilienceHelper;
 import dev.meirong.shop.contracts.order.OrderApi;
 import dev.meirong.shop.contracts.profile.ProfileApi;
 import dev.meirong.shop.contracts.wallet.WalletApi;
-import dev.meirong.shop.sellerbff.config.SellerClientProperties;
+import dev.meirong.shop.sellerbff.client.MarketplaceServiceClient;
+import dev.meirong.shop.sellerbff.client.OrderServiceClient;
+import dev.meirong.shop.sellerbff.client.ProfileServiceClient;
+import dev.meirong.shop.sellerbff.client.PromotionServiceClient;
+import dev.meirong.shop.sellerbff.client.SearchServiceClient;
+import dev.meirong.shop.sellerbff.client.WalletServiceClient;
 import dev.meirong.shop.sellerbff.service.SellerAggregationService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.net.http.HttpClient;
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -27,7 +32,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.support.RestClientAdapter;
+import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
 /**
  * WireMock-based contract tests verifying seller-bff correctly serializes/deserializes
@@ -57,9 +65,8 @@ class SellerContractTest {
         objectMapper = new ObjectMapper().findAndRegisterModules();
 
         String baseUrl = "http://localhost:" + wireMock.port();
-        SellerClientProperties properties = new SellerClientProperties(
-                baseUrl, baseUrl, baseUrl, baseUrl, baseUrl, baseUrl,
-                Duration.ofSeconds(2), Duration.ofSeconds(5));
+        HttpClient httpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
 
         ResilienceHelper resilienceHelper = Mockito.mock(ResilienceHelper.class);
         Mockito.doAnswer(inv -> ((Supplier<?>) inv.getArgument(1)).get())
@@ -70,10 +77,26 @@ class SellerContractTest {
                 .write(Mockito.anyString(), Mockito.<Supplier<Object>>any(), Mockito.<Function<Throwable, Object>>any());
 
         aggregationService = new SellerAggregationService(
-                RestClient.builder(), RestClient.builder().build(), properties, resilienceHelper,
+                createClient(baseUrl, factory, ProfileServiceClient.class),
+                createClient(baseUrl, factory, MarketplaceServiceClient.class),
+                createClient(baseUrl, factory, OrderServiceClient.class),
+                createClient(baseUrl, factory, WalletServiceClient.class),
+                createClient(baseUrl, factory, PromotionServiceClient.class),
+                createClient(baseUrl, factory, SearchServiceClient.class),
+                resilienceHelper,
                 new SimpleMeterRegistry());
     }
 
+    private <T> T createClient(String baseUrl, JdkClientHttpRequestFactory factory, Class<T> clientType) {
+        RestClient restClient = RestClient.builder()
+                .requestFactory(factory)
+                .baseUrl(baseUrl)
+                .build();
+        HttpServiceProxyFactory proxyFactory = HttpServiceProxyFactory
+                .builderFor(RestClientAdapter.create(restClient))
+                .build();
+        return proxyFactory.createClient(clientType);
+    }
     @Test
     void getOrder_deserializesOrderCorrectly() throws JsonProcessingException {
         ApiResponse<OrderApi.OrderResponse> apiResp = ApiResponse.success(new OrderApi.OrderResponse(

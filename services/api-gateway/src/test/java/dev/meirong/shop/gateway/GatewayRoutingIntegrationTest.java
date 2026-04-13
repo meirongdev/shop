@@ -173,7 +173,6 @@ class GatewayRoutingIntegrationTest {
                             "\"host\":\"" + value(exchange.getRequestHeaders().getFirst("Host")) + "\"," +
                             "\"buyerId\":\"" + value(exchange.getRequestHeaders().getFirst("X-Buyer-Id")) + "\"," +
                             "\"userId\":\"" + value(exchange.getRequestHeaders().getFirst("X-User-Id")) + "\"," +
-                            "\"internalToken\":\"" + value(exchange.getRequestHeaders().getFirst("X-Internal-Token")) + "\"," +
                             "\"requestId\":\"" + value(exchange.getRequestHeaders().getFirst("X-Request-Id")) + "\"}";
                     byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
                     exchange.getResponseHeaders().add("Content-Type", "application/json");

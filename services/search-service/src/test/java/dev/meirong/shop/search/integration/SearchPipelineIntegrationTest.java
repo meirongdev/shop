@@ -57,7 +57,6 @@ class SearchPipelineIntegrationTest {
         registry.add("shop.search.meilisearch.admin-key", () -> "testMasterKey");
         registry.add("shop.search.meilisearch.search-key", () -> "testMasterKey");
         registry.add("shop.search.product-topic", () -> TOPIC);
-        registry.add("shop.security.internal.enabled", () -> "false");
     }
 
     @Autowired

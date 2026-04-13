@@ -38,7 +38,6 @@ class TrustedHeadersFilterTest {
         request.addHeader("X-Request-Id", "req-123");
         request.addHeader("X-Buyer-Id", "spoofed-player");
         request.addHeader("X-Roles", "ROLE_ADMIN");
-        request.addHeader("X-Internal-Token", "spoofed-token");
         request.addHeader("X-Custom", "custom-value");
         MockHttpServletResponse response = new MockHttpServletResponse();
         CapturingFilterChain chain = new CapturingFilterChain();

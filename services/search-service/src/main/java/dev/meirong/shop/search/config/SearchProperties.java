@@ -10,7 +10,13 @@ public record SearchProperties(
         String marketplaceServiceUrl,
         AnalyticsProperties analytics
 ) {
-    public record MeilisearchProperties(String url, String adminKey, String searchKey) {}
+    public record MeilisearchProperties(
+            String url,
+            String adminKey,
+            String searchKey,
+            Duration taskTimeout,
+            Duration taskPollInterval
+    ) {}
 
     public record AnalyticsProperties(
             Duration retention,

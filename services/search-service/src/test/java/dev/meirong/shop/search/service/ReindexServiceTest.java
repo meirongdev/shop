@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import dev.meirong.shop.contracts.marketplace.MarketplaceApi;
 import dev.meirong.shop.contracts.marketplace.MarketplaceInternalApi;
+import dev.meirong.shop.search.index.MeilisearchTaskAwaiter;
 import dev.meirong.shop.search.client.MarketplaceInternalClient;
 import dev.meirong.shop.search.index.ProductIndexSettings;
 import dev.meirong.shop.search.index.ProductIndexer;
@@ -39,11 +40,14 @@ class ReindexServiceTest {
     @Mock
     private ProductIndexSettings productIndexSettings;
 
+    @Mock
+    private MeilisearchTaskAwaiter taskAwaiter;
+
     private ReindexService reindexService;
 
     @BeforeEach
     void setUp() {
-        reindexService = new ReindexService(adminClient, marketplaceClient, indexer, productIndexSettings);
+        reindexService = new ReindexService(adminClient, marketplaceClient, indexer, productIndexSettings, taskAwaiter);
     }
 
     @Test
@@ -82,8 +86,8 @@ class ReindexServiceTest {
         verify(indexer).indexBatch(any(), any());
         verify(adminClient).swapIndexes(any(SwapIndexesParams[].class));
         verify(adminClient).deleteIndex(tempIndex);
-        verify(adminClient).waitForTask(101);
-        verify(adminClient).waitForTask(102);
+        verify(taskAwaiter).await(swapTask);
+        verify(taskAwaiter).await(deleteTask);
     }
 
     private static TaskInfo taskInfo(int taskUid) throws Exception {

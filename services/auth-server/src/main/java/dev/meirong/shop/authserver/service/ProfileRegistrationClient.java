@@ -5,7 +5,9 @@ import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;
 import dev.meirong.shop.contracts.profile.ProfileInternalApi;
 import dev.meirong.shop.authserver.config.AuthProperties;
+import dev.meirong.shop.httpclient.error.SharedDownstreamErrorHandler;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -15,8 +17,12 @@ public class ProfileRegistrationClient {
     private final RestClient restClient;
     private final AuthProperties properties;
 
-    public ProfileRegistrationClient(RestClient.Builder builder, AuthProperties properties) {
-        this.restClient = builder.build();
+    public ProfileRegistrationClient(RestClient.Builder builder,
+                                     AuthProperties properties,
+                                     SharedDownstreamErrorHandler errorHandler) {
+        this.restClient = builder
+                .defaultStatusHandler(HttpStatusCode::isError, errorHandler::handleError)
+                .build();
         this.properties = properties;
     }
 

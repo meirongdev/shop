@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.idempotency.IdempotencyGuard;
+import dev.meirong.shop.httpclient.error.SharedDownstreamErrorHandler;
 import dev.meirong.shop.common.kafka.NonRetryableKafkaConsumerException;
 import dev.meirong.shop.common.kafka.RetryableKafkaConsumerException;
 import dev.meirong.shop.contracts.profile.ProfileInternalApi;
@@ -41,6 +42,7 @@ public class OrderEventListener {
     private final LoyaltyIdempotencyKeyRepository idempotencyKeyRepository;
     private final LoyaltyProperties loyaltyProperties;
     private final RestClient restClient;
+    private final SharedDownstreamErrorHandler errorHandler;
 
     public OrderEventListener(ObjectMapper objectMapper,
                               LoyaltyAccountService accountService,
@@ -48,14 +50,18 @@ public class OrderEventListener {
                               IdempotencyGuard idempotencyGuard,
                               LoyaltyIdempotencyKeyRepository idempotencyKeyRepository,
                               LoyaltyProperties loyaltyProperties,
-                              RestClient.Builder builder) {
+                              RestClient.Builder builder,
+                              SharedDownstreamErrorHandler errorHandler) {
         this.objectMapper = objectMapper;
         this.accountService = accountService;
         this.onboardingTaskService = onboardingTaskService;
         this.idempotencyGuard = idempotencyGuard;
         this.idempotencyKeyRepository = idempotencyKeyRepository;
         this.loyaltyProperties = loyaltyProperties;
-        this.restClient = builder.build();
+        this.errorHandler = errorHandler;
+        this.restClient = builder
+                .defaultStatusHandler(org.springframework.http.HttpStatusCode::isError, errorHandler::handleError)
+                .build();
     }
 
     @RetryableTopic(

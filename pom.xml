@@ -15,6 +15,7 @@
   <modules>
     <module>shared/shop-common</module>
     <module>shared/shop-contracts</module>
+    <module>shared/shop-clients</module>
     <module>tooling/architecture-tests</module>
     <module>tooling/shop-archetypes</module>
     <module>tooling/archetype-tests</module>
@@ -73,6 +74,11 @@
       <dependency>
         <groupId>dev.meirong.shop</groupId>
         <artifactId>shop-starter-feature-toggle</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>dev.meirong.shop</groupId>
+        <artifactId>shop-starter-http-client</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

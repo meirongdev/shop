@@ -20,7 +20,9 @@
 - docs/API-DOCUMENTATION-SPRINGDOC-2026.md
 - docs/ARCHUNIT-RULES.md
 - docs/COMPATIBILITY-DEVELOPMENT-STANDARD-2026.md
+- docs/CONTRACT-TESTING-GUIDE.md
 - docs/DEVELOPER-EXPERIENCE-STANDARD-2026.md
+- docs/ENGINEERING-OPTIMIZATION-ROADMAP.md
 - docs/SERVICE-TECH-STACK-AND-EXTENSIBILITY.md
 
 ---
@@ -48,6 +50,9 @@
 | 运维 Runbooks - Kafka 延迟 | `docs/runbooks/KAFKA_LAG.md` | N/A | 诊断流程、应急处理步骤变化 |
 | 运维 Runbooks - 支付失败 | `docs/runbooks/PAYMENT_FAILURE.md` | N/A | 诊断流程、应急处理步骤变化 |
 | 运维 Runbooks - 服务下线 | `docs/runbooks/SERVICE_DOWN.md` | N/A | 诊断流程、应急处理步骤变化 |
+| 工程优化路线图（开发效率 + 架构质量 + 云原生） | `docs/ENGINEERING-OPTIMIZATION-ROADMAP.md` | `docs/ROADMAP-2026.md`、`docs/ENGINEERING-STANDARDS-2026.md` | 新优化项提出、优先级调整、ADR 变更 |
+| 契约测试实施指南 | `docs/CONTRACT-TESTING-GUIDE.md` | `docs/ARCHUNIT-RULES.md`（相关规则补充） | 契约测试工具变更、流程调整、最佳实践更新 |
+| 公共 Client 与 Tracing 传播设计 | `docs/superpowers/specs/2026-04-13-common-client-and-tracing-design.md` | `docs/ENGINEERING-STANDARDS-2026.md` | 客户端抽取、Tracing/Baggage 传播标准变化 |
 
 ---
 

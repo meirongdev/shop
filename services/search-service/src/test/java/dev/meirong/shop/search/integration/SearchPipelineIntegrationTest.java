@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.contracts.search.SearchApi;
 import dev.meirong.shop.contracts.event.EventEnvelope;
 import dev.meirong.shop.contracts.event.MarketplaceProductEventData;
+import dev.meirong.shop.search.index.MeilisearchTaskAwaiter;
 import dev.meirong.shop.search.index.ProductIndexSettings;
 import dev.meirong.shop.search.service.ProductSearchService;
 import com.meilisearch.sdk.Client;
@@ -26,7 +27,7 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -36,10 +37,12 @@ import org.testcontainers.utility.DockerImageName;
 class SearchPipelineIntegrationTest {
 
     private static final String TOPIC = "marketplace.product.events.v1";
+    private static final int SEARCH_POLL_ATTEMPTS = 120;
+    private static final long SEARCH_POLL_INTERVAL_MILLIS = 500L;
 
     @ServiceConnection
     @Container
-    static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.9.0"));
+    static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("apache/kafka-native:4.0.0"));
 
     @Container
     static GenericContainer<?> meilisearch = new GenericContainer<>(DockerImageName.parse("getmeili/meilisearch:v1.12"))
@@ -67,10 +70,13 @@ class SearchPipelineIntegrationTest {
     @Qualifier("meilisearchAdminClient")
     private Client adminClient;
 
+    @Autowired
+    private MeilisearchTaskAwaiter taskAwaiter;
+
     @BeforeEach
     void cleanIndex() {
         try {
-            adminClient.index(ProductIndexSettings.INDEX_NAME).deleteAllDocuments();
+            taskAwaiter.await(adminClient.index(ProductIndexSettings.INDEX_NAME).deleteAllDocuments());
         } catch (Exception ignored) {
             // index may not be ready yet; tests rely on polling below
         }
@@ -147,7 +153,8 @@ class SearchPipelineIntegrationTest {
         sendEvent("PRODUCT_CREATED", "prod-rank-1", "Ranking Serum", true, 0, baseTime);
         sendEvent("PRODUCT_CREATED", "prod-rank-2", "Ranking Serum", true, 30, baseTime);
 
-        SearchApi.SearchProductsResponse response = awaitSearch("Ranking Serum");
+        SearchApi.SearchProductsResponse response =
+                awaitSearch(new SearchApi.SearchProductsRequest("Ranking Serum", null, null, 1, 20), 2);
 
         assertThat(response.hits()).extracting(SearchApi.ProductHit::id)
                 .containsSequence("prod-rank-2", "prod-rank-1");
@@ -159,8 +166,8 @@ class SearchPipelineIntegrationTest {
         sendEvent("PRODUCT_CREATED", "prod-rank-3", "Sorted Serum", true, 30, baseTime, new BigDecimal("29.99"));
         sendEvent("PRODUCT_CREATED", "prod-rank-4", "Sorted Serum", true, 0, baseTime, new BigDecimal("9.99"));
 
-        SearchApi.SearchProductsResponse response = awaitSearch(
-                new SearchApi.SearchProductsRequest("Sorted Serum", null, "priceInCents:asc", 1, 20));
+        SearchApi.SearchProductsResponse response =
+                awaitSearch(new SearchApi.SearchProductsRequest("Sorted Serum", null, "priceInCents:asc", 1, 20), 2);
 
         assertThat(response.hits()).extracting(SearchApi.ProductHit::id)
                 .containsSequence("prod-rank-4", "prod-rank-3");
@@ -215,24 +222,29 @@ class SearchPipelineIntegrationTest {
     }
 
     private SearchApi.SearchProductsResponse awaitSearch(SearchApi.SearchProductsRequest request) throws InterruptedException {
+        return awaitSearch(request, 1);
+    }
+
+    private SearchApi.SearchProductsResponse awaitSearch(SearchApi.SearchProductsRequest request, int minimumHits)
+            throws InterruptedException {
         SearchApi.SearchProductsResponse last = null;
-        for (int i = 0; i < 40; i++) {
+        for (int i = 0; i < SEARCH_POLL_ATTEMPTS; i++) {
             try {
                 last = productSearchService.search(request);
-                if (last != null && !last.hits().isEmpty()) {
+                if (last != null && last.hits().size() >= minimumHits) {
                     return last;
                 }
             } catch (Exception ignored) {
                 // consumer/index may still be initializing
             }
-            Thread.sleep(500);
+            Thread.sleep(SEARCH_POLL_INTERVAL_MILLIS);
         }
         return last == null ? new SearchApi.SearchProductsResponse(java.util.List.of(), 0, 1, 0, java.util.Map.of()) : last;
     }
 
     private SearchApi.SearchProductsResponse awaitNoResults(String query) throws InterruptedException {
         SearchApi.SearchProductsResponse last = null;
-        for (int i = 0; i < 40; i++) {
+        for (int i = 0; i < SEARCH_POLL_ATTEMPTS; i++) {
             try {
                 last = productSearchService.search(new SearchApi.SearchProductsRequest(query, null, null, 1, 20));
                 if (last != null && last.hits().isEmpty()) {
@@ -241,7 +253,7 @@ class SearchPipelineIntegrationTest {
             } catch (Exception ignored) {
                 // consumer/index may still be initializing
             }
-            Thread.sleep(500);
+            Thread.sleep(SEARCH_POLL_INTERVAL_MILLIS);
         }
         return last == null ? new SearchApi.SearchProductsResponse(java.util.List.of(), 0, 1, 0, java.util.Map.of()) : last;
     }
@@ -249,7 +261,7 @@ class SearchPipelineIntegrationTest {
     private SearchApi.SearchSuggestionsResponse awaitSuggestions(String query, java.util.List<String> locales)
             throws InterruptedException {
         SearchApi.SearchSuggestionsResponse last = null;
-        for (int i = 0; i < 40; i++) {
+        for (int i = 0; i < SEARCH_POLL_ATTEMPTS; i++) {
             try {
                 last = productSearchService.suggest(query, 8, locales);
                 if (last != null && !last.suggestions().isEmpty()) {
@@ -258,7 +270,7 @@ class SearchPipelineIntegrationTest {
             } catch (Exception ignored) {
                 // consumer/index may still be initializing
             }
-            Thread.sleep(500);
+            Thread.sleep(SEARCH_POLL_INTERVAL_MILLIS);
         }
         return last == null ? new SearchApi.SearchSuggestionsResponse(java.util.List.of()) : last;
     }

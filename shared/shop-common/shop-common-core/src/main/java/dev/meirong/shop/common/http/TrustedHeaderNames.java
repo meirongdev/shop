@@ -9,7 +9,6 @@ public final class TrustedHeaderNames {
     public static final String USERNAME = "X-Username";
     public static final String PORTAL = "X-Portal";
     public static final String ROLES = "X-Roles";
-    public static final String INTERNAL_TOKEN = "X-Internal-Token";
     public static final String ORDER_ID = "X-Order-Id";
 
     private TrustedHeaderNames() {

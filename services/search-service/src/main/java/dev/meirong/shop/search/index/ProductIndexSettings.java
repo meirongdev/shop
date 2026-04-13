@@ -22,13 +22,16 @@ public class ProductIndexSettings {
 
     public static final String INDEX_NAME = "products";
 
-    private final Client adminClient;
     private final ReindexService reindexService;
+    private final MeilisearchTaskAwaiter taskAwaiter;
+    private final Client adminClient;
 
     public ProductIndexSettings(@Qualifier("meilisearchAdminClient") Client adminClient,
-                                @Lazy ReindexService reindexService) {
+                                @Lazy ReindexService reindexService,
+                                MeilisearchTaskAwaiter taskAwaiter) {
         this.adminClient = adminClient;
         this.reindexService = reindexService;
+        this.taskAwaiter = taskAwaiter;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -48,16 +51,18 @@ public class ProductIndexSettings {
 
     public void ensureIndex(String indexName) {
         try {
-            waitForTask(adminClient.createIndex(indexName, "id"));
+            taskAwaiter.await(adminClient.createIndex(indexName, "id"));
         } catch (RuntimeException exception) {
             log.debug("Index '{}' may already exist: {}", indexName, exception.getMessage());
         }
 
         var index = adminClient.index(indexName);
-        waitForTask(index.updateSearchableAttributesSettings(new String[]{"name", "description", "categoryName"}));
-        waitForTask(index.updateFilterableAttributesSettings(new String[]{"categoryId", "sellerId", "published", "priceInCents"}));
-        waitForTask(index.updateSortableAttributesSettings(new String[]{"priceInCents", "createdAt", "name", "inventory"}));
-        waitForTask(index.updateRankingRulesSettings(new String[]{
+        taskAwaiter.await(index.updateSearchableAttributesSettings(new String[]{"name", "description", "categoryName"}));
+        taskAwaiter.await(index.updateFilterableAttributesSettings(
+                new String[]{"categoryId", "sellerId", "published", "priceInCents"}));
+        taskAwaiter.await(index.updateSortableAttributesSettings(
+                new String[]{"priceInCents", "createdAt", "name", "inventory"}));
+        taskAwaiter.await(index.updateRankingRulesSettings(new String[]{
                 "words",
                 "typo",
                 "proximity",
@@ -66,7 +71,7 @@ public class ProductIndexSettings {
                 "exactness",
                 "inventory:desc"
         }));
-        waitForTask(index.updateLocalizedAttributesSettings(new LocalizedAttribute[]{
+        taskAwaiter.await(index.updateLocalizedAttributesSettings(new LocalizedAttribute[]{
                 new LocalizedAttribute(
                         new String[]{"name", "description", "categoryName"},
                         new String[]{"en", "zh", "ja"})
@@ -74,18 +79,14 @@ public class ProductIndexSettings {
 
         var faceting = new Faceting();
         faceting.setMaxValuesPerFacet(100);
-        waitForTask(index.updateFacetingSettings(faceting));
+        taskAwaiter.await(index.updateFacetingSettings(faceting));
 
         var pagination = new Pagination();
         pagination.setMaxTotalHits(5000);
-        waitForTask(index.updatePaginationSettings(pagination));
+        taskAwaiter.await(index.updatePaginationSettings(pagination));
 
         var typoTolerance = new TypoTolerance();
         typoTolerance.setEnabled(true);
-        waitForTask(index.updateTypoToleranceSettings(typoTolerance));
-    }
-
-    private void waitForTask(TaskInfo taskInfo) {
-        adminClient.waitForTask(taskInfo.getTaskUid());
+        taskAwaiter.await(index.updateTypoToleranceSettings(typoTolerance));
     }
 }

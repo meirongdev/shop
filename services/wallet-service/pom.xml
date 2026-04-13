@@ -81,6 +81,10 @@
         </dependency>
         <dependency>
             <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-starter-http-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
             <artifactId>shop-contracts-wallet</artifactId>
             <version>${project.version}</version>
         </dependency>

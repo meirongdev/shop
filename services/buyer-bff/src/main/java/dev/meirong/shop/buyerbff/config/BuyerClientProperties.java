@@ -1,6 +1,5 @@
 package dev.meirong.shop.buyerbff.config;
 
-import java.net.http.HttpClient;
 import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -12,15 +11,9 @@ public record BuyerClientProperties(String profileServiceUrl,
                                     String orderServiceUrl,
                                     String searchServiceUrl,
                                     String loyaltyServiceUrl,
-                                    Duration guestCartTtl,
-                                    HttpClient.Version httpVersion,
-                                    Duration connectTimeout,
-                                    Duration readTimeout) {
+                                    Duration guestCartTtl) {
 
     public BuyerClientProperties {
         guestCartTtl = guestCartTtl == null ? Duration.ofHours(48) : guestCartTtl;
-        httpVersion = httpVersion == null ? HttpClient.Version.HTTP_1_1 : httpVersion;
-        connectTimeout = connectTimeout == null ? Duration.ofSeconds(2) : connectTimeout;
-        readTimeout = readTimeout == null ? Duration.ofSeconds(5) : readTimeout;
     }
 }

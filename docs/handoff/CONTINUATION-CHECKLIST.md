@@ -34,7 +34,7 @@ git --no-pager log --oneline -5
 ### 2. 平台工程 P1（并行）
 
 - 补偿持久化：coupon 核销 / 库存回补 / 积分退还升级为 outbox + 定时重试
-- 关键链路契约测试：优先 `buyer-bff -> order/promotion/loyalty/marketplace`
+- 分布式锁统一抽象：当锁场景继续增长到 6+ 服务时，再评估提炼 `DistributedLockExecutor`
 - 异常语义收敛：`CommonErrorCode` 与下游错误映射统一
 - 业务指标埋点：按 `docs/OBSERVABILITY-ALERTING-SLO.md`
 - Kafka 幂等规范 + ArchUnit 规则

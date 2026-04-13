@@ -60,6 +60,15 @@
         </dependency>
         <dependency>
             <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-starter-http-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-clients</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
             <artifactId>shop-contracts-buyer</artifactId>
             <version>${project.version}</version>
         </dependency>

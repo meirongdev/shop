@@ -96,9 +96,12 @@
 - [x] **Archetype 自动化测试**：新增 `archetype-tests` 模块，为 6 个 archetype 提供完整的生成验证测试（目录结构、编译、测试、依赖验证），集成到 CI 门禁；详见 `docs/ARCHETYPE-TESTING-IMPROVEMENT-PLAN.md`
 - [x] **Problem Details（RFC 7807）**：已在 `shop-common` 统一 `GlobalExceptionHandler` 为 RFC 7807 `ProblemDetail`，服务配置启用 Problem Details，并保留 `code` / `message` / `traceId` 兼容字段
 - [x] **Testcontainers @ServiceConnection**：`AbstractMySqlIntegrationTest` 基类已在 order / wallet / promotion / marketplace / loyalty / profile / activity / notification 8 个 MySQL 服务落地，@ServiceConnection 推广完成
-- [x] **HTTP Interfaces（@HttpExchange）**：buyer-bff 搜索调用 + search-service marketplace internal client 已切换为声明式 HTTP 客户端
+- [x] **HTTP Interfaces（@HttpExchange）**：buyer-bff / seller-bff 已完成全量声明式客户端改造，聚合层由 typed client + `HttpServiceProxyFactory` 承载
+- [x] **JWT 非对称签名 + JWKS**：auth-server 已切换 RS256 并暴露 `/.well-known/jwks.json`，api-gateway 已改为 `NimbusJwtDecoder.withJwkSetUri()`
+- [x] **AppCDS 启动加速**：`platform/docker/Dockerfile.fast` 已升级为 extract → CDS training → production 三阶段构建
+- [x] **Redis 接入统一**：buyer-bff / auth-server / activity-service / api-gateway 已统一到 Redisson；Gateway 限流也已切换为 `RedissonClient + RScript`
 - [x] **业务指标埋点补齐**：已在 seller-bff / marketplace / notification / webhook / subscription 补齐 `shop_*` Counter/Timer（52 个新指标，5 个服务），加上已有的 buyer-bff / search-service / order-service / promotion-service / wallet-service / loyalty-service / activity-service，全量完成
-- [x] **关键链路契约测试**：buyer-bff Marketplace/Order/LoyaltyContractTest（10 tests）+ seller-bff SellerContractTest（3 tests），共 13 个 WireMock 契约测试
+- [x] **关键链路契约测试**：buyer-bff Marketplace/Order/Loyalty 套件已覆盖 marketplace / promotion / wallet / loyalty / order 关键序列化链路，seller-bff SellerContractTest 覆盖卖家聚合链路，共 13 个 WireMock 契约测试
 - [x] **OpenAPI 全服务接入**：15/15 服务已有 OpenApiConfig Bean，关键 DTO（BuyerApi/OrderApi）补充 @Schema 注解
 - [x] **Harness Engineering**：增强 Git hooks（pre-commit/pre-push），新增 AGENTS.md 定义 5 类 agent 质量门禁，verify-platform-improvements.sh 自动化验证 7/7 通过
 - [x] **异常语义收敛**（`src/main/java` 中 `catch (Exception)` 已清零，buyer-bff / search-service / api-gateway / webhook-service / promotion-service / notification-service / loyalty-service / activity-service / subscription-service 已按边界收窄异常）
@@ -125,12 +128,12 @@
 
 | 任务 | 当前状态 | 设计入口 |
 |------|----------|----------|
-| **可观测性平台**（Garage S3 + Loki + Tempo + Grafana） | 📐 有设计文档 | `specs/2026-03-23-observability-stack-design.md` |
-| **弹性治理**（R4j 全量 + 补偿持久化 + Kafka 幂等） | 📐 有设计文档 | `specs/2026-03-23-resilience-strategy-design.md` |
-| **Spring Boot 3.5 升级**（Problem Details / CDS / HTTP Interfaces） | 📐 有设计文档 | `specs/2026-03-23-spring-boot-35-upgrades-design.md` |
+| **可观测性平台**（Garage S3 + Loki + Tempo + Grafana） | 部分实现，后续补告警 / SLO / lag 指标收口 | `specs/2026-03-23-observability-stack-design.md` |
+| **弹性治理**（R4j 全量 + 补偿持久化 + Kafka 幂等） | ✅ Phase 1 已实现 | `specs/2026-03-23-resilience-strategy-design.md` |
+| **Spring Boot 3.5 升级**（Problem Details / @ServiceConnection / HTTP Interfaces / RS256+JWKS / AppCDS） | ✅ Phase 1 已实现 | `specs/2026-03-23-spring-boot-35-upgrades-design.md` |
 | **Phase 3/4 业务功能**（注册 / 裂变 / SMS OTP / PayPal / Klarna） | 📐 有设计文档 | `specs/2026-03-23-phase3-business-features-design.md` |
 | Apple Sign-In | 📐 有设计文档 | `specs/2026-03-23-apple-signin-design.md` |
-| 关键链路契约测试 | 未实现 | 优先为 `buyer-bff → order/promotion/loyalty/marketplace` 建 consumer/provider contract |
+| 关键链路契约测试 | ✅ 已实现（WireMock consumer 契约测试） | `services/buyer-bff/src/test/java/dev/meirong/shop/buyerbff/contract/` / `services/seller-bff/src/test/java/dev/meirong/shop/sellerbff/contract/` |
 | 搜索增强 | 未实现 | `search-service + Meilisearch` 语义 / 向量 / 多语言，依赖行为数据沉淀 |
 | Phase 5 / 6 能力 | 未实现 | 保持为 roadmap / design backlog |
 
@@ -755,7 +758,16 @@ Phase 5：Service Mesh（Istio）
 
 - [x] BFF 下游调用统一接入 Resilience4j（已在 `shop-common` 抽出程序化四层防护 helper，`seller-bff` / `buyer-bff` 主要下游读写与 checkout 相关路径均已统一接入）
 - [x] Domain/Event 服务引入 Testcontainers 集成测试模板
-- [ ] 关键链路增加契约测试（consumer/provider）
+- [ ] 关键链路增加契约测试（consumer/provider）→ 详见 `docs/CONTRACT-TESTING-GUIDE.md`
+- [ ] 工程优化路线图落地 → 详见 `docs/ENGINEERING-OPTIMIZATION-ROADMAP.md`
+  - [ ] P0: Maven Build Cache（本地构建提速 50%+）
+  - [ ] P0: SBOM + cosign 镜像签名（欧盟 CRA 合规）
+  - [ ] P0: Error Prone + NullAway + JSpecify（编译期消灭 NPE）
+  - [ ] P1: Spring Cloud Contract 契约测试 PoC（2 条关键路径）
+  - [ ] P1: OpenAPI → KMP 代码生成（消灭前端 DTO 漂移）
+  - [ ] P1: Spring Modulith 领域边界治理 PoC（marketplace + order）
+  - [ ] P2: Pitest Mutation Testing（wallet/order 核心域）
+  - [ ] P2: Playwright 视觉回归测试（KMP WASM UI 一致性）
 - [x] 统一异常语义：收敛 `catch (Exception)`，按边界抛出业务/下游/系统错误（`src/main/java` 中 broad catch 已清零，并已切换到 RFC 7807 兼容错误响应）
 - [x] 统一指标命名与 SLO 草案（支付成功率、下单耗时、事件延迟）
 - [x] 新增 `docs/SOURCE-OF-TRUTH-MATRIX.md`，建立主题级唯一权威文档映射

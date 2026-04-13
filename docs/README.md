@@ -3,6 +3,8 @@
 保留的权威（SSOT）文档（位于 docs/ 根目录）：
 
 - ENGINEERING-STANDARDS-2026.md
+- ENGINEERING-OPTIMIZATION-ROADMAP.md — **工程优化路线图（开发效率 + 架构质量 + 云原生运维）**
+- CONTRACT-TESTING-GUIDE.md — **Spring Cloud Contract 契约测试实操手册**
 - ARCHITECTURE-DESIGN.md
 - OBSERVABILITY-ALERTING-SLO.md
 - ROADMAP-2026.md

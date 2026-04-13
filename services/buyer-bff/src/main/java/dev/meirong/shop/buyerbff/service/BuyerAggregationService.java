@@ -1,14 +1,14 @@
 package dev.meirong.shop.buyerbff.service;
 
-import dev.meirong.shop.buyerbff.client.LoyaltyServiceClient;
-import dev.meirong.shop.buyerbff.client.MarketplaceServiceClient;
-import dev.meirong.shop.buyerbff.client.OrderServiceClient;
-import dev.meirong.shop.buyerbff.client.ProfileInternalServiceClient;
-import dev.meirong.shop.buyerbff.client.ProfileServiceClient;
-import dev.meirong.shop.buyerbff.client.PromotionInternalServiceClient;
-import dev.meirong.shop.buyerbff.client.PromotionServiceClient;
-import dev.meirong.shop.buyerbff.client.SearchServiceClient;
-import dev.meirong.shop.buyerbff.client.WalletServiceClient;
+import dev.meirong.shop.clients.loyalty.LoyaltyServiceClient;
+import dev.meirong.shop.clients.marketplace.MarketplaceServiceClient;
+import dev.meirong.shop.clients.order.OrderServiceClient;
+import dev.meirong.shop.clients.profile.ProfileInternalServiceClient;
+import dev.meirong.shop.clients.profile.ProfileServiceClient;
+import dev.meirong.shop.clients.promotion.PromotionInternalServiceClient;
+import dev.meirong.shop.clients.promotion.PromotionServiceClient;
+import dev.meirong.shop.clients.search.SearchServiceClient;
+import dev.meirong.shop.clients.wallet.WalletServiceClient;
 import dev.meirong.shop.common.api.ApiResponse;
 import dev.meirong.shop.common.error.BusinessException;
 import dev.meirong.shop.common.error.CommonErrorCode;

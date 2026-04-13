@@ -1,0 +1,74 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>dev.meirong.shop</groupId>
+        <artifactId>shop-platform</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>shop-clients</artifactId>
+    <name>shop-clients</name>
+    <description>Shared @HttpExchange client interfaces for all domain services</description>
+
+    <dependencies>
+        <!-- Spring Web for @HttpExchange annotations only -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+
+        <!-- Contracts for DTOs and path constants -->
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-contracts-order</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-contracts-marketplace</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-contracts-profile</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-contracts-wallet</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-contracts-promotion</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-contracts-loyalty</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-contracts-search</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Internal: ApiResponse for return types -->
+        <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-common-core</artifactId>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

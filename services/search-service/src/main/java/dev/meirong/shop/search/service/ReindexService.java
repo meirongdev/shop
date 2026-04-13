@@ -1,6 +1,7 @@
 package dev.meirong.shop.search.service;
 
 import dev.meirong.shop.search.client.MarketplaceInternalClient;
+import dev.meirong.shop.search.index.MeilisearchTaskAwaiter;
 import dev.meirong.shop.search.index.ProductDocument;
 import dev.meirong.shop.search.index.ProductIndexSettings;
 import dev.meirong.shop.search.index.ProductIndexer;
@@ -21,15 +22,18 @@ public class ReindexService {
     private final MarketplaceInternalClient marketplaceClient;
     private final ProductIndexer indexer;
     private final ProductIndexSettings productIndexSettings;
+    private final MeilisearchTaskAwaiter taskAwaiter;
 
     public ReindexService(@Qualifier("meilisearchAdminClient") Client adminClient,
                           MarketplaceInternalClient marketplaceClient,
                           ProductIndexer indexer,
-                          ProductIndexSettings productIndexSettings) {
+                          ProductIndexSettings productIndexSettings,
+                          MeilisearchTaskAwaiter taskAwaiter) {
         this.adminClient = adminClient;
         this.marketplaceClient = marketplaceClient;
         this.indexer = indexer;
         this.productIndexSettings = productIndexSettings;
+        this.taskAwaiter = taskAwaiter;
     }
 
     public void reindex() {
@@ -61,15 +65,11 @@ public class ReindexService {
         // 3. Swap indexes atomically
         var swapParams = new SwapIndexesParams();
         swapParams.setIndexes(new String[]{ProductIndexSettings.INDEX_NAME, tempIndex});
-        waitForTask(adminClient.swapIndexes(new SwapIndexesParams[]{swapParams}));
+        taskAwaiter.await(adminClient.swapIndexes(new SwapIndexesParams[]{swapParams}));
 
         // 4. Delete old (now temp-named) index
-        waitForTask(adminClient.deleteIndex(tempIndex));
+        taskAwaiter.await(adminClient.deleteIndex(tempIndex));
 
         log.info("Full reindex complete. Swapped {} <-> {}", ProductIndexSettings.INDEX_NAME, tempIndex);
-    }
-
-    private void waitForTask(com.meilisearch.sdk.model.TaskInfo taskInfo) {
-        adminClient.waitForTask(taskInfo.getTaskUid());
     }
 }

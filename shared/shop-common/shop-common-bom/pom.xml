@@ -40,6 +40,11 @@
                 <artifactId>shop-starter-feature-toggle</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>dev.meirong.shop</groupId>
+                <artifactId>shop-starter-http-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

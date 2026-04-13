@@ -70,6 +70,8 @@ shop:
       url: ${MEILISEARCH_URL:http://localhost:7700}
       admin-key: ${MEILISEARCH_ADMIN_KEY:${MEILI_MASTER_KEY:}}
       search-key: ${MEILISEARCH_SEARCH_KEY:${MEILI_MASTER_KEY:}}
+      task-timeout: ${MEILISEARCH_TASK_TIMEOUT:PT1M}
+      task-poll-interval: ${MEILISEARCH_TASK_POLL_INTERVAL:100ms}
     analytics:
       retention: ${SEARCH_ANALYTICS_RETENTION:P7D}
       max-tracked-queries: ${SEARCH_ANALYTICS_MAX_TRACKED_QUERIES:5000}

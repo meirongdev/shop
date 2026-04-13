@@ -30,10 +30,12 @@
 - ✅ **ArchUnit 规则**：19 条规则落地（编码规范、分层约束、命名规范、Spring 专项、幂等契约）
 - ✅ **契约测试**：13 个 WireMock 测试覆盖 buyer-bff/seller-bff → Domain Service 关键链路
 - ✅ **Archetype 测试**：`archetype-tests` 模块为 6 个 archetype 提供完整的生成验证测试
+- 🔄 **下一步**：Spring Cloud Contract 契约测试、Pitest Mutation Testing（详见 `docs/ENGINEERING-OPTIMIZATION-ROADMAP.md`）
 
 4) **工程治理底座已就位，CI 门禁完善** ✅
 - Maven Wrapper、Enforcer、GitHub Actions CI、`tooling/shop-archetypes/` 都已落地。
 - ✅ **Harness Engineering**：增强 Git hooks（pre-commit/pre-push），新增 AGENTS.md 定义 5 类 agent 质量门禁
+- 🔄 **下一步**：Error Prone + NullAway + JSpecify、SBOM + 镜像签名（详见 `docs/ENGINEERING-OPTIMIZATION-ROADMAP.md`）
 
 5) **共享基线已成型，实现漂移已消除** ✅
 - ✅ `buyer-bff` `catch (Exception ...)` 已清零，异常边界已收敛
@@ -53,7 +55,7 @@
 ## 2.2 服务分层标准
 
 - **Edge/Gateway**：Spring Cloud Gateway Server Web MVC + Virtual Threads + Redis-backed 基础限流
-- **Auth**：Spring Security + OAuth2 Resource Server + JWT（生产建议迁移到非对称签名与 JWKS）
+- **Auth**：Spring Security + OAuth2 Resource Server + JWT（当前基线已为 RS256 + JWKS）
 - **BFF**：Spring MVC + Virtual Threads + Resilience4j + bounded RestClient timeout；非核心依赖默认必须可降级，核心依赖默认必须快速失败
 - **Domain（事务型）**：Spring MVC + JPA + Flyway + MySQL（多数 Java 服务已启用 Virtual Threads）
 - **Event/Worker（异步型）**：Spring Boot + Kafka + Outbox
@@ -65,13 +67,13 @@
 - 安全：Trusted Headers + Internal Token（后续演进 mTLS/服务身份）
 - 配置：统一 `application.yml` 模板（端口、健康检查、Tracing、内部调用安全）
 - 动态特性开关：OpenFeature API + Spring Property Provider + ConfigMap 文件挂载 + Configuration Watcher 热刷新（当前已在 `search-service` 试点）
-- API 规范：OpenAPI 3.1 baseline + 统一错误模型 + 版本化路径（`/v1`）；当前 springdoc 尚未在所有服务统一落地
+- API 规范：OpenAPI 3.1 baseline + 统一错误模型 + 版本化路径（`/v1`）；当前 15/15 服务已统一接入 springdoc
 
 ## 2.4 当前仓库的实现状态（与目标态区分）
 
 - **已经可视为平台基线**：Java 25 / Boot 3.5.11 / Cloud 2025.0.1、Maven Wrapper、Enforcer、Actuator、Prometheus、OTLP、结构化日志、Internal Token、Kind/K8s、本地 archetype、Feature Toggle 试点
-- **已经开始落地但未统一完成**：springdoc / OpenAPI、Resilience4j、Testcontainers、Feature Toggle 扩散到更多服务
-- **仍属演进方向**：OpenRewrite、ArchUnit、契约测试、镜像构建 + Kind smoke CI、mTLS / JWKS / workload identity、Grafana / Tempo / Loki 等完整观测平台
+- **已经开始落地但未统一完成**：Resilience4j 标准化扩散、Feature Toggle 扩散到更多服务、观测与告警规则精细化
+- **仍属演进方向**：OpenRewrite、镜像构建 + Kind smoke CI、mTLS / workload identity、搜索增强、AI 推荐等长期能力
 
 > 技术栈适配性、复用建议与演进方向的权威文档：`docs/TECH-STACK-BEST-PRACTICES-2026.md`
 >

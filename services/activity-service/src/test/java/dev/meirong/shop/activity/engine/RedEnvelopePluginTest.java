@@ -8,16 +8,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.activity.domain.ActivityGame;
 import dev.meirong.shop.activity.domain.ActivityParticipationRepository;
 import dev.meirong.shop.activity.domain.GameType;
+import dev.meirong.shop.activity.support.RedissonTestClientFactory;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.codec.StringCodec;
-import org.redisson.config.Config;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -32,9 +31,7 @@ class RedEnvelopePluginTest {
 
     @BeforeEach
     void setUp() {
-        Config config = new Config();
-        config.useSingleServer().setAddress("redis://" + REDIS.getHost() + ":" + REDIS.getMappedPort(6379));
-        redissonClient = Redisson.create(config);
+        redissonClient = RedissonTestClientFactory.create(REDIS.getHost(), REDIS.getMappedPort(6379));
         redissonClient.getKeys().flushall();
     }
 

@@ -21,5 +21,6 @@
         <module>shop-starter-resilience</module>
         <module>shop-starter-api-compat</module>
         <module>shop-starter-feature-toggle</module>
+        <module>shop-starter-http-client</module>
     </modules>
 </project>

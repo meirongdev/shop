@@ -8,14 +8,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Clock;
 import java.util.List;
+import org.redisson.api.RScript;
+import org.redisson.api.RedissonClient;
+import org.redisson.client.RedisException;
+import org.redisson.client.codec.StringCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.core.annotation.Order;
-import org.springframework.dao.DataAccessException;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -44,19 +45,43 @@ public class RateLimitingFilter extends OncePerRequestFilter {
      * ARGV[1] = rate (tokens/sec), ARGV[2] = capacity (burst), ARGV[3] = now (epoch ms)<br>
      * Returns 1 if the request is allowed, 0 if rate-limited.
      */
-    private static final DefaultRedisScript<Long> TOKEN_BUCKET_SCRIPT = buildTokenBucketScript();
+    private static final String TOKEN_BUCKET_SCRIPT = """
+            local tokens_key = KEYS[1]
+            local ts_key     = KEYS[2]
+            local rate       = tonumber(ARGV[1])
+            local capacity   = tonumber(ARGV[2])
+            local now        = tonumber(ARGV[3])
 
-    private final StringRedisTemplate redis;
+            local last_tokens = tonumber(redis.call('get', tokens_key))
+            if last_tokens == nil then last_tokens = capacity end
+
+            local last_ts = tonumber(redis.call('get', ts_key))
+            if last_ts == nil then last_ts = now end
+
+            local elapsed_ms = math.max(0, now - last_ts)
+            local refilled   = math.min(capacity, last_tokens + elapsed_ms * rate / 1000.0)
+
+            if refilled < 1.0 then
+                return 0
+            end
+
+            local ttl = math.ceil(capacity / rate * 2)
+            redis.call('setex', tokens_key, ttl, refilled - 1)
+            redis.call('setex', ts_key, ttl, now)
+            return 1
+            """;
+
+    private final RedissonClient redissonClient;
     private final GatewayProperties properties;
     private final Clock clock;
 
     @Autowired
-    public RateLimitingFilter(StringRedisTemplate redis, GatewayProperties properties) {
-        this(redis, properties, Clock.systemUTC());
+    public RateLimitingFilter(RedissonClient redissonClient, GatewayProperties properties) {
+        this(redissonClient, properties, Clock.systemUTC());
     }
 
-    RateLimitingFilter(StringRedisTemplate redis, GatewayProperties properties, Clock clock) {
-        this.redis = redis;
+    RateLimitingFilter(RedissonClient redissonClient, GatewayProperties properties, Clock clock) {
+        this.redissonClient = redissonClient;
         this.properties = properties;
         this.clock = clock;
     }
@@ -76,9 +101,11 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             long capacity = properties.rateLimit().burst();
             long nowMs = clock.instant().toEpochMilli();
 
-            Long allowed = redis.execute(
+            Long allowed = redissonClient.getScript(StringCodec.INSTANCE).eval(
+                    RScript.Mode.READ_WRITE,
                     TOKEN_BUCKET_SCRIPT,
-                    List.of(baseKey + ":tokens", baseKey + ":ts"),
+                    RScript.ReturnType.INTEGER,
+                    List.<Object>of(baseKey + ":tokens", baseKey + ":ts"),
                     String.valueOf(ratePerSec),
                     String.valueOf(capacity),
                     String.valueOf(nowMs));
@@ -88,7 +115,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 response.setHeader("Retry-After", "60");
                 return;
             }
-        } catch (DataAccessException exception) {
+        } catch (RedisException exception) {
             log.warn("Rate limit check failed, allowing request through: {}", exception.getMessage());
         }
 
@@ -101,36 +128,5 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 ? buyerId
                 : (request.getRemoteAddr() == null || request.getRemoteAddr().isBlank() ? "unknown" : request.getRemoteAddr());
         return KEY_PREFIX + id;
-    }
-
-    private static DefaultRedisScript<Long> buildTokenBucketScript() {
-        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
-        script.setScriptText("""
-                local tokens_key = KEYS[1]
-                local ts_key     = KEYS[2]
-                local rate       = tonumber(ARGV[1])
-                local capacity   = tonumber(ARGV[2])
-                local now        = tonumber(ARGV[3])
-
-                local last_tokens = tonumber(redis.call('get', tokens_key))
-                if last_tokens == nil then last_tokens = capacity end
-
-                local last_ts = tonumber(redis.call('get', ts_key))
-                if last_ts == nil then last_ts = now end
-
-                local elapsed_ms = math.max(0, now - last_ts)
-                local refilled   = math.min(capacity, last_tokens + elapsed_ms * rate / 1000.0)
-
-                if refilled < 1.0 then
-                    return 0
-                end
-
-                local ttl = math.ceil(capacity / rate * 2)
-                redis.call('setex', tokens_key, ttl, refilled - 1)
-                redis.call('setex', ts_key, ttl, now)
-                return 1
-                """);
-        script.setResultType(Long.class);
-        return script;
     }
 }

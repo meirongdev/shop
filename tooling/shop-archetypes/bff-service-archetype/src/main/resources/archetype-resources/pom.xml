@@ -52,6 +52,11 @@
             <version>${shopPlatformVersion}</version>
         </dependency>
         <dependency>
+            <groupId>dev.meirong.shop</groupId>
+            <artifactId>shop-starter-http-client</artifactId>
+            <version>${shopPlatformVersion}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>

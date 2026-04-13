@@ -11,7 +11,6 @@ HEALTHCHECK_PATH="${HEALTHCHECK_PATH:-/buyer/v1/marketplace/list}"
 HEALTHCHECK_BODY="${HEALTHCHECK_BODY:-{}}"
 PF_PORT="${PF_PORT:-38080}"
 NAMESPACE="${NAMESPACE:-shop}"
-INTERNAL_TOKEN="${INTERNAL_TOKEN:-local-dev-internal-token-change-me}"
 BASE_URL="http://localhost:${PF_PORT}"
 TARGET_VUS="${TARGET_VUS:-10}"
 RAMP_SECONDS="${RAMP_SECONDS:-15}"
@@ -77,7 +76,6 @@ HTTP_STATUS=""
 for _ in $(seq 1 10); do
   HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
     -H 'Content-Type: application/json' \
-    -H "X-Internal-Token: ${INTERNAL_TOKEN}" \
     -d "${HEALTHCHECK_BODY}" \
     "${BASE_URL}${HEALTHCHECK_PATH}" || true)
   if [ "${HTTP_STATUS}" = "200" ]; then
@@ -100,7 +98,6 @@ echo ""
 echo "=== [4/5] Running h2c experiment (~90s) ==="
 k6 run \
   --env BASE_URL="${BASE_URL}" \
-  --env INTERNAL_TOKEN="${INTERNAL_TOKEN}" \
   --env TARGET_VUS="${TARGET_VUS}" \
   --env RAMP_SECONDS="${RAMP_SECONDS}" \
   --env STEADY_SECONDS="${STEADY_SECONDS}" \

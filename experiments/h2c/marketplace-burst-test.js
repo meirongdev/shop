@@ -24,8 +24,7 @@ export const options = {
 };
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:38080';
-const INTERNAL_TOKEN = __ENV.INTERNAL_TOKEN || 'local-dev-internal-token-change-me';
-const HEADERS = { 'Content-Type': 'application/json', 'X-Internal-Token': INTERNAL_TOKEN };
+const HEADERS = { 'Content-Type': 'application/json' };
 
 export default function () {
   const res = http.post(

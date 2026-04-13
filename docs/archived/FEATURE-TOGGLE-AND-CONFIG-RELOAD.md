@@ -229,7 +229,6 @@ Feature Toggle 的**动态热更新链路**只在 Kind / Kubernetes 基线中受
    - 等待 watcher 触发 refresh
    - 再次验证接口行为变化
 
-若直接通过 `kubectl port-forward` 访问 `search-service`，需携带 `X-Internal-Token`，因为该服务启用了统一的内部调用安全过滤器。
 
 ---
 

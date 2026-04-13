@@ -21,14 +21,12 @@
 - `ApiResponse`
 - `CommonErrorCode` / `BusinessException`
 - `TrustedHeaderNames`
-- `InternalAccessFilter`
 - 全局异常处理
 
 关键文件：
 
 - `shop-common/src/main/java/dev/meirong/shop/common/api/ApiResponse.java`
 - `shop-common/src/main/java/dev/meirong/shop/common/error/CommonErrorCode.java`
-- `shop-common/src/main/java/dev/meirong/shop/common/web/InternalAccessFilterConfiguration.java`
 
 ### `shop-contracts`
 

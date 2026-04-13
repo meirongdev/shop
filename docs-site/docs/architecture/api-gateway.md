@@ -42,7 +42,6 @@ Gateway 对 `/api/**` 路径的已认证请求注入以下头：
 | `X-Username` | JWT claim: username |
 | `X-Roles` | JWT claim: roles |
 | `X-Portal` | JWT claim: portal |
-| `X-Internal-Token` | 配置项 |
 
 ## 安全策略
 
@@ -76,7 +75,6 @@ Gateway 对 `/api/**` 路径的已认证请求注入以下头：
 | 配置项 | 环境变量 | 说明 |
 |--------|---------|------|
 | JWT Secret | `SHOP_AUTH_JWT_SECRET` | 与 Auth Server 共享 |
-| Internal Token | `SHOP_INTERNAL_TOKEN` | 服务间认证 |
 | Redis Host | `GATEWAY_REDIS_HOST` | 默认 `redis` |
 | Redis Port | `GATEWAY_REDIS_PORT` | 默认 `6379` |
 | Rate Limit RPM | `GATEWAY_RATE_LIMIT_RPM` | 默认 `100` |

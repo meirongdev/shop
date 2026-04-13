@@ -72,7 +72,7 @@
 |------|----------|------|
 | 统一响应模型 | `ApiResponse<T>` | 位于 `shop-common` |
 | 全局异常模型 | `BusinessException` + `CommonErrorCode` | 服务统一返回 `SC_*` 错误语义 |
-| 内部安全 | `X-Internal-Token` + `InternalAccessFilter` | 服务间可信调用链校验 |
+| 内部安全 | Kubernetes NetworkPolicy (Cilium) | 服务间流量控制与隔离 |
 | 契约集中化 | `shop-contracts` | API path 常量、DTO、event envelope 统一管理 |
 | Feature Toggle | OpenFeature + property provider | 当前已在 `search-service` 试点 |
 | 可观测自举 | `shop-common` + OTLP logback appender + `shop.profiling` | Java 服务默认具备 metrics / traces / logs / profiling 接入点 |
@@ -183,12 +183,13 @@
 
 - **当前状态应表述为：开发 / 验证环境的完整 observability platform 已落地，生产级治理仍有演进空间。**
 
-### 4.4 安全基线是“共享 internal token + trusted headers”，不是服务网格
+### 4.4 安全基线：Cilium NetworkPolicy + Trusted Headers
 
 当前事实：
 
-- JWT、Trusted Headers、`X-Internal-Token` 已落地
-- 大多数服务通过 `scanBasePackages = "dev.meirong.shop"` 加载 `shop-common` 中的共享安全过滤器和异常处理
+- JWT、Trusted Headers 已落地
+- 东西向安全由 Kubernetes NetworkPolicy (Cilium) 强制执行
+- 大多数服务通过 `scanBasePackages = "dev.meirong.shop"` 加载 `shop-common` 中的共享异常处理与可观测配置
 
 但当前仍未统一落地：
 

@@ -1021,7 +1021,7 @@ POST /activity/v1/admin/games/{id}/activate      # 上线
 POST /activity/v1/admin/games/{id}/end           # 强制结束
 GET  /activity/v1/admin/games/{id}/stats         # 实时统计
 
-# 当前已实现：内部（X-Internal-Token）
+# 内部接口 (Service-to-service security is enforced via Kubernetes NetworkPolicy (Cilium). Identity context is propagated via trusted headers injected by the Gateway.)
 GET  /internal/activity/games/active             # buyer-bff 查询当前活跃游戏
 
 # 预留扩展接口（设计已完成，尚未实现）

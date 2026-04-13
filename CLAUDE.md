@@ -90,9 +90,9 @@ Each domain service owns its MySQL schema and Flyway migrations (`src/main/resou
 - Error responses follow RFC 7807 Problem Details; global exception handling is in `shared/shop-common`.
 
 ### Internal Trust Model
-- Gateway injects trusted headers on every request: `X-Request-Id`, `X-Buyer-Id` (= JWT `principalId` claim), `X-Username`, `X-Roles`, `X-Portal`, `X-Internal-Token`.
-- Domain services enforce `InternalAccessFilter` (from `shared/shop-common`) when `shop.security.internal.enabled=true`.
-- BFF-to-service calls always include `X-Internal-Token`.
+- Gateway injects trusted headers on every request: `X-Request-Id`, `X-Buyer-Id` (= JWT `principalId` claim), `X-Username`, `X-Roles`, and `X-Portal`.
+- Service-to-service access is restricted via K8s NetworkPolicy (Cilium).
+- BFF-to-service calls propagate trusted headers.
 
 ### Configuration
 - Use `@ConfigurationProperties(prefix = "shop...")` records for typed config, not `@Value`.

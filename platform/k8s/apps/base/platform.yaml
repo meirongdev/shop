@@ -5,7 +5,6 @@ metadata:
   namespace: shop
 type: Opaque
 stringData:
-  SHOP_INTERNAL_TOKEN: local-dev-internal-token-change-me
   MYSQL_USER: shop
   MYSQL_PASSWORD: shop
   MEILI_MASTER_KEY: masterKey1234567890
@@ -27,7 +26,6 @@ data:
   MARKETPLACE_SERVICE_URL: http://marketplace-service:8080
   SEARCH_SERVICE_URL: http://search-service:8080
   MARKETPLACE_PRODUCT_TOPIC: marketplace.product.events.v1
-  SHOP_SECURITY_INTERNAL_ENABLED: "false"
   SHOP_AUTH_JWKS_URI: http://auth-server:8080/.well-known/jwks.json
   JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=60 -XX:InitialRAMPercentage=30"
 ---

@@ -5,7 +5,6 @@ metadata:
   namespace: shop
 type: Opaque
 stringData:
-  SHOP_INTERNAL_TOKEN: local-dev-internal-token-change-me
   MYSQL_USER: shop
   MYSQL_PASSWORD: shop
   MEILI_MASTER_KEY: masterKey1234567890

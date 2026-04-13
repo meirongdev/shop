@@ -208,12 +208,12 @@ GET  /wallet/v1/payment-methods                  # 已绑定支付方式
 POST /wallet/v1/payment-methods                  # 绑定新支付方式
 DELETE /wallet/v1/payment-methods/{id}           # 解绑
 
-# 内部接口（X-Internal-Token，服务间调用）
+# 内部接口（Service-to-service，NetworkPolicy 保护）
 POST /internal/wallet/pay                        # order-service 调用扣款
 POST /internal/wallet/refund                     # order-service 调用退款
 GET  /internal/wallet/account/{buyerId}         # buyer-bff 聚合查询
 
-# Webhook（Stripe 回调，不走 Gateway）
+# Webhook（Stripe 回调）
 POST /internal/wallet/webhook/stripe
 ```
 
@@ -255,7 +255,7 @@ EventEnvelope<WalletTransactionEventData> {
 | 重复充值 | 幂等键 + wallet_idempotency_key 表 |
 | 超卖余额 | `SELECT FOR UPDATE` 锁行 + 余额校验 |
 | Stripe 回调伪造 | Stripe-Signature HMAC 验证 |
-| 直接调用内部接口 | X-Internal-Token 中间件校验 |
+| 直接调用内部接口 | NetworkPolicy (Cilium) 东西向访问控制 |
 | 敏感数据泄露 | 只存 card_last4，不存完整卡号 |
 | 金额精度 | DECIMAL(19,2)，Java BigDecimal，严禁 float/double |
 

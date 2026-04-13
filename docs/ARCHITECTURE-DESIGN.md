@@ -73,7 +73,7 @@
 │  │          /activity/** → activity-service（直连，BFF 不聚合游戏）        │  │
 │  └─────────────────────────────────┬──────────────────────────────────────┘  │
 └─────────────────────────────────────┼────────────────────────────────────────┘
-                                      │ X-Internal-Token
+                                      │ Trusted Headers (NetworkPolicy Enforced)
               ┌───────────────────────┴────────────────────┐
               ▼                                             ▼
 ┌───────────────────────┐                     ┌────────────────────────────┐
@@ -212,13 +212,13 @@ public-paths:
 ```
 外部请求
   → Gateway: 验证 JWT → 注入 Trusted Headers
-           (当前：X-Request-Id, X-Buyer-Id, X-Username, X-Roles, X-Portal, X-Internal-Token)
+           (当前：X-Request-Id, X-Buyer-Id, X-Username, X-Roles, X-Portal)
            (Gateway 响应默认返回 X-Request-Id / X-Trace-Id 供客户端关联排障)
-  → 各服务: 信任 Trusted Headers，拒绝无 X-Internal-Token 的直接调用
+  → 各服务: 信任 Trusted Headers (由 Kubernetes NetworkPolicy / Cilium 强制执行东西向安全)
 
 activity-service 特殊规则：
   → 游戏参与接口检查 X-Buyer-Id（登录用户）或 X-Guest-Session-Id（游客）
-  → 奖励发放内部调用 loyalty/promotion/wallet 必须携带 X-Internal-Token
+  → 奖励发放内部调用 loyalty/promotion/wallet 传播身份上下文
 ```
 
 ### 3.3 事件驱动架构

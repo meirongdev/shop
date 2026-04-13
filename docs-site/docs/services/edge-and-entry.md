@@ -23,7 +23,7 @@ title: 入口与聚合服务
 关键能力：
 
 - 统一 northbound 路由与 JWT 校验。
-- 统一注入 `X-Request-Id`、`X-Buyer-Id`、`X-Username`、`X-Roles`、`X-Portal`、`X-Internal-Token` 等可信头。
+- 统一注入 `X-Request-Id`、`X-Buyer-Id`、`X-Username`、`X-Roles`、`X-Portal` 等可信头。
 - 默认对客户端暴露 `X-Request-Id` 和 `X-Trace-Id`，便于排障。
 - Redis Lua 负责限流，Gateway filter 负责追踪关联和流量治理。
 

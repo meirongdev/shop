@@ -82,9 +82,9 @@ Deployment 必须在 `8081` 端口配置探针：
 
 ### 4.2 东西向调用
 
-- 服务间内部调用统一使用 `X-Internal-Token`
-- 如果服务开放内部接口，必须配置 `shop.security.internal.enabled`
-- 例外路径（如 `/actuator/**`）必须显式声明
+- 服务间内部调用安全受 Kubernetes NetworkPolicy (Cilium) 保护。
+- 业务上下文（如用户身份、请求 ID）通过 Gateway 注入的 Trusted Headers 传播。
+- 内部接口不应直接暴露给外部流量。
 
 ---
 
@@ -114,7 +114,7 @@ Deployment 必须在 `8081` 端口配置探针：
 - [ ] 已声明 `8080` / `8081` 端口
 - [ ] 已配置 readiness / liveness probes
 - [ ] 已接入 metrics / tracing / structured logging
-- [ ] 已明确 JWT / internal token 的安全边界
+- [ ] 已配置对应的 NetworkPolicy 允许可信调用方接入
 - [ ] 已补充本地或 Kind 验证步骤
 
 ---

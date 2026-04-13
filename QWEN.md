@@ -170,10 +170,9 @@ make platform-validate
 
 ### Internal Trust Model
 
-Gateway injects trusted headers on every request:
-- `X-Request-Id`, `X-Buyer-Id` (JWT `principalId` claim), `X-Username`, `X-Roles`, `X-Portal`, `X-Internal-Token`
-- Domain services enforce `InternalAccessFilter` (from `shop-common`) when `shop.security.internal.enabled=true`
-- BFF-to-service calls always include `X-Internal-Token`
+- Gateway injects trusted headers on every request: `X-Request-Id`, `X-Buyer-Id` (JWT `principalId` claim), `X-Username`, `X-Roles`, `X-Portal`
+- Service-to-service access is restricted via K8s NetworkPolicy (Cilium)
+- BFF-to-service calls propagate trusted headers
 
 ### Testing Practices
 

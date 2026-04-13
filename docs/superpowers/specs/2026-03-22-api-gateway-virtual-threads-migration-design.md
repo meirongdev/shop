@@ -253,7 +253,6 @@ spring:
 shop:
   gateway:
     jwt-secret: ${SHOP_AUTH_JWT_SECRET:change-this-to-a-32-byte-demo-secret}
-    internal-token: ${SHOP_INTERNAL_TOKEN:local-dev-internal-token-change-me}
     rate-limit:
       requests-per-minute: ${GATEWAY_RATE_LIMIT_RPM:100}
       # burst 预留，Token Bucket 扩展时使用
@@ -381,7 +380,7 @@ public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
 
     // 不可信 header（客户端传入的需剥离）
     private static final Set<String> STRIPPED = Set.of(
-        "x-player-id", "x-username", "x-roles", "x-portal", "x-internal-token");
+        "x-player-id", "x-username", "x-roles", "x-portal");
 
     private final Map<String, String> injected; // 注入的可信 header
 
@@ -395,7 +394,6 @@ public class TrustedHeadersRequestWrapper extends HttpServletRequestWrapper {
             "X-Username",       nullToEmpty(jwt.getClaimAsString("username")),
             "X-Roles",          String.join(",", roles),
             "X-Portal",         nullToEmpty(jwt.getClaimAsString("portal")),
-            "X-Internal-Token", internalToken
         );
     }
 

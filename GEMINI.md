@@ -66,8 +66,8 @@ A Maven multi-module microservices architecture featuring Spring Boot services, 
 - **Standard Response**: Wrap all API responses in `ApiResponse<T>` from `shop-common`.
 
 ### Security & Internal Trust
-- **Header Injection**: Gateway injects `X-Request-Id`, `X-Buyer-Id`, `X-Username`, `X-Roles`, `X-Portal`, and `X-Internal-Token`. (`X-Buyer-Id` carries the authenticated buyer's principal ID from the `principalId` JWT claim.)
-- **Validation**: Services must use `InternalAccessFilter` (from `shop-common`) to validate the `X-Internal-Token`.
+- **Header Injection**: Gateway injects `X-Request-Id`, `X-Buyer-Id`, `X-Username`, `X-Roles`, and `X-Portal`. (`X-Buyer-Id` carries the authenticated buyer's principal ID from the `principalId` JWT claim.)
+- **Service-to-Service Security**: Services are protected by K8s NetworkPolicy. Trusted headers are propagated for identity context.
 
 ### Configuration
 - **Type Safety**: Prefer `@ConfigurationProperties` records.

@@ -145,7 +145,7 @@ PUT  /profile/v1/seller                       # 更新店铺信息
 # 公开（无需 JWT）
 GET  /public/sellers/{sellerId}               # 公开店铺主页
 
-# 内部接口（X-Internal-Token）
+# 内部接口 (Service-to-service security is enforced via Kubernetes NetworkPolicy (Cilium). Identity context is propagated via trusted headers injected by the Gateway.)
 GET  /internal/profile/buyer/{buyerId}       # BFF 聚合查询
 GET  /internal/profile/seller/{sellerId}      # BFF 聚合查询
 PUT  /internal/profile/buyer/{buyerId}/tier  # loyalty-service 同步会员等级

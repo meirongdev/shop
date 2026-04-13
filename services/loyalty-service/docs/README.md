@@ -495,7 +495,7 @@ GET  /loyalty/v1/redemptions                  # 我的兑换记录
 GET  /loyalty/v1/redemptions/{id}             # 兑换详情
 GET  /loyalty/v1/onboarding/tasks             # 新人任务进度列表
 
-# 内部接口（X-Internal-Token）
+# 内部接口 (Service-to-service security is enforced via Kubernetes NetworkPolicy (Cilium). Identity context is propagated via trusted headers injected by the Gateway.)
 POST /internal/loyalty/earn                   # 服务间调用赚取积分
 GET  /internal/loyalty/account/{buyerId}     # 查询积分（BFF 聚合）
 POST /internal/loyalty/onboarding/task        # 触发新人任务完成（profile-service / buyer-bff 调用）

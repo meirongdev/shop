@@ -207,7 +207,6 @@ Content-Type: application/problem+json
 ```java
 restClient.get()
     .uri(properties.profileServiceUrl() + "/v1/profiles/{buyerId}", buyerId)
-    .header("X-Internal-Token", properties.internalToken())
     .retrieve()
     .onStatus(status -> status.is4xxClientError(), (req, res) -> { ... })
     .body(new ParameterizedTypeReference<ApiResponse<ProfileApi.ProfileResponse>>() {});
@@ -217,7 +216,6 @@ restClient.get()
 - 每个调用 8–15 行样板代码，`BuyerAggregationService` 文件超过 400 行
 - baseUrl、超时、内部 Token Header 在每个调用中重复
 - 单元测试需 mock `RestClient` 整条调用链，测试代码脆弱
-- 新增调用时易遗漏 `X-Internal-Token` 或错误处理
 
 ### 4.2 设计：各服务 Client 模块化（`*ServiceClient` 接口）
 
@@ -336,7 +334,6 @@ public class BuyerBffConfig {
     @Bean
     RestClient.Builder internalRestClientBuilder(BuyerClientProperties props) {
         return RestClient.builder()
-                .defaultHeader("X-Internal-Token", props.internalToken())
                 .requestFactory(requestFactory(props));
     }
 
@@ -374,7 +371,6 @@ public class BuyerBffConfig {
 // Before（~12 行）
 ApiResponse<OrderApi.OrderResponse> resp = restClient.get()
     .uri(properties.orderServiceUrl() + "/v1/orders/{id}", orderId)
-    .header("X-Internal-Token", properties.internalToken())
     .retrieve()
     .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
         throw new BusinessException(CommonErrorCode.DOWNSTREAM_ERROR, "order not found");

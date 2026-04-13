@@ -347,7 +347,7 @@ GET  /order/v1/seller/orders                # 卖家订单列表
 POST /order/v1/seller/orders/{id}/ship      # 发货（录入运单号）
 POST /order/v1/seller/orders/{id}/refunds/{refundId}/review  # 审核退款
 
-# 内部接口（X-Internal-Token）
+# 内部接口 (Service-to-service security is enforced via Kubernetes NetworkPolicy (Cilium). Identity context is propagated via trusted headers injected by the Gateway.)
 POST /internal/orders/payment-confirm       # 支付成功回调（wallet-service 调用）
 POST /internal/orders/redemption            # loyalty-service 调用创建兑换订单
 GET  /internal/orders/{id}/summary          # BFF 聚合查询

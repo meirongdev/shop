@@ -1,6 +1,4 @@
----
 # NetworkPolicy: restrict ingress to each service to only trusted callers.
-# This replaces the static X-Internal-Token validation previously done by InternalAccessFilter.
 # Port 8080 = application; port 8081 = management/actuator (open to observability namespace).
 
 # api-gateway: public ingress (no restriction on port 8080)

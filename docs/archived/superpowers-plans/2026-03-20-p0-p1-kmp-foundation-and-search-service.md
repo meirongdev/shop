@@ -414,7 +414,6 @@ shop:
       search-key: ${MEILISEARCH_SEARCH_KEY:}
     product-topic: ${MARKETPLACE_PRODUCT_TOPIC:marketplace.product.events.v1}
     marketplace-service-url: ${MARKETPLACE_SERVICE_URL:http://marketplace-service:8080}
-    internal-token: ${SHOP_INTERNAL_TOKEN:}
 ```
 
 - [ ] **Step 4: Verify module compiles**
@@ -871,7 +870,6 @@ public class MarketplaceInternalClient {
     public MarketplaceInternalClient(SearchProperties props) {
         this.restClient = RestClient.builder()
             .baseUrl(props.marketplaceServiceUrl())
-            .defaultHeader("X-Internal-Token", props.internalToken())
             .build();
     }
 
@@ -1015,7 +1013,6 @@ public ApiResponse<SearchApi.SearchProductsResponse> searchProducts(MarketplaceA
         .build().toUriString();
 
     return searchRestClient.get().uri(uri)
-        .header("X-Internal-Token", clientProperties.getInternalToken())
         .retrieve()
         .body(new ParameterizedTypeReference<>() {});
 }
@@ -1117,7 +1114,6 @@ search-service:
     MEILISEARCH_ADMIN_KEY: ${MEILISEARCH_ADMIN_KEY:-adminKey123}
     MEILISEARCH_SEARCH_KEY: ${MEILISEARCH_SEARCH_KEY:-searchKey123}
     MARKETPLACE_SERVICE_URL: http://marketplace-service:8080
-    SHOP_INTERNAL_TOKEN: ${SHOP_INTERNAL_TOKEN}
     OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
   depends_on:
     kafka:

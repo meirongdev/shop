@@ -316,7 +316,7 @@ cd e2e-tests && npx playwright show-report
 - `search-service-feature-toggles` ConfigMap
 - Spring Cloud Kubernetes Configuration Watcher
 - `search-service` 的 `/actuator/refresh`
-- `X-Internal-Token` 保护直接访问的内部服务接口
+
 
 验证建议：
 
@@ -325,10 +325,9 @@ cd e2e-tests && npx playwright show-report
 kubectl -n shop port-forward svc/search-service 18091:8080 18092:8081
 
 # 读取内部调用 token
-INTERNAL_TOKEN=$(kubectl -n shop get secret shop-shared-secret -o jsonpath='{.data.SHOP_INTERNAL_TOKEN}' | base64 --decode)
 
 # 1) 确认 autocomplete 当前可用
-curl -H "X-Internal-Token: ${INTERNAL_TOKEN}" \
+curl \
   "http://127.0.0.1:18091/search/v1/products/suggestions?q=hair"
 
 # 2) 关闭 autocomplete
@@ -337,7 +336,7 @@ kubectl -n shop patch configmap search-service-feature-toggles \
   -p '{"data":{"feature-toggles.yaml":"shop:\n  features:\n    flags:\n      search-autocomplete: false\n      search-trending: true\n      search-locale-aware: true\n"}}'
 
 # 3) 等待 watcher 触发 refresh（当前 Kind 建议等待约 40~50 秒）后再次访问，应返回 503
-curl -i -H "X-Internal-Token: ${INTERNAL_TOKEN}" \
+curl -i \
   "http://127.0.0.1:18091/search/v1/products/suggestions?q=hair"
 
 # 4) 恢复开关
@@ -347,7 +346,6 @@ kubectl -n shop patch configmap search-service-feature-toggles \
 ```
 
 > 注意：需要热更新的 ConfigMap 文件必须以**目录挂载**方式注入 Pod，不能使用 `subPath`，否则 K8s 不会把更新后的文件内容投影到容器内。
-> 由于 `search-service` 直接端口转发绕过了 gateway/BFF，访问业务接口时要显式带上 `X-Internal-Token`。
 
 ### 4.1.1 验证 Search Service 默认排序与显式排序
 
@@ -362,32 +360,31 @@ kubectl -n shop patch configmap search-service-feature-toggles \
 kubectl -n shop port-forward svc/marketplace-service 38080:8080
 kubectl -n shop port-forward svc/search-service 38091:8080 38092:8081
 
-INTERNAL_TOKEN=$(kubectl -n shop get secret shop-shared-secret -o jsonpath='{.data.SHOP_INTERNAL_TOKEN}' | base64 --decode)
 STAMP=$(date +%s)
 QUERY="ranking-smoke-${STAMP}"
 
 # 1) 创建两条同名商品：A 更便宜但缺货，B 更贵但有库存
-curl -H "X-Internal-Token: ${INTERNAL_TOKEN}" \
+curl \
   -H 'Content-Type: application/json' \
   -X POST http://127.0.0.1:38080/marketplace/v1/product/create \
   -d "{\"sellerId\":\"seller-smoke\",\"sku\":\"RANK-${STAMP}-A\",\"name\":\"${QUERY}\",\"description\":\"search ranking smoke A\",\"price\":9.99,\"inventory\":0,\"published\":true}"
 
-curl -H "X-Internal-Token: ${INTERNAL_TOKEN}" \
+curl \
   -H 'Content-Type: application/json' \
   -X POST http://127.0.0.1:38080/marketplace/v1/product/create \
   -d "{\"sellerId\":\"seller-smoke\",\"sku\":\"RANK-${STAMP}-B\",\"name\":\"${QUERY}\",\"description\":\"search ranking smoke B\",\"price\":29.99,\"inventory\":30,\"published\":true}"
 
 # 2) 触发全量重建索引；返回 SC_OK 后即可直接继续查询
-curl -H "X-Internal-Token: ${INTERNAL_TOKEN}" \
+curl \
   -X POST http://127.0.0.1:38091/search/v1/products/_reindex
 
 # 3) 默认搜索：应先返回有库存商品
-curl -H "X-Internal-Token: ${INTERNAL_TOKEN}" --get \
+curl --get \
   --data-urlencode "q=${QUERY}" \
   http://127.0.0.1:38091/search/v1/products
 
 # 4) 显式价格升序：应先返回更便宜商品
-curl -H "X-Internal-Token: ${INTERNAL_TOKEN}" --get \
+curl --get \
   --data-urlencode "q=${QUERY}" \
   --data-urlencode 'sort=priceInCents:asc' \
   http://127.0.0.1:38091/search/v1/products
@@ -416,18 +413,17 @@ curl -H "X-Internal-Token: ${INTERNAL_TOKEN}" --get \
 kubectl -n shop port-forward svc/activity-service 28080:8080 28081:8081
 
 # 读取内部调用 token
-INTERNAL_TOKEN=$(kubectl -n shop get secret shop-shared-secret -o jsonpath='{.data.SHOP_INTERNAL_TOKEN}' | base64 --decode)
 
 # 1) 创建一个单红包活动（买家角色会被拒绝）
 curl -i -X POST http://127.0.0.1:28080/activity/v1/admin/games \
-  -H "X-Internal-Token: ${INTERNAL_TOKEN}" \
+  \
   -H 'X-Roles: ROLE_ADMIN' \
   -H 'Content-Type: application/json' \
   -d '{"type":"RED_ENVELOPE","name":"Kind Red Envelope","config":"{\"packet_count\":1,\"total_amount\":5.00}","perUserDailyLimit":10,"perUserTotalLimit":10}'
 
 # 2) 激活活动
 curl -X POST http://127.0.0.1:28080/activity/v1/admin/games/<GAME_ID>/activate \
-  -H "X-Internal-Token: ${INTERNAL_TOKEN}" \
+  \
   -H 'X-Roles: ROLE_ADMIN'
 
 # 3) 通过 gateway 登录 buyer，获取 JWT
@@ -466,7 +462,7 @@ done
 
 # 8) 创建单卡 CollectCard 活动（首次参与即 full set）
 curl -X POST http://127.0.0.1:28080/activity/v1/admin/games \
-  -H "X-Internal-Token: ${INTERNAL_TOKEN}" \
+  \
   -H 'X-Roles: ROLE_ADMIN' \
   -H 'Content-Type: application/json' \
   -d '{"type":"COLLECT_CARD","name":"Kind Collect Card","config":"{\"cards\":[{\"id\":\"card-mascot\",\"name\":\"Mascot\",\"rarity\":\"COMMON\",\"probability\":1.0}]}","perUserDailyLimit":3,"perUserTotalLimit":3}'
@@ -488,20 +484,20 @@ curl http://127.0.0.1:18080/api/activity/v1/games/<COLLECT_GAME_ID>/my-history \
 
 # 11) 创建 VirtualFarm 活动
 curl -X POST http://127.0.0.1:28080/activity/v1/admin/games \
-  -H "X-Internal-Token: ${INTERNAL_TOKEN}" \
+  \
   -H 'X-Roles: ROLE_ADMIN' \
   -H 'Content-Type: application/json' \
   -d '{"type":"VIRTUAL_FARM","name":"Kind Virtual Farm","config":"{\"max_stage\":2,\"stage_progress\":50,\"water_progress\":50}","perUserDailyLimit":5,"perUserTotalLimit":5}'
 
 # 12) 为 VirtualFarm 添加 harvest 奖励并激活活动
 curl -X POST http://127.0.0.1:28080/activity/v1/admin/games/<FARM_GAME_ID>/prizes \
-  -H "X-Internal-Token: ${INTERNAL_TOKEN}" \
+  \
   -H 'X-Roles: ROLE_ADMIN' \
   -H 'Content-Type: application/json' \
   -d '{"name":"Farm Points","type":"POINTS","value":20,"probability":1.0,"totalStock":-1,"displayOrder":0,"imageUrl":null,"couponTemplateId":null}'
 
 curl -X POST http://127.0.0.1:28080/activity/v1/admin/games/<FARM_GAME_ID>/activate \
-  -H "X-Internal-Token: ${INTERNAL_TOKEN}" \
+  \
   -H 'X-Roles: ROLE_ADMIN'
 
 # 13) buyer 连续浇水两次，第二次返回 matured=true

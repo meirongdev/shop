@@ -249,7 +249,7 @@ POST /marketplace/v1/seller/products/{id}/unpublish  # 下架
 POST /marketplace/v1/seller/products/{id}/publish    # 重新上架
 POST /marketplace/v1/seller/products/{id}/images     # 上传图片
 
-# 内部接口（X-Internal-Token）
+# 内部接口 (Service-to-service security is enforced via Kubernetes NetworkPolicy (Cilium). Identity context is propagated via trusted headers injected by the Gateway.)
 POST /internal/marketplace/inventory/lock      # order-service 锁定库存
 POST /internal/marketplace/inventory/release   # order-service 释放库存
 POST /internal/marketplace/inventory/deduct    # order-service 正式扣减

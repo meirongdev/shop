@@ -97,7 +97,7 @@
 
 - `ApiResponse<T>` 统一 northbound 响应模型
 - `BusinessException` / `CommonErrorCode` 统一错误语义
-- `InternalAccessFilter` 校验 `X-Internal-Token`
+- 东西向安全由 Kubernetes NetworkPolicy (Cilium) 强制执行
 - `TraceIdExtractor`、结构化日志、OTLP logback appender、自举式可观测配置
 - `shop.profiling.*` 持续分析开关
 - Feature toggle、幂等、防重复这类通用能力

@@ -27,9 +27,10 @@ RUN if [ -f /app/app.jar ] && file app.jar | grep -q "Java archive"; then \
     fi
 
 # Stage 3: production image with AppCDS archive
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:25-jre AS stage-2
 WORKDIR /app
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+COPY --from=base /app/app.jar ./
 COPY --from=base /app/extracted/dependencies/ ./
 COPY --from=base /app/extracted/spring-boot-loader/ ./
 COPY --from=base /app/extracted/snapshot-dependencies/ ./

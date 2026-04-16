@@ -148,27 +148,6 @@ install_gradle_deps() {
   log_info "Gradle will download required tools on first run (KMP builds may take 10+ minutes)..."
 }
 
-# Install mvnd (Maven Daemon) for faster incremental builds
-install_mvnd() {
-  log_warn "mvnd is required but not installed."
-  case "${OS}" in
-    macos)
-      log_info "Installing mvnd via Homebrew..."
-      brew install mvnd
-      ;;
-    ubuntu|debian|linux)
-      log_info "Installing mvnd via SDKMAN..."
-      curl -s "https://get.sdkman.io" | bash
-      source "$HOME/.sdkman/bin/sdkman-init.sh"
-      sdk install mvnd
-      ;;
-    *)
-      log_error "Please install mvnd manually: https://github.com/apache/maven-mvnd"
-      exit 1
-      ;;
-  esac
-}
-
 # Check container runtime resources (macOS only for now)
 check_runtime_resources() {
   local runtime_type="$1"  # "docker" or "orbstack"
@@ -286,14 +265,6 @@ main() {
     missing+=("helm")
   fi
 
-  # Check mvnd (Maven Daemon) - optional but recommended for faster builds
-  if command_exists mvnd; then
-    log_info "✓ mvnd: $(mvnd --version 2>&1 | head -1)"
-  else
-    log_warn "✗ mvnd: not found (optional — recommended for 30-50% faster Maven builds)"
-    # Don't add to missing list since it's optional, not required
-  fi
-
   echo ""
 
   # Install missing dependencies
@@ -314,9 +285,6 @@ main() {
           ;;
         helm)
           install_helm
-          ;;
-        mvnd)
-          install_mvnd
           ;;
       esac
     done

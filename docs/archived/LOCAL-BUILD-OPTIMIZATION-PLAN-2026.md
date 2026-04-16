@@ -110,7 +110,7 @@ timed out.
 | P0 | Automated container resource validation | done | prevents "pods Pending" confusion |
 | P1 | Use git-sha image tags instead of `:dev` | done | fixes "deployed but still old" hidden bug; lets `kubectl apply` drive rollouts; shrinks deploy-kind.sh from ~165 to ~80 lines |
 | P1 | Multi-node Kind + larger Docker Desktop resources | done | parallel pod startup becomes safe again |
-| P2 | Adopt `mvnd` + BuildKit cache mounts | done | 30–50% off incremental Maven builds (when mvnd installed) |
+| P2 | Adopt `mvnd` + BuildKit cache mounts | removed | Originally 30–50% off incremental Maven builds; removed to simplify environment |
 | P2 | Inject `-XX:TieredStopAtLevel=1` in dev overlay | done | 30–50% faster JVM start in dev |
 | P2 | Replace `sleep 15` with active gateway probing | done | saves 0–15s per e2e run |
 | P3 | Refine `--changed` dependency graph (`shared/*` → only true dependents) | done | fewer unnecessary rebuilds |
@@ -179,33 +179,16 @@ all services.
 
 ### B. Image build phase
 
-#### B1. Switch to `mvnd` (P2 — done)
+#### B1. Remove `mvnd` support (Simplification)
 
-**Implementation**: The Makefile now auto-detects mvnd:
+**Status**: Removed (2026-04-14)
 
-```makefile
-# Makefile line 7
-MVNW := $(shell command -v mvnd 2>/dev/null || echo ./mvnw)
-```
+**Reasoning**: While `mvnd` provides speed benefits, it adds another external dependency that developers must manage. To simplify the environment and ensure consistency across all local and CI environments, `mvnd` support was removed in favor of the standard Maven wrapper (`./mvnw`).
 
-- **When mvnd is installed**: All Makefile targets (`make build`, `make test`, `make verify`) use mvnd automatically
-- **When mvnd is absent**: Falls back to `./mvnw` (standard Maven wrapper) — CI continues working unchanged
-- **Installation**: `make install-deps` checks for mvnd and can install it via Homebrew (macOS) or SDKMAN (Linux)
-
-**Expected win**: 30–50% faster incremental Maven builds (5–15s saved per invocation from JVM reuse).
-
-**To enable**:
-```bash
-# macOS
-brew install mvnd
-
-# Linux (via SDKMAN)
-curl -s "https://get.sdkman.io" | bash
-source "$HOME/.sdkman/bin/sdkman-init.sh"
-sdk install mvnd
-```
-
-After installation, `make build` and other targets automatically use mvnd — no configuration changes needed.
+**Changes**:
+- Removed `mvnd` auto-detection from `Makefile`.
+- Removed `mvnd` check and installation logic from `platform/scripts/install-deps.sh`.
+- Makefile now uses `./mvnw` exclusively.
 
 #### B2. BuildKit cache mounts in `Dockerfile.fast` / `Dockerfile.module`
 
@@ -420,7 +403,7 @@ If `frontend/e2e-tests/playwright.config.ts` sets `workers: 1`, raise it to
 4. **P1 — done**: Multi-node Kind cluster (1 control-plane + 2 workers).
 5. **P1 — done**: Git-sha image tags + simplification of `deploy-kind.sh`.
 6. **P2 — done**: Replace `sleep 15` with active gateway readiness probe.
-7. **P2 — done**: Adopt mvnd for faster Maven builds (auto-detect in Makefile).
+7. **P2 — removed**: Removed mvnd support (simplify environment and dependencies).
 8. **P2 — done**: JVM dev overlay flags (`-XX:TieredStopAtLevel=1 -Xss512k`).
 9. **P3 — done**: Dependency-graph-aware `--changed` (fine-grained shared module mapping).
 10. **P3**: Spring Boot AppCDS, observability slim overlay.

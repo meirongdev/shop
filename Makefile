@@ -2,9 +2,8 @@ SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 .DEFAULT_GOAL := help
 
-# Use mvnd (Maven Daemon) when available for 30-50% faster incremental builds.
-# Falls back to standard Maven wrapper for CI environments without mvnd.
-MVNW := $(shell command -v mvnd 2>/dev/null || echo ./mvnw)
+# Use standard Maven wrapper.
+MVNW := ./mvnw
 DOCS_DIR := docs-site
 DOCS_STAMP := $(DOCS_DIR)/node_modules/.package-lock-stamp
 CLUSTER ?= shop-kind

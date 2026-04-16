@@ -3,7 +3,6 @@ package dev.meirong.shop.httpclient.support;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.httpclient.error.SharedDownstreamErrorHandler;
 import dev.meirong.shop.httpclient.interceptor.TracingHeaderInterceptor;
-import io.micrometer.tracing.Tracer;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import org.springframework.http.HttpStatusCode;

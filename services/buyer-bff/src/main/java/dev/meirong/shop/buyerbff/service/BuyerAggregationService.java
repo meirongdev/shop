@@ -1,6 +1,7 @@
 package dev.meirong.shop.buyerbff.service;
 
 import dev.meirong.shop.clients.loyalty.LoyaltyServiceClient;
+import dev.meirong.shop.clients.PageResponse;
 import dev.meirong.shop.clients.marketplace.MarketplaceServiceClient;
 import dev.meirong.shop.clients.order.OrderServiceClient;
 import dev.meirong.shop.clients.profile.ProfileInternalServiceClient;

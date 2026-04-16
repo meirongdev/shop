@@ -1,11 +1,13 @@
 package dev.meirong.shop.loyalty.listener;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.meirong.shop.common.idempotency.IdempotencyGuard;
 import dev.meirong.shop.common.kafka.NonRetryableKafkaConsumerException;
+import dev.meirong.shop.httpclient.error.SharedDownstreamErrorHandler;
 import dev.meirong.shop.loyalty.config.LoyaltyProperties;
 import dev.meirong.shop.loyalty.domain.LoyaltyIdempotencyKeyRepository;
 import dev.meirong.shop.loyalty.service.LoyaltyAccountService;
@@ -32,6 +34,8 @@ class OrderEventListenerTest {
     private RestClient.Builder builder;
     @Mock
     private RestClient restClient;
+    @Mock
+    private SharedDownstreamErrorHandler errorHandler;
 
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
@@ -39,6 +43,7 @@ class OrderEventListenerTest {
 
     @BeforeEach
     void setUp() {
+        when(builder.defaultStatusHandler(any(), any())).thenReturn(builder);
         when(builder.build()).thenReturn(restClient);
         listener = new OrderEventListener(
                 objectMapper,
@@ -47,7 +52,8 @@ class OrderEventListenerTest {
                 idempotencyGuard,
                 idempotencyKeyRepository,
                 new LoyaltyProperties("orders", "users", "http://profile-service", 10, 1, 3),
-                builder
+                builder,
+                errorHandler
         );
     }
 

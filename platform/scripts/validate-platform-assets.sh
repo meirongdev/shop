@@ -63,6 +63,18 @@ grep -Fxq '!**/target/*.jar' .dockerignore || {
   echo "error: .dockerignore must include host-built target jars for platform/docker/Dockerfile.fast." >&2
   exit 1
 }
+grep -Fxq '!.docker-context-validation/' .dockerignore || {
+  echo "error: .dockerignore must re-include .docker-context-validation/ so Docker context validation artifacts are sent to platform/docker/Dockerfile.fast." >&2
+  exit 1
+}
+grep -Fxq '!.docker-context-validation/target/' .dockerignore || {
+  echo "error: .dockerignore must re-include .docker-context-validation/target/ so Docker context validation artifacts are visible inside the build context." >&2
+  exit 1
+}
+grep -Fxq '!.docker-context-validation/target/context-check.jar' .dockerignore || {
+  echo "error: .dockerignore must re-include .docker-context-validation/target/context-check.jar for Docker context validation." >&2
+  exit 1
+}
 
 fast_context_dir=".docker-context-validation"
 fast_context_target="${fast_context_dir}/target"

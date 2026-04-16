@@ -33,6 +33,9 @@ node_modules
 # Allow host-built runtime jars for fast local Docker builds
 !**/target/
 !**/target/*.jar
+!.docker-context-validation/
+!.docker-context-validation/target/
+!.docker-context-validation/target/context-check.jar
 
 # Allow KMP WASM build outputs for seller-portal and buyer-app images
 !frontend/kmp/seller-app/build/dist/**

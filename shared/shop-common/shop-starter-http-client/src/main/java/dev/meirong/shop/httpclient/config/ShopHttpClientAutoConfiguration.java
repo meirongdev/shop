@@ -7,9 +7,9 @@ import dev.meirong.shop.httpclient.support.ShopHttpExchangeSupport;
 import io.micrometer.tracing.Tracer;
 import java.time.Duration;
 import java.util.List;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.lang.Nullable;
@@ -34,29 +34,29 @@ import org.springframework.web.client.RestClient;
 public class ShopHttpClientAutoConfiguration {
 
     @Bean
-    @ConditionalOnBean(RestClient.Builder.class)
     public TracingHeaderInterceptor tracingHeaderInterceptor(
+            @Nullable Tracer tracer,
             @Value("${shop.http-client.baggage-headers:X-Buyer-Id,X-Seller-Id,X-Username,X-Portal,X-Roles,X-Order-Id}")
             @Nullable String baggageHeaders) {
         if (baggageHeaders == null || baggageHeaders.isBlank()) {
-            return new TracingHeaderInterceptor(BaggageMapping.defaults());
+            return new TracingHeaderInterceptor(tracer, BaggageMapping.defaults());
         }
         List<BaggageMapping> mappings = List.of(baggageHeaders.split(",")).stream()
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .map(BaggageMapping::of)
                 .toList();
-        return new TracingHeaderInterceptor(mappings);
+        return new TracingHeaderInterceptor(tracer, mappings);
     }
 
     @Bean
-    @ConditionalOnBean({RestClient.Builder.class, TracingHeaderInterceptor.class})
     public ShopHttpExchangeSupport shopHttpExchangeSupport(
-            RestClient.Builder restClientBuilder,
+            ObjectProvider<RestClient.Builder> restClientBuilderProvider,
             ObjectMapper objectMapper,
             TracingHeaderInterceptor tracingInterceptor,
             @Value("${shop.http-client.connect-timeout:2s}") @Nullable Duration connectTimeout,
             @Value("${shop.http-client.read-timeout:5s}") @Nullable Duration readTimeout) {
+        RestClient.Builder restClientBuilder = restClientBuilderProvider.getIfAvailable(RestClient::builder);
         return new ShopHttpExchangeSupport(
                 restClientBuilder,
                 objectMapper,
